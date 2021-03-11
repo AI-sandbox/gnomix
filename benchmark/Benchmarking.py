@@ -44,45 +44,6 @@ def load_dict(path):
     with open(path, 'rb') as handle:
         return pickle.load(handle)
 
-## the below 2 fucntion are called by get_gen_0
-
-# def vcf2npy(vcf_file):
-#     vcf_data = allel.read_vcf(vcf_file)
-#     chm_len, nout, _ = vcf_data["calldata/GT"].shape
-#     mat_vcf_2d = vcf_data["calldata/GT"].reshape(chm_len,nout*2).T
-#     return mat_vcf_2d.astype('int16')
-
-# def map2npy(map_file, shape, pop_order):
-#     sample_map = pd.read_csv(map_file, sep="\t", header=None)
-#     sample_map.columns = ["sample", "ancestry"]
-#     y = np.zeros(shape, dtype='int16')
-#     for i, a in enumerate(sample_map["ancestry"]):
-#         a_numeric = np.where(a==pop_order)[0][0]
-#         y[2*i:2*i+2] = a_numeric
-#     return y
-
-# def get_gen_0(data_path, sets):
-#     gen_0_path = data_path + "/simulation_output"
-
-#     population_map_file = data_path+"/populations.txt"
-#     pop_order = np.genfromtxt(population_map_file, dtype="str")
-    
-#     out = []
-#     for s in sets:
-#         X_vcf = gen_0_path + "/"+s+"/founders.vcf"
-#         y_map = gen_0_path + "/"+s+"/founders.map"
-#         X_raw_gen_0 = vcf2npy(X_vcf)
-#         y_raw_gen_0 = map2npy(y_map, X_raw_gen_0.shape, pop_order)
-#         out.append(X_raw_gen_0)
-#         out.append(y_raw_gen_0)
-    
-#     return out
-
-# def get_gens(data_name):
-#     if data_name == "6_even_anc":
-#         gens = [2,4,6,8,12,16,24,32,48,64]
-#     return gens
-
 accr = lambda y, y_hat : round(accuracy_score(y.reshape(-1), y_hat.reshape(-1))*100,2)
 def acc_per_gen(model, X_val, y_val, gens):
     set_size = (X_val.shape[0])//len(gens)
@@ -95,6 +56,29 @@ def acc_per_gen(model, X_val, y_val, gens):
         accs.append(acc)
 
     return accs
+
+def eval_cal_acc(model, data):
+    
+    (X_t1, y_t1), (X_t2, y_t2), (X_v, y_v) = data
+
+    # calibrate on t1 (biased input but larga set and unseen founders)
+    model.calibrate = True
+
+    # train and apply calibrator
+    zs = model.predict_proba(X_t1,rtn_calibrated=False).reshape(-1,model.num_anc)
+    model.calibrator = calibrator_module(zs, y_t1.reshape(-1), model.num_anc, method ='Isotonic')  
+    model._evaluate_smooth(X_t2,X_t2,X_v,y_v)
+
+    # evaluate accuracy
+    val_acc_cal = model.smooth_acc_val
+
+    # evaluate log loss
+    val_probs_cal = model.predict_proba(X_v)
+    val_ll_cal = log_loss(y_v.reshape(-1), val_probs_cal.reshape(-1, model.num_anc))
+
+    model.calibrate = False
+    
+    return val_acc_cal, val_ll_cal, val_probs_cal
 
 def get_data(data_path, W, gens, chm, verbose=False):
     """
@@ -110,9 +94,6 @@ def get_data(data_path, W, gens, chm, verbose=False):
             W: window size (in SNPs)
             C: chm size (in SNPs)
     """
-
-#     if data == "6_even_anc":
-#         data_path = "../Admixture/generated_data/6_even_anc_t2/chm22"
     test_gens = [_ for _ in gens if _!= 0] # without 0
 
     # get paths - gen0 only for train1
@@ -144,12 +125,7 @@ def get_data(data_path, W, gens, chm, verbose=False):
     X_train2, labels_window_train2 = data_process(X_train2_raw, labels_train2_raw, W, 0)
     X_val, labels_window_val       = data_process(X_val_raw, labels_val_raw, W, 0)
 
-    X_train_raw = np.concatenate([X_train1_raw, X_train2_raw])
-    labels_train_raw = np.concatenate([labels_train1_raw, labels_train2_raw])
     del X_train1_raw, X_train2_raw, X_val_raw, labels_train1_raw, labels_train2_raw, labels_val_raw
-
-    X_train = np.concatenate([X_train1,X_train2])
-    labels_window_train = np.concatenate([labels_window_train1,labels_window_train2])
 
     # for training and storing a pre-trained model
     population_map_file = data_path+"/populations.txt"
@@ -188,7 +164,6 @@ def get_base_model(model_name="xgb"):
     elif model_name == "rf":
         model = ensemble.RandomForestClassifier(n_estimators=trees,max_depth=max_depth,n_jobs=cores) 
     elif model_name == "lgb":
-        # use np.nan for missing values
         model = lgb.LGBMClassifier(n_estimators=trees, max_depth=max_depth,
                     learning_rate=lr, reg_lambda=reg_lambda, reg_alpha=reg_alpha,
                     nthread=cores, random_state=random_state) 
@@ -233,7 +208,7 @@ def get_smoother(smoother_name, num_anc, default_sws=75):
 # --------------------------------- Train&Eval ---------------------------------
 
 
-def bm_train(base, smooth, root, data_path, gens, chm, W=1000, load_base=True, load_smooth=True, eval=True, verbose=False):
+def bm_train(base, smooth, root, data_path, gens, chm, W=1000, load_base=True, load_smooth=True, eval=True, models_exist=None, verbose=False):
     """
     data is a string referring to some dataset
 
@@ -250,9 +225,9 @@ def bm_train(base, smooth, root, data_path, gens, chm, W=1000, load_base=True, l
 
     if verbose:
         print("Reading data...")
-    # gens = get_gens(data_name)
     data, meta = get_data(data_path, W=W, gens=gens, chm=chm, verbose=False)
     (X_t1, y_t1), (X_t2, y_t2), (X_v, y_v) = data
+    test_gens = [_ for _ in gens if _!= 0] # without 0
 
     if not os.path.exists(root):
         os.makedirs(root)
@@ -260,30 +235,30 @@ def bm_train(base, smooth, root, data_path, gens, chm, W=1000, load_base=True, l
     for b in base:
         
         print("BASE:", b)
-                
-        # load base model
-        base_dir = os.path.join(root, "base_models")
-        if not os.path.exists(base_dir):
-            os.makedirs(base_dir)
-        # base_data_dir = os.path.join(base_dir, data_name)
-        # if not os.path.exists(base_data_dir):
-        #     os.makedirs(base_data_dir)
-        base_model_path = os.path.join(base_dir, b + ".pkl")
-        
-        if load_base:
-            if os.path.exists(base_model_path):
-                print(base_model_path)
-                model = pickle.load(open(base_model_path,"rb"))
-            else:
-                print("Trained base not found, performing training...")
-                load_base=False
 
-        if not load_base:
-            # train and evaluate base, save 
-            bmg = partial(get_base_model, b)
-            model = XGMIX(chmlen=meta["C"], win=meta["W"], num_anc=meta["A"], sws=None, base_model_generator=bmg)
-            model._train_base(X_t1, y_t1)
-            pickle.dump(model, open(base_model_path, "wb" ))
+        if models_exist:
+            print("Skipping base...")
+        else:
+            # load base model
+            base_dir = os.path.join(root, "base_models")
+            if not os.path.exists(base_dir):
+                os.makedirs(base_dir)
+            base_model_path = os.path.join(base_dir, b + ".pkl")
+            
+            if load_base:
+                if os.path.exists(base_model_path):
+                    print(base_model_path)
+                    model = pickle.load(open(base_model_path,"rb"))
+                else:
+                    print("Trained base not found, performing training...")
+                    load_base=False
+
+            if not load_base:
+                # train and evaluate base, save 
+                bmg = partial(get_base_model, b)
+                model = XGMIX(chmlen=meta["C"], win=meta["W"], num_anc=meta["A"], sws=None, base_model_generator=bmg)
+                model._train_base(X_t1, y_t1)
+                pickle.dump(model, open(base_model_path, "wb" ))
             
         for s in smooth:
             print("SMOOTH:", s)
@@ -291,11 +266,9 @@ def bm_train(base, smooth, root, data_path, gens, chm, W=1000, load_base=True, l
             models_dir = os.path.join(root, "models")
             if not os.path.exists(models_dir):
                 os.makedirs(models_dir)
-            # models_data_dir = os.path.join(models_dir, data_name)
-            # if not os.path.exists(models_data_dir):
-            #     os.makedirs(models_data_dir)
             model_name = b + "_" + s
             model_path = os.path.join(models_dir, model_name + ".pkl")
+            print(model_path)
             
             if load_smooth:
                 if os.path.exists(model_path):
@@ -313,14 +286,11 @@ def bm_train(base, smooth, root, data_path, gens, chm, W=1000, load_base=True, l
                 pickle.dump(model, open(model_path, "wb" ))
 
             if eval:
-                metrics[model_name] = bm_eval(model_path, data, gens=gens, verbose=verbose)
+                metrics[model_name] = bm_eval(model_path, data, gens=test_gens, verbose=verbose)
 
     return metrics
 
-def bm_eval(model_path, data, gens=None, Xy_cal=None, verbose=False):
-
-    # if metrics_path is None:
-    #     metrics_path = model_path.split(".")[0] + "_metrics.pk"
+def bm_eval(model_path, data, gens=None, eval_calibration=True, verbose=False):
 
     (X_t1, y_t1), (X_t2, y_t2), (X_v, y_v) = data
 
@@ -334,8 +304,15 @@ def bm_eval(model_path, data, gens=None, Xy_cal=None, verbose=False):
     if verbose:
         print("retrieving accuracies..")
     
-    metrics["train_acc"] = model.smooth_acc_train
-    metrics["val_acc"]   = model.smooth_acc_val
+    # Base
+    metrics["base_train_acc"]     = model.base_acc_train
+    metrics["base_val_acc"]       = model.base_acc_val
+    metrics["base_train_acc_bal"] = model.base_acc_train_balanced
+    metrics["base_val_acc_bal"]   = model.base_acc_val_balanced
+
+    # Smooth
+    metrics["train_acc"]     = model.smooth_acc_train
+    metrics["val_acc"]       = model.smooth_acc_val
     metrics["train_acc_bal"] = model.smooth_acc_train_balanced
     metrics["val_acc_bal"]   = model.smooth_acc_val_balanced
 
@@ -364,16 +341,16 @@ def bm_eval(model_path, data, gens=None, Xy_cal=None, verbose=False):
     # generation vise performance
     if gens is not None:
         if verbose:
-            print("estimating accuracy and log loss for each generation..")
-            print("NOTE: this assumes that the validation set contains equal number from each generation in that order")
+            print("estimating accuracy for each generation..")
+        assert 0 not in gens, "Shouldn't be evaluating generation 0!"
         gen_performance = {}
         gen_performance["gens"] = gens
         gen_performance["accs"] = acc_per_gen(model, X_v, y_v, gens)
         metrics["gen_performance"] = gen_performance
 
-    if Xy_cal is not None:
-        print("Calibration evaluation not implemented yet!")
-
+    if eval_calibration:
+        val_acc_cal, val_ll_cal, _ = eval_cal_acc(model,data)
+        
     return metrics
 
 
