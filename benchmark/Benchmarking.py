@@ -16,7 +16,7 @@ import matplotlib.colors as mcolors
 matplotlib.rcParams.update(matplotlib.rcParamsDefault)
 
 # local
-sys.path.append('/home/arvindsk/XGMix/') # TODO
+sys.path.append('/home/arvindsk/XGMix_benchmark/') # TODO
 from XGMIX import *
 from Utils.preprocess import load_np_data, data_process
 from Utils.visualization import plot_cm, plot_chm
@@ -256,7 +256,9 @@ def bm_train(base, smooth, root, data_path, gens, chm, W=1000, load_base=True, l
             if not load_base:
                 # train and evaluate base, save 
                 bmg = partial(get_base_model, b)
-                model = XGMIX(chmlen=meta["C"], win=meta["W"], num_anc=meta["A"], sws=None, base_model_generator=bmg)
+                # adding context_ratio.
+                model = XGMIX(chmlen=meta["C"], win=meta["W"], num_anc=meta["A"], sws=None, base_model_generator=bmg,
+                              context_ratio=0.5)
                 model._train_base(X_t1, y_t1)
                 pickle.dump(model, open(base_model_path, "wb" ))
             
@@ -283,6 +285,10 @@ def bm_train(base, smooth, root, data_path, gens, chm, W=1000, load_base=True, l
                 model.smooth = smoother
                 model.sws = sws
                 model._train_smooth(X_t2, y_t2)
+                # retrain base...
+                # merge X_t1 and X_t2, y_t1 and y_t2
+                train, train_lab = np.concatenate([X_t1, X_t2]), np.concatenate([y_t1, y_t2])
+                model._train_base(train, train_lab)
                 pickle.dump(model, open(model_path, "wb" ))
 
             if eval:
