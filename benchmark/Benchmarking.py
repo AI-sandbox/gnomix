@@ -45,17 +45,42 @@ def load_dict(path):
         return pickle.load(handle)
 
 accr = lambda y, y_hat : round(accuracy_score(y.reshape(-1), y_hat.reshape(-1))*100,2)
-def acc_per_gen(model, X_val, y_val, gens):
-    set_size = (X_val.shape[0])//len(gens)
+def acc_per_gen(y, y_pred, gens):
+    set_size = (X.shape[0])//len(gens)
     accs = []
     for g, gen in enumerate(gens):
-        X = X_val[g*set_size:(g+1)*set_size]
-        y = y_val[g*set_size:(g+1)*set_size] 
-        prediction = model.predict(X)
-        acc = accr(y, prediction)
+        y_g = y[g*set_size:(g+1)*set_size]
+        y_pred_g = y_pred[g*set_size:(g+1)*set_size]
+        acc = accr(y_g, y_pred_g)
         accs.append(acc)
 
     return accs
+
+def get_snp_lvl_acc(y_snp, y_pred, W):
+    """
+    Evaluate snp level accuracy by comparing each snp with it's associated label
+    W is window size
+    """
+    N, C = y_snp.shape
+    y_pred_snp = np.zeros_like(y_snp)
+    rem_len = C - (C//W)*W
+    for i in range(N):
+        y_pred_snp[i] = np.concatenate(( np.repeat(y_pred[i,:-1],W), np.repeat(y_pred[i,-1],rem_len) ))
+
+    snp_lvl_acc = accr(y_snp, y_pred_snp)
+    return snp_lvl_acc
+
+def acc_per_gen_snp_lvl(y_snp, y_pred, gens, W):
+    set_size = (X.shape[0])//len(gens)
+    accs = []
+    for g, gen in enumerate(gens):
+        y_g = y_snp[g*set_size:(g+1)*set_size]
+        y_pred_g = y_pred[g*set_size:(g+1)*set_size]
+        acc = get_snp_lvl_acc(y_g, y_pred_g)
+        accs.append(acc)
+
+    return accs
+
 
 def eval_cal_acc(model, data):
     
@@ -125,8 +150,6 @@ def get_data(data_path, W, gens, chm, verbose=False):
     X_train2, labels_window_train2 = data_process(X_train2_raw, labels_train2_raw, W, 0)
     X_val, labels_window_val       = data_process(X_val_raw, labels_val_raw, W, 0)
 
-    del X_train1_raw, X_train2_raw, X_val_raw, labels_train1_raw, labels_train2_raw, labels_val_raw
-
     # for training and storing a pre-trained model
     population_map_file = data_path+"/populations.txt"
     position_map_file   = data_path+"/chm{}/positions.txt".format(chm)
@@ -146,7 +169,7 @@ def get_data(data_path, W, gens, chm, verbose=False):
         "W": W                 # window size in SNPs
     }
 
-    return data, meta
+    return data, meta, labels_val_raw
 
 # --------------------------------- Models ---------------------------------
 
@@ -225,7 +248,7 @@ def bm_train(base, smooth, root, data_path, gens, chm, W=1000, load_base=True, l
 
     if verbose:
         print("Reading data...")
-    data, meta = get_data(data_path, W=W, gens=gens, chm=chm, verbose=False)
+    data, meta, y_val_snp = get_data(data_path, W=W, gens=gens, chm=chm, verbose=False)
     (X_t1, y_t1), (X_t2, y_t2), (X_v, y_v) = data
     test_gens = [_ for _ in gens if _!= 0] # without 0
 
@@ -296,7 +319,7 @@ def bm_train(base, smooth, root, data_path, gens, chm, W=1000, load_base=True, l
 
     return metrics
 
-def bm_eval(model_path, data, gens=None, eval_calibration=True, verbose=False):
+def bm_eval(model_path, data, gens=None, eval_calibration=True, y_snp=None, verbose=False):
 
     (X_t1, y_t1), (X_t2, y_t2), (X_v, y_v) = data
 
@@ -344,6 +367,8 @@ def bm_eval(model_path, data, gens=None, eval_calibration=True, verbose=False):
         print("estimating model size..")    
     metrics["model_total_size_mb"] = round(os.stat(model_path).st_size/(10**6),2)
     
+    y_val_pred = model.predict(X_v)
+
     # generation vise performance
     if gens is not None:
         if verbose:
@@ -351,11 +376,19 @@ def bm_eval(model_path, data, gens=None, eval_calibration=True, verbose=False):
         assert 0 not in gens, "Shouldn't be evaluating generation 0!"
         gen_performance = {}
         gen_performance["gens"] = gens
-        gen_performance["accs"] = acc_per_gen(model, X_v, y_v, gens)
+        gen_performance["accs"] = acc_per_gen(y_v, y_val_pred, gens)
+        gen_performance["accs_snp_lvl"] = acc_per_gen_snp_lvl(y_val_snp, y_val_pred, gens, W=model.win)
         metrics["gen_performance"] = gen_performance
 
+    # snp level accuracy
+    if y_snp is not None:
+        metrics["val_acc_snp_lvl"] = get_snp_lvl_acc(y_val_snp, y_val_pred, W=model.win)
+
+    # evaluate the performance with calibrated data
     if eval_calibration:
         val_acc_cal, val_ll_cal, _ = eval_cal_acc(model,data)
+        metrics["val_acc_cal"] = val_acc_cal
+        metrics["val_ll_cal"]  = val_ll_cal
         
     return metrics
 
