@@ -315,7 +315,7 @@ def bm_train(base, smooth, root, data_path, gens, chm, W=1000, load_base=True, l
                 pickle.dump(model, open(model_path, "wb" ))
 
             if eval:
-                metrics[model_name] = bm_eval(model_path, data, gens=test_gens, verbose=verbose)
+                metrics[model_name] = bm_eval(model_path, data, gens=test_gens, y_snp=y_val_snp, verbose=verbose)
 
     return metrics
 
