@@ -195,7 +195,9 @@ class XGMIX():
         # reshape
         windowed_data = windowed_data.reshape(-1,windowed_data.shape[2])
         windowed_labels = None if labels is None else labels.reshape(-1)
-    
+
+        self.base_inference_time = round(time()-time_begin,2)
+
         return windowed_data, windowed_labels
 
 
