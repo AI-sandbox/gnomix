@@ -377,7 +377,8 @@ def bm_eval(model_path, data, gens=None, eval_calibration=True, y_snp=None, verb
         gen_performance = {}
         gen_performance["gens"] = gens
         gen_performance["accs"] = acc_per_gen(y_v, y_val_pred, gens)
-        gen_performance["accs_snp_lvl"] = acc_per_gen_snp_lvl(y_snp, y_val_pred, gens, W=model.win)
+        if y_snp is not None:
+            gen_performance["accs_snp_lvl"] = acc_per_gen_snp_lvl(y_snp, y_val_pred, gens, W=model.win)
         metrics["gen_performance"] = gen_performance
 
     # snp level accuracy
