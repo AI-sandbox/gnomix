@@ -46,7 +46,7 @@ def load_dict(path):
 
 accr = lambda y, y_hat : round(accuracy_score(y.reshape(-1), y_hat.reshape(-1))*100,2)
 def acc_per_gen(y, y_pred, gens):
-    set_size = (X.shape[0])//len(gens)
+    set_size = (y.shape[0])//len(gens)
     accs = []
     for g, gen in enumerate(gens):
         y_g = y[g*set_size:(g+1)*set_size]
@@ -65,18 +65,18 @@ def get_snp_lvl_acc(y_snp, y_pred, W):
     y_pred_snp = np.zeros_like(y_snp)
     rem_len = C - (C//W)*W
     for i in range(N):
-        y_pred_snp[i] = np.concatenate(( np.repeat(y_pred[i,:-1],W), np.repeat(y_pred[i,-1],rem_len) ))
+        y_pred_snp[i] = np.concatenate(( np.repeat(y_pred[i,:-1],W), np.repeat(y_pred[i,-1],W+rem_len) )) # fixed a bug here
 
     snp_lvl_acc = accr(y_snp, y_pred_snp)
     return snp_lvl_acc
 
 def acc_per_gen_snp_lvl(y_snp, y_pred, gens, W):
-    set_size = (X.shape[0])//len(gens)
+    set_size = (y_snp.shape[0])//len(gens)
     accs = []
     for g, gen in enumerate(gens):
         y_g = y_snp[g*set_size:(g+1)*set_size]
         y_pred_g = y_pred[g*set_size:(g+1)*set_size]
-        acc = get_snp_lvl_acc(y_g, y_pred_g)
+        acc = get_snp_lvl_acc(y_g, y_pred_g,W)
         accs.append(acc)
 
     return accs
@@ -92,7 +92,7 @@ def eval_cal_acc(model, data):
     # train and apply calibrator
     zs = model.predict_proba(X_t1,rtn_calibrated=False).reshape(-1,model.num_anc)
     model.calibrator = calibrator_module(zs, y_t1.reshape(-1), model.num_anc, method ='Isotonic')  
-    model._evaluate_smooth(X_t2,X_t2,X_v,y_v)
+    model._evaluate_smooth(X_t2,y_t2,X_v,y_v)
 
     # evaluate accuracy
     val_acc_cal = model.smooth_acc_val
@@ -377,12 +377,12 @@ def bm_eval(model_path, data, gens=None, eval_calibration=True, y_snp=None, verb
         gen_performance = {}
         gen_performance["gens"] = gens
         gen_performance["accs"] = acc_per_gen(y_v, y_val_pred, gens)
-        gen_performance["accs_snp_lvl"] = acc_per_gen_snp_lvl(y_val_snp, y_val_pred, gens, W=model.win)
+        gen_performance["accs_snp_lvl"] = acc_per_gen_snp_lvl(y_snp, y_val_pred, gens, W=model.win)
         metrics["gen_performance"] = gen_performance
 
     # snp level accuracy
     if y_snp is not None:
-        metrics["val_acc_snp_lvl"] = get_snp_lvl_acc(y_val_snp, y_val_pred, W=model.win)
+        metrics["val_acc_snp_lvl"] = get_snp_lvl_acc(y_snp, y_val_pred, W=model.win)
 
     # evaluate the performance with calibrated data
     if eval_calibration:
