@@ -216,6 +216,8 @@ def get_base_model(model_name="xgb"):
         model = svm.SVC(kernel=string_kernel, probability=True)
     elif model_name == "svm_random_string_kernel":
         model = svm.SVC(kernel=random_string_kernel, probability=True)
+    elif model_name == "svm_random_string_kernel_singlethread":
+        model = svm.SVC(kernel=random_string_kernel_singlethread, probability=True)
     elif model_name == "svm_hamming_kernel":
         model = svm.SVC(kernel=hamming_kernel, probability=True)
     else:
