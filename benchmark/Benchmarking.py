@@ -16,7 +16,7 @@ import matplotlib.colors as mcolors
 matplotlib.rcParams.update(matplotlib.rcParamsDefault)
 
 # local
-sys.path.append('/home/arvindsk/XGMix_benchmark/') # TODO
+sys.path.append('/home/wknd37/XGMix_benchmark/') # TODO
 from XGMIX import *
 from Utils.preprocess import load_np_data, data_process
 from Utils.visualization import plot_cm, plot_chm
@@ -32,6 +32,13 @@ from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
+
+# string kernel dependencies
+import multiprocessing as mp
+from functools import partial
+from Utils.string_kernel import string_kernel, random_string_kernel, hamming_kernel
+slide_window = np.lib.stride_tricks.sliding_window_view
+
 
 # --------------------------------- Utils ---------------------------------
 def save_dict(D, path):
@@ -105,7 +112,7 @@ def eval_cal_acc(model, data):
     
     return val_acc_cal, val_ll_cal, val_probs_cal
 
-def get_data(data_path, W, gens, chm, verbose=False):
+def get_data(data_path, W, gens, chm, verbose=False, only_founders=False):
     """
     input
     - W is window size in SNPs (int)
@@ -120,6 +127,9 @@ def get_data(data_path, W, gens, chm, verbose=False):
             C: chm size (in SNPs)
     """
     test_gens = [_ for _ in gens if _!= 0] # without 0
+
+    if only_founders:
+        gens, test_gens = [0], [0]
 
     # get paths - gen0 only for train1
     train1_paths = [data_path + "/chm{}/simulation_output/train1/gen_".format(chm) + str(gen) + "/" for gen in gens]
@@ -202,6 +212,12 @@ def get_base_model(model_name="xgb"):
         model = LogisticRegression(penalty="l1", C = 1., solver="liblinear", max_iter=1000)
     elif model_name == "lda":
         model = LDA()
+    elif model_name == "svm_string_kernel":
+        model = svm.SVC(kernel=string_kernel, probability=True)
+    elif model_name == "svm_random_string_kernel":
+        model = svm.SVC(kernel=random_string_kernel, probability=True)
+    elif model_name == "svm_hamming_kernel":
+        model = svm.SVC(kernel=hamming_kernel, probability=True)
     else:
         print("Don't recognize the model")
 
@@ -231,7 +247,8 @@ def get_smoother(smoother_name, num_anc, default_sws=75):
 # --------------------------------- Train&Eval ---------------------------------
 
 
-def bm_train(base, smooth, root, data_path, gens, chm, W=1000, load_base=True, load_smooth=True, eval=True, models_exist=None, verbose=False):
+def bm_train(base, smooth, root, data_path, gens, chm, W=1000,
+            load_base=True, load_smooth=True, eval=True, models_exist=None, verbose=False, only_founders=False):
     """
     data is a string referring to some dataset
 
@@ -248,8 +265,13 @@ def bm_train(base, smooth, root, data_path, gens, chm, W=1000, load_base=True, l
 
     if verbose:
         print("Reading data...")
-    data, meta, y_val_snp = get_data(data_path, W=W, gens=gens, chm=chm, verbose=False)
+    data, meta, y_val_snp = get_data(data_path, W=W, gens=gens, chm=chm, verbose=False, only_founders=only_founders)
     (X_t1, y_t1), (X_t2, y_t2), (X_v, y_v) = data
+    
+    if only_founders:
+        data_founders, meta_founders, y_val_snp_founders = get_data(data_path, W=W, gens=gens, chm=chm, verbose=False, only_founders=only_founders)
+        (X_t1_founders, y_t1_founders), (X_t2_founders, y_t2_founders), _ = data
+        
     test_gens = [_ for _ in gens if _!= 0] # without 0
 
     if not os.path.exists(root):
@@ -282,7 +304,10 @@ def bm_train(base, smooth, root, data_path, gens, chm, W=1000, load_base=True, l
                 # adding context_ratio.
                 model = XGMIX(chmlen=meta["C"], win=meta["W"], num_anc=meta["A"], sws=None, base_model_generator=bmg,
                               context_ratio=0.5)
-                model._train_base(X_t1, y_t1)
+                if not only_founders:
+                    model._train_base(X_t1, y_t1)
+                else:
+                    model._train_base(X_t1_founders, y_t1_founders)
                 pickle.dump(model, open(base_model_path, "wb" ))
             
         for s in smooth:
@@ -310,7 +335,11 @@ def bm_train(base, smooth, root, data_path, gens, chm, W=1000, load_base=True, l
                 model._train_smooth(X_t2, y_t2)
                 # retrain base...
                 # merge X_t1 and X_t2, y_t1 and y_t2
-                train, train_lab = np.concatenate([X_t1, X_t2]), np.concatenate([y_t1, y_t2])
+                if not only_founders:
+                    train, train_lab = np.concatenate([X_t1, X_t2]), np.concatenate([y_t1, y_t2])
+                else:
+                    train, train_lab = np.concatenate([X_t1_founders, X_t2_founders]), np.concatenate([y_t1_founders, y_t2_founders])
+
                 model._train_base(train, train_lab)
                 pickle.dump(model, open(model_path, "wb" ))
 
