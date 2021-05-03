@@ -20,11 +20,11 @@ def string_kernel(X, Y, n_jobs=None):
 
     return np.sum(sums,axis=0)
 
-def random_string_kernel_singlethread(X, Y):
+def random_string_kernel_singlethread(X, Y, alpha=1, seed=37):
     np.random.seed(seed)
     Z = np.array([np.equal(X_i, Y) for X_i in X])
     Ms = [m for m in range(1,Z.shape[-1]) if np.random.rand() < (1/m**alpha)]
-    return np.sum( np.array( [m*sum_over_mz(m,Z) for m in Ms ), axis=0 )
+    return np.sum( np.array( [m*sum_over_mz(m,Z) for m in Ms] ), axis=0 )
 
 def random_string_kernel(X, Y, alpha=1, n_jobs=None, seed=37):
     
