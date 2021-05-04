@@ -250,7 +250,7 @@ def get_smoother(smoother_name, num_anc, default_sws=75):
 
 
 def bm_train(base, smooth, root, data_path, gens, chm, W=1000,
-            load_base=True, load_smooth=True, eval=True, models_exist=None, verbose=False, only_founders=False):
+            load_base=True, load_smooth=True, eval=True, models_exist=None, verbose=False, only_founders=False, quick_eval=False):
     """
     data is a string referring to some dataset
 
@@ -306,6 +306,7 @@ def bm_train(base, smooth, root, data_path, gens, chm, W=1000,
                 # adding context_ratio.
                 model = XGMIX(chmlen=meta["C"], win=meta["W"], num_anc=meta["A"], sws=None, base_model_generator=bmg,
                               context_ratio=0.5)
+                # train the base
                 if not only_founders:
                     model._train_base(X_t1, y_t1)
                 else:
@@ -335,8 +336,7 @@ def bm_train(base, smooth, root, data_path, gens, chm, W=1000,
                 model.smooth = smoother
                 model.sws = sws
                 model._train_smooth(X_t2, y_t2)
-                # retrain base...
-                # merge X_t1 and X_t2, y_t1 and y_t2
+                # retrain base..., merge X_t1 and X_t2, y_t1 and y_t2
                 if not only_founders:
                     train, train_lab = np.concatenate([X_t1, X_t2]), np.concatenate([y_t1, y_t2])
                 else:
@@ -347,6 +347,12 @@ def bm_train(base, smooth, root, data_path, gens, chm, W=1000,
 
             if eval:
                 metrics[model_name] = bm_eval(model_path, data, gens=test_gens, y_snp=y_val_snp, verbose=verbose)
+
+            if quick_eval:
+                print("Quick Evaluation...")
+                model._evaluate_base(X_t2, y_t2, X_v, y_v) # t2 for speed (not true train error)
+                model._evaluate_smooth(X_t2, y_t2, X_v, y_v)
+
 
     return metrics
 
