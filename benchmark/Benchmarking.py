@@ -267,12 +267,12 @@ def bm_train(base, smooth, root, data_path, gens, chm, W=1000,
 
     if verbose:
         print("Reading data...")
-    data, meta, y_val_snp = get_data(data_path, W=W, gens=gens, chm=chm, verbose=False, only_founders=only_founders)
+    data, meta, y_val_snp = get_data(data_path, W=W, gens=gens, chm=chm, verbose=False, only_founders=False)
     (X_t1, y_t1), (X_t2, y_t2), (X_v, y_v) = data
     
     if only_founders:
         data_founders, meta_founders, y_val_snp_founders = get_data(data_path, W=W, gens=gens, chm=chm, verbose=False, only_founders=only_founders)
-        (X_t1_founders, y_t1_founders), (X_t2_founders, y_t2_founders), _ = data
+        (X_t1_founders, y_t1_founders), (X_t2_founders, y_t2_founders), _ = data_founders
         
     test_gens = [_ for _ in gens if _!= 0] # without 0
 
