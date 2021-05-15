@@ -54,7 +54,7 @@ def apply_calibration(proba, calibrator):
     proba = normalize_prob(iso_prob, A).reshape(N,-1,A)
     return proba
 
-def plot_reliability_curve(pred_prob,y_cal,pop_order,method='Uncalibrated',bins=10):
+def plot_reliability_curve(pred_prob,y_cal,pop_order,method='Uncalibrated',bins=10, legend=True):
     
     fig, (ax1) = plt.subplots(nrows = 1, ncols=1, figsize = (8,6))
                                               
@@ -71,7 +71,6 @@ def plot_reliability_curve(pred_prob,y_cal,pop_order,method='Uncalibrated',bins=
         
         ax1.set_xlabel('Est. Prob/ mean predicted value')
         ax1.set_ylabel('True Prob/fraction_of_positives')
-        ax1.legend(loc="lower right")
         
         y_test = y_label.flatten()
         y_pred =np.where(est_prob.flatten()>1/n_classes,1,0)
@@ -81,7 +80,9 @@ def plot_reliability_curve(pred_prob,y_cal,pop_order,method='Uncalibrated',bins=
         class_metrics[pop_order[i]]['Recall'] = float("%1.3f" %recall_score(y_test, y_pred))
         class_metrics[pop_order[i]]['F1'] = float("%1.3f" %f1_score(y_test, y_pred))
         class_metrics[pop_order[i]]['AUC'] = float("%1.3f" %roc_auc_score(y_test, y_pred))
-    
+
+    if legend:
+        ax1.legend(loc="lower right")
     fig.tight_layout()
     plt.show()
     return class_metrics

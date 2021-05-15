@@ -2,7 +2,7 @@ import numpy as np
 import multiprocessing as mp
 from functools import partial
 
-slide_window = np.lib.stride_tricks.sliding_window_view
+slide_window = np.lib.stride_tricks.sliding_window_view # requires numpy version 1.20+
 
 def sum_over_mZ(m,Z):
     return np.sum(np.all( np.lib.stride_tricks.sliding_window_view(Z,m,axis=2), axis=3),axis=2)
@@ -10,10 +10,10 @@ def sum_over_mZ(m,Z):
 def sum_over_zM(z, Ms):
     return np.sum([np.sum(np.all(np.lib.stride_tricks.sliding_window_view(z,m,axis=1), axis=2),axis=1) for m in Ms], axis=0)
 
-def string_kernel(X, Y, n_jobs=None, m_axis="samples"):
+def string_kernel(X, Y, K_max=None, n_jobs=None, m_axis="samples"):
     
     Z = np.array([np.equal(X_i, Y) for X_i in X])
-    Ms = range(1,Z.shape[-1])
+    Ms = range(1,Z.shape[-1]) if K_max is None else range(1,K_max)
     
     if n_jobs == 1 or m_axis is "None":
         K = np.sum( np.array( [sum_over_mZ(m,Z) for m in Ms] ), axis=0 )
