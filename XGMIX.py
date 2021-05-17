@@ -137,9 +137,9 @@ def train(chm, model_name, genetic_map_df, data_path, generations, window_size_c
         del X_train1_raw_gen_0, y_train1_raw_gen_0, X_train2_raw_gen_0, y_train2_raw_gen_0 
 
     # reshape according to window size 
-    X_train1, labels_window_train1 = data_process(X_train1_raw, labels_train1_raw, window_size_pos, missing)
-    X_train2, labels_window_train2 = data_process(X_train2_raw, labels_train2_raw, window_size_pos, missing)
-    X_val, labels_window_val       = data_process(X_val_raw, labels_val_raw, window_size_pos, missing)
+    X_t1, y_t1 = data_process(X_train1_raw, labels_train1_raw, window_size_pos, missing)
+    X_t2, y_t2 = data_process(X_train2_raw, labels_train2_raw, window_size_pos, missing)
+    X_v, y_v       = data_process(X_val_raw, labels_val_raw, window_size_pos, missing)
 
     del X_train1_raw, X_train2_raw, X_val_raw, labels_train1_raw, labels_train2_raw, labels_val_raw
 
@@ -147,17 +147,21 @@ def train(chm, model_name, genetic_map_df, data_path, generations, window_size_c
     # init, train, evaluate and save model
     if verbose:
         print("Initializing XGMix model and training...")
-    model = XGMIX(chm_len, window_size_pos, smooth_size, num_anc, 
-                  snp_pos, snp_ref, pop_order, calibrate=calibrate, 
-                  cores=n_cores, context_ratio=context_ratio,
-                  mode_filter_size=mode_filter_size, 
-                  base_params = [20,4], smooth_params=[100,smooth_depth])
+    # model = XGMIX(chm_len, window_size_pos, smooth_size, num_anc, 
+    #               snp_pos, snp_ref, pop_order, calibrate=calibrate, 
+    #               cores=n_cores, context_ratio=context_ratio,
+    #               mode_filter_size=mode_filter_size, 
+    #               base_params = [20,4], smooth_params=[100,smooth_depth])
+    model = XGMIX(C=chm_len, M=window_size_pos, S=smooth_size, A=num_anc, 
+                  snp_pos=snp_pos, snp_ref=snp_ref, population_order=pop_order,
+                  calibrate=calibrate, n_jobs=n_cores, context_ratio=context_ratio)
     # other params: mode_filter_size
-    model.train(X_train1, labels_window_train1, X_train2, labels_window_train2, X_val, labels_window_val, retrain_base=retrain_base, verbose=verbose)
+
+    model.train( data = ((X_t1, y_t1), (X_t2, y_t2), (X_v, y_v)), retrain_base=retrain_base, verbose=verbose)
 
     # evaluate model
     analysis_path = join_paths(model_repo, "analysis", verb=False)
-    CM(labels_window_val.ravel(), model.predict(X_val).ravel(), pop_order, analysis_path, verbose)
+    CM(y_v.ravel(), model.predict(X_v).ravel(), pop_order, analysis_path, verbose)
     print("Saving model at {}".format(model_path))
     pickle.dump(model, open(model_path,"wb"))
 
@@ -293,14 +297,13 @@ def main(args, verbose=True, **kwargs):
         else: 
             label_pred_query_window = model.predict(X_query)
             proba_query_window = model.predict_proba(X_query)
+        
+        print(label_pred_query_window.shape)
 
         # writing the result to disc
         if verbose:
             print("Writing inference to disc...")
-        meta_data = get_meta_data(args.chm, model.snp_pos,
-                                query_vcf_data['variants/POS'], model.num_windows,
-                                model.win, gen_map_df)
-        # out_prefix = output_path + "/" + args.output_basename
+        meta_data = get_meta_data(args.chm, model.snp_pos, query_vcf_data['variants/POS'], model.W, model.M, gen_map_df)
         out_prefix = output_path + "/" + output_path.split("/")[-1]
         write_msp_tsv(out_prefix, meta_data, label_pred_query_window, model.population_order, query_vcf_data['samples'])
         write_fb_tsv(out_prefix, meta_data, proba_query_window, model.population_order, query_vcf_data['samples'])

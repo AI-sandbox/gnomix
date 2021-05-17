@@ -46,7 +46,7 @@ where the first 5 arguments are described above in the pre-trained setting and
 - <*reference_file*> is a .vcf or .vcf.gz file containing the reference haplotypes (in any order)
 - <*sample_map_file*> is a sample map file matching reference samples to their respective reference populations
 
-The program uses these two files as input to [rfmix's](https://github.com/slowkoni/rfmix) simulation algorithm to create training data for the model.
+The program uses these two files as input to our simulation algorithm (see **pyadmix/**) to create training data for the model.
 
 ### Calibration
 XGmix output probabilities might not reflect the true confidence / accuracy of the predictions. By setting to True calibration when training a new model, Isotonic Regression is used to match the predicted probabilities to calibrated probabilities. For example, in a calibrated model, predictions with a probability 80% will be correct 80% of the time.
