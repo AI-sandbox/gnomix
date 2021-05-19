@@ -1,21 +1,25 @@
 from copy import deepcopy
 import numpy as np
-
 import sklearn_crfsuite
-from sklearn_crfsuite import metrics as crf_metrics
-from sklearn.metrics import accuracy_score
+
+from Utils.Smooth.smooth import Smoother
+
+class CRF_Smoother(Smoother):
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.model = CRF(verbose=self.verbose)
 
 class CRF:
 
     def __init__(self, solver="lbfgs", max_it=10000, verbose=False):
         self.CRF = sklearn_crfsuite.CRF(
-            algorithm=solver, 
+            algorithm=solver,
             max_iterations=max_it,
             all_possible_transitions=True,
             all_possible_states=True,
             verbose=verbose
         )
-        
 
     def npy2crf(self, X, Y=None):
         """format data for linear-chain CRF"""
@@ -54,6 +58,7 @@ class CRF:
     def fit(self, X, y):
         X_CRF, y_CRF = self.npy2crf(X, y)
         self.CRF.fit(X_CRF, y_CRF)
+        self.classes_ = self.CRF.classes_
 
     def predict(self, X):
         X_CRF, _ = self.npy2crf(X)
@@ -67,13 +72,3 @@ class CRF:
         proba_CRF = self.CRF.predict_marginals(X_CRF)
         proba = self.crf2npy(proba_CRF)
         return proba
-    
-
-    # # One hot encoder
-    # def ohe(y, n_anc):
-    #     N, B = y.shape
-    #     out = np.zeros((N,B,n_anc), dtype=int)
-    #     for i in range(N):
-    #         for b in range(B):
-    #             out[i,b,y[i,b]] = 1  
-    #     return out

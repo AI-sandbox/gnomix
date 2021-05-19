@@ -2,6 +2,14 @@ import numpy as np
 import torch
 from torch import nn
 
+from Utils.Smooth.smooth import Smoother
+
+class CNN_Smoother(Smoother):
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.model = CNN(num_classes=self.A, num_features=self.S, verbose=self.verbose)
+
 class LAIDataset(torch.utils.data.Dataset):
     
     def __init__(self, data, labels):
@@ -19,22 +27,24 @@ class LAIDataset(torch.utils.data.Dataset):
 
         return X, y
 
-class CONV(nn.Module):
+class CNN(nn.Module):
     
-    def __init__(self, num_anc, sws, lr=0.001):
-        super(CONV, self).__init__()
-        self.sws = sws
-        self.num_anc = num_anc
+    def __init__(self, num_classes, num_features, lr=0.001, verbose=False):
+        super(CNN, self).__init__()
+        self.num_features = num_features
+        self.num_classes = num_classes
         
         self.smoothNet = self._get_conv_smoother()
         self.drop = nn.Dropout(0.5)
         self.drop_cols = nn.Dropout(0.5)
 
-        self.optimizer = torch.optim.Adam(self.parameters(), lr = 0.001)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr = lr)
+
+        self.verbose = verbose
         
     def _get_conv_smoother(self):
         layers = []
-        layers.append(nn.Conv1d(self.num_anc,self.num_anc,self.sws,padding=(self.sws-1)//2,padding_mode="reflection"))
+        layers.append(nn.Conv1d(self.num_classes,self.num_classes,self.num_features,padding=(self.num_features-1)//2,padding_mode="reflection"))
 
         return nn.Sequential(*layers)
         
@@ -101,7 +111,7 @@ class CONV(nn.Module):
         return accuracy
     
     # XGMix interface
-    def fit(self, X, y, max_ep=250, val_every=50, verbose=False):
+    def fit(self, X, y, max_ep=250, val_every=50):
 
         X_torch, y_torch = as_torch_tensor(X, y)
         generator = get_data_generator(X_torch, y_torch)
@@ -117,10 +127,10 @@ class CONV(nn.Module):
                 loss.backward()
                 self.optimizer.step()
             
-            if verbose:
+            if self.verbose:
                 print("Loss at iteration {}: {}".format(ep,running_loss.data.cpu().numpy()/len(generator)))
             
-            if verbose and ep % val_every == 0:
+            if self.verbose and ep % val_every == 0:
                 
                 self.eval()
                 

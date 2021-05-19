@@ -4,15 +4,28 @@ from sklearn.metrics import accuracy_score, balanced_accuracy_score
 
 class Base():
 
-    def __init__(self, chm_len, window_size, num_ancestry, context=0, n_jobs=None, seed=94305):
+    def __init__(self, chm_len, window_size, num_ancestry, missing_encoding=2, context=0, n_jobs=None, seed=94305, verbose=False):
 
         self.C = chm_len
         self.M = window_size
         self.W = self.C//self.M # Number of windows
         self.A = num_ancestry
+        self.missing_encoding=missing_encoding
         self.context = context
+        self.n_jobs = n_jobs
+        self.seed = seed
+        self.verbose = verbose
 
     def init_base_models(self, model_factory):
+        """
+        inputs:
+            - model_factory: function that returns a model object that has the functions
+                - fit
+                - predict
+                - predict_proba
+            - and the attributes
+                - classes_
+        """
         self.models = {}
         for w in range(self.W):
             self.models["model"+str(w*self.M)] = model_factory()

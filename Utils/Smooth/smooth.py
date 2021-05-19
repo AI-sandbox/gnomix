@@ -4,7 +4,8 @@ from sklearn.metrics import accuracy_score, balanced_accuracy_score
 
 class Smoother():
 
-    def __init__(self, n_windows, smooth_window_size, num_ancestry, model=None, calibrate=None, n_jobs=None, seed=None, mode_filter=0):
+    def __init__(self, n_windows, smooth_window_size, num_ancestry, model=None,
+                calibrate=None, n_jobs=None, seed=None, mode_filter=0, verbose=False):
 
         self.S = (1+smooth_window_size)//2
         self.W = n_windows
@@ -14,6 +15,7 @@ class Smoother():
         self.mode_filter = mode_filter
         self.n_jobs = n_jobs
         self.seed = seed
+        self.verbose = verbose
 
     def process_base_proba(self,B,y=None):
         return B, y # smoother doesn't pre-process by default

@@ -2,13 +2,19 @@ import numpy as np
 import multiprocessing as mp
 from functools import partial
 
-slide_window = np.lib.stride_tricks.sliding_window_view # requires numpy version 1.20+
+def get_slide_window():
+    try:
+        return np.lib.stride_tricks.sliding_window_view 
+    except AttributeError:
+        print("Error: String kernel implementation requires numpy versions 1.20+")
 
 def sum_over_mZ(m,Z):
-    return np.sum(np.all( np.lib.stride_tricks.sliding_window_view(Z,m,axis=2), axis=3),axis=2)
+    slide_window = get_slide_window()
+    return np.sum(np.all( slide_window(Z,m,axis=2), axis=3),axis=2)
 
 def sum_over_zM(z, Ms):
-    return np.sum([np.sum(np.all(np.lib.stride_tricks.sliding_window_view(z,m,axis=1), axis=2),axis=1) for m in Ms], axis=0)
+    slide_window = get_slide_window()
+    return np.sum([np.sum(np.all( slide_window(z,m,axis=1), axis=2),axis=1) for m in Ms], axis=0)
 
 def string_kernel(X, Y, K_max=None, n_jobs=None, m_axis="samples"):
     
@@ -68,7 +74,9 @@ def hamming_kernel(X, Y):
     return np.dot(X,Y.T) + np.dot((1-X), (1-Y).T)
 
 def substring_kernel_vectorized(X, Y, M=5, stride=1):
-        
+
+    slide_window = get_slide_window()
+
     nx, mx = X.shape
     ny, my = Y.shape
 

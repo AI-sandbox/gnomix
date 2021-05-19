@@ -4,7 +4,10 @@ import sys
 from time import time
 
 from Utils.Base.models import LogisticRegressionBase
+
 from Utils.Smooth.xgb import XGB_Smoother
+from Utils.Smooth.crf import CRF_Smoother
+from Utils.Smooth.cnn import CNN_Smoother
 
 from XGFix.XGFIX import XGFix
 
@@ -12,16 +15,17 @@ class XGMIX():
 
     def __init__(self, C, M, S, A,
                 base=LogisticRegressionBase, smooth=XGB_Smoother, # base and smooth models
-                snp_pos=None, snp_ref=None, population_order=None, # dataset specific, TODO: store in one object
+                snp_pos=None, snp_ref=None, population_order=None, missing_encoding=2, # dataset specific, TODO: store in one object
                 n_jobs=None, path=None, # configs
                 calibrate=False, context_ratio=0.0, mode_filter=False, # hyperparams
-                seed=94305
+                seed=94305, verbose=False
     ):
         """
         Inputs
            C: chromosome length in SNPs
            M: number of windows for chromosome segmentation
-           S: Smoother window size: number of windows considered for a smoother (TODO: is this only a function of the smoother type)
+           S: Smoother window size: number of windows considered for a smoother 
+                - (TODO: S is only a parameter for some smoother types, should we only have it defined there locally?)
            A: number of ancestry considered
 
         """
@@ -34,10 +38,8 @@ class XGMIX():
         # configs
         self.path = path
         self.n_jobs = n_jobs
-
-        # smoother
-        self.S = (S+1)//2
-        self.flat_base = S is None
+        self.seed = seed
+        self.verbose = verbose
 
         # data
         self.snp_pos = snp_pos
@@ -47,14 +49,15 @@ class XGMIX():
         # gnomix hyperparams
         self.context = int(self.M*context_ratio)
         self.calibrate = calibrate
+  
+        self.base = base(chm_len=self.C, window_size=self.M, num_ancestry=self.A,
+                            missing_encoding=missing_encoding, n_jobs=self.n_jobs,
+                            seed=self.seed, verbose=self.verbose)
 
-        # common ground that should be standardized (in a config file?)
-        self.seed = seed
-
-        self.base = base(chm_len=self.C, window_size=self.M, num_ancestry=self.A, n_jobs=self.n_jobs, seed=self.seed)
-        self.smooth = smooth(n_windows=self.W, smooth_window_size=self.S, num_ancestry=self.A, n_jobs=self.n_jobs,
-                                calibrate=self.calibrate, mode_filter=mode_filter, seed=self.seed)
-
+        self.smooth = smooth(n_windows=self.W, smooth_window_size=S, num_ancestry=self.A,
+                            n_jobs=self.n_jobs, calibrate=self.calibrate, mode_filter=mode_filter, 
+                            seed=self.seed, verbose=self.verbose)
+        
         # model stats
         self.time = {}
         self.accuracies = {}

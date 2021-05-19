@@ -285,7 +285,6 @@ def main(args, verbose=True, **kwargs):
             X_query_phased, label_pred_query_window = model.phase(X_query)
             if verbose:
                 print("Writing phased SNPs to disc...")
-            # TODO: is there a way to infer the Alternating SNPs?
             U = {
                 "variants/REF": model.snp_ref[fmt_idx],
                 "variants/ALT": np.expand_dims(np.repeat("NA", len(fmt_idx)),axis=1)
@@ -297,8 +296,6 @@ def main(args, verbose=True, **kwargs):
         else: 
             label_pred_query_window = model.predict(X_query)
             proba_query_window = model.predict_proba(X_query)
-        
-        print(label_pred_query_window.shape)
 
         # writing the result to disc
         if verbose:
