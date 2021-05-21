@@ -4,8 +4,7 @@ import calibration as cal
 from sklearn.isotonic import IsotonicRegression
 from sklearn import preprocessing
 from sklearn.calibration import  calibration_curve
-from sklearn.metrics import confusion_matrix, plot_confusion_matrix,brier_score_loss,\
-mean_squared_error,log_loss,precision_score, f1_score, recall_score, roc_auc_score
+from sklearn.metrics import precision_score, f1_score, recall_score, roc_auc_score
 
 """
 This code uses library uncertianity-calibration from 
@@ -17,43 +16,52 @@ This code uses library uncertianity-calibration from
 }
 """
 
-def check_prob_sum(probs):
-    """
-    Check that the vector probs sums to 1
-    """
-    rtol = 0.1
-    try:
-        np.testing.assert_allclose(sum(probs),1, rtol = rtol)
-    except AssertionError:
-        print(f'AssertionError: probs do not sum to within {rtol} of 1')
+class Calibrator():
 
+    def __init__(self, n_classes, method="Isotonic"):
+        self.method = method
+        self.n_classes = n_classes
+        self.models = [None]*n_classes
 
+    def normalize(self, proba):
+        """ Normalize the probabilities
+        """
+        if self.n_classes == 2:
+            proba[:, 0] = 1. - proba[:, 1]
+        else:
+            proba /= np.sum(proba, axis=1)[:, np.newaxis]
 
-def normalize_prob(prob,n_classes):
-    """ Normalize the probabilities
-    """
-    if n_classes == 2:
-        prob[:, 0] = 1. - prob[:, 1]
-    else:
-        prob /= np.sum(prob, axis=1)[:, np.newaxis]
+        # XXX : for some reason all probas can be 0
+        proba[np.isnan(proba)] = 1. / self.n_classes
 
-    # XXX : for some reason all probas can be 0
-    prob[np.isnan(prob)] = 1. / n_classes
+        # Deal with cases where the predicted probaability minimally exceeds 1.0
+        proba[(1.0 < proba) & (proba <= 1.0 + 1e-5)] = 1.0
+        
+        return proba
 
-    # Deal with cases where the predicted probability minimally exceeds 1.0
-    prob[(1.0 < prob) & (prob <= 1.0 + 1e-5)] = 1.0
-    
-    return prob
+    def fit(self, proba, y):
+        
+        if self.method == 'Platt':
+            print("Not implemented yet. Using Isotonic regression..")
+            
+        if self.method =='Isotonic':
 
-def apply_calibration(proba, calibrator):
-    N, B, A = proba.shape
-    proba_flatten=proba.reshape(-1,A)
-    iso_prob=np.zeros((proba_flatten.shape[0],A))
-    for i in range(A):    
-        iso_prob[:,i] = calibrator[i].transform(proba_flatten[:,i])
-    proba = normalize_prob(iso_prob, A).reshape(N,-1,A)
-    return proba
+            # binarize class labels
+            lb = preprocessing.LabelBinarizer().fit(y)
+            y_cal_ohe = lb.transform(y)
+            
+            for i in range(self.n_classes):    
+                self.models[i] = IsotonicRegression(out_of_bounds = 'clip').fit(proba[:,i], y_cal_ohe[:,i])
 
+    def transform(self, proba):
+        shape = proba.shape
+        proba_flatten = proba.reshape(-1,self.n_classes)
+        iso_prob = np.zeros((proba_flatten.shape[0],self.n_classes))
+        for i in range(self.n_classes):    
+            iso_prob[:,i] = self.models[i].transform(proba_flatten[:,i])
+        proba = self.normalize(iso_prob).reshape(*shape)
+        return proba
+ 
 def plot_reliability_curve(pred_prob,y_cal,pop_order,method='Uncalibrated',bins=10, legend=True):
     
     fig, (ax1) = plt.subplots(nrows = 1, ncols=1, figsize = (8,6))
@@ -86,39 +94,6 @@ def plot_reliability_curve(pred_prob,y_cal,pop_order,method='Uncalibrated',bins=
     fig.tight_layout()
     plt.show()
     return class_metrics
-
-
-def calibrator_module(zs,ys,n_classes,method):
-        
-    if method == 'Platt':
-        calibrator = cal.PlattBinnerMarginalCalibrator(n_classes, num_bins=200)
-        calibrator.train_calibration(zs, ys)
-      
-        calibrated_zs = calibrator.calibrate(zs)
-        calibration_error = cal.get_calibration_error(calibrated_zs, ys)
-        print("Scaling-binning L2 calibration error with %s is %.2f%%" % (method, (100 * calibration_error)))
-        
-    elif method =='Isotonic':
-
-        # binarize class labels
-        lb = preprocessing.LabelBinarizer().fit(ys)
-        y_cal_ohe = lb.transform(ys)
-        del lb
-        
-        calibrator = []
-        # calibrated_prob = np.zeros((ys.shape[0],n_classes))
-        
-        for i in range(n_classes):    
-            calibrator.append(IsotonicRegression(out_of_bounds = 'clip').fit(zs[:,i], y_cal_ohe[:,i]))
-            # calibrated_prob[:,i] = calibrator[i].transform(zs[:,i])
-
-        # # Normalize the probabilities
-        # calibrated_prob = normalize_prob(calibrated_prob,n_classes)
-        # calibration_error = cal.get_calibration_error(calibrated_prob, ys)
-        # print("Scaling-binning L2 calibration error with %s is %.2f%%" % (method, (100 * calibration_error)))
-        
-    return calibrator
-
 
 def comparison(uncalibrated_zs,calibrated_zs,ys,pop_type,pop_order):
     

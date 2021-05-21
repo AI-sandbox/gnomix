@@ -3,7 +3,7 @@ import pickle
 import sys
 from time import time
 
-from Utils.Base.models import LogisticRegressionBase
+from Utils.Base.models import LogisticRegressionBase, RandomStringKernelBase
 
 from Utils.Smooth.xgb import XGB_Smoother
 from Utils.Smooth.crf import CRF_Smoother
@@ -27,7 +27,6 @@ class XGMIX():
            S: Smoother window size: number of windows considered for a smoother 
                 - (TODO: S is only a parameter for some smoother types, should we only have it defined there locally?)
            A: number of ancestry considered
-
         """
 
         self.C = C

@@ -1,22 +1,15 @@
-import argparse
 import gzip
-import logging
 import numpy as np
 import os
-import pandas as pd
 import pickle
-from scipy import stats
-from sklearn.metrics import accuracy_score, confusion_matrix
 import sys
 from time import time
-import xgboost as xgb
 
 from Utils.utils import run_shell_cmd, join_paths, read_vcf, vcf_to_npy, npy_to_vcf, update_vcf 
 from Utils.utils import cM2nsnp, get_num_outs, read_genetic_map
 from Utils.preprocess import load_np_data, data_process, get_gen_0
 from Utils.postprocess import get_meta_data, write_msp_tsv, write_fb_tsv
 from Utils.visualization import plot_cm, CM
-from Utils.Calibration import calibrator_module, normalize_prob
 from Utils.XGMix import XGMIX
 from Admixture.Admixture import read_sample_map, split_sample_map, main_admixture
 from Admixture.fast_admix import main_admixture_fast

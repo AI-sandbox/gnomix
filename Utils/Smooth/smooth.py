@@ -1,6 +1,7 @@
 import numpy as np
 from Utils.Smooth.utils import mode_filter
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
+from Utils.Smooth.Calibration import Calibrator
 
 class Smoother():
 
@@ -12,6 +13,7 @@ class Smoother():
         self.A = num_ancestry
         self.model = model
         self.calibrate = calibrate
+        self.calibrator = None
         self.mode_filter = mode_filter
         self.n_jobs = n_jobs
         self.seed = seed
@@ -36,7 +38,10 @@ class Smoother():
         proba = self.model.predict_proba(B_s)
         
         if self.calibrate:
-            proba = apply_calibration(proba, self.calibrator)
+            if self.calibrator is None:
+                print("No calibrator found, returning original probabilities.")
+            else:
+                proba = self.calibrator.transform(proba)
 
         return proba.reshape(-1, self.W, self.A)
 
@@ -50,15 +55,23 @@ class Smoother():
 
     def evaluate(self,B,y):
 
-        round_accr = lambda accr : round(np.mean(accr)*100,2)
-
         y_pred = self.predict(B)
+        round_accr = lambda accr : round(np.mean(accr)*100,2)
         accr = round_accr( accuracy_score(y.reshape(-1), y_pred.reshape(-1)) )
         accr_bal = round_accr( balanced_accuracy_score(y.reshape(-1), y_pred.reshape(-1)) )
 
         return accr, accr_bal
 
     def train_calibrator(self, B, y, frac=0.05):
+
+        # get pure probabilities
+        calibrate = self.calibrate
+        self.calibrate = False
         idxs = np.random.choice(len(B),int(frac*len(B)),replace=False)
-        proba = self.model.predict_proba(B[idxs],rtn_calibrated=False).reshape(-1,self.A)
-        self.calibrator = calibrator_module(proba, y[idxs].reshape(-1), self.A, method ='Isotonic') 
+        proba = self.predict_proba(B[idxs]).reshape(-1,self.A)
+        self.calibrate = calibrate
+
+        # calibrate
+        self.calibrator = Calibrator(self.A)
+        self.calibrator.fit(proba, y[idxs].reshape(-1))
+
