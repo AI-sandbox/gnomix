@@ -13,6 +13,7 @@ class LogisticRegressionBase(Base):
 
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         self.init_base_models(
             lambda : LogisticRegression(penalty="l2", C = 1., solver="liblinear", max_iter=1000)
         )
@@ -70,6 +71,7 @@ class StringKernelBase(Base):
 
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.train_admix = False # save computation
 
         self.kernel = string_kernel if self.n_jobs!=1 else string_kernel_singlethread
 
@@ -77,10 +79,12 @@ class StringKernelBase(Base):
             lambda : svm.SVC(kernel=self.kernel, probability=True)
         )
 
+
 class RandomStringKernelBase(Base):
 
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.train_admix = False # save computation
 
         self.kernel = random_string_kernel if self.n_jobs!=1 else random_string_kernel_singlethread
 

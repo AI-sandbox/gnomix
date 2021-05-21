@@ -4,7 +4,7 @@ from sklearn.metrics import accuracy_score, balanced_accuracy_score
 
 class Base():
 
-    def __init__(self, chm_len, window_size, num_ancestry, missing_encoding=2, context=0, n_jobs=None, seed=94305, verbose=False):
+    def __init__(self, chm_len, window_size, num_ancestry, missing_encoding=2, context=0, train_admix=True, n_jobs=None, seed=94305, verbose=False):
 
         self.C = chm_len
         self.M = window_size
@@ -12,6 +12,7 @@ class Base():
         self.A = num_ancestry
         self.missing_encoding=missing_encoding
         self.context = context
+        self.train_admix = train_admix
         self.n_jobs = n_jobs
         self.seed = seed
         self.verbose = verbose
@@ -30,8 +31,23 @@ class Base():
         for w in range(self.W):
             self.models["model"+str(w*self.M)] = model_factory()
 
-    def train(self,X,y,verbose=True):
-        
+    def filter_founders(self, X, y):
+        mask = np.where([np.all(row == row[0]) for row in y])[0]
+        return X[mask], y[mask]
+
+    def train(self, X, y, verbose=True):
+        """
+        inputs:
+            - X: np.array of shape (N, C) where N is sample size and C chm length
+            - y: np.array of shape (N, C) where N is sample size and C chm length
+        """
+
+        if not self.train_admix:
+            print("Filtering out admixed individuals")
+            print("Sample size before:", len(X))
+            X, y = self.filter_founders(X,y)
+            print("Sample size after:", len(X))
+
         if self.context != 0.0:
             pad_left = np.flip(X[:,0:self.context],axis=1)
             pad_right = np.flip(X[:,-self.context:],axis=1)
