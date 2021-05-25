@@ -4,3 +4,4 @@ workspace.code-workspace
 expts
 *.vcf
 *.vcf.gz
+*.pkl

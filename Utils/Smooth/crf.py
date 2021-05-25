@@ -2,14 +2,6 @@ from copy import deepcopy
 import numpy as np
 import sklearn_crfsuite
 
-from Utils.Smooth.smooth import Smoother
-
-class CRF_Smoother(Smoother):
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.model = CRF(verbose=self.verbose)
-
 class CRF:
 
     def __init__(self, solver="lbfgs", max_it=10000, verbose=False):

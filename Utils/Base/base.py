@@ -1,10 +1,12 @@
 import numpy as np
 import sys
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
+from time import time
 
 class Base():
 
-    def __init__(self, chm_len, window_size, num_ancestry, missing_encoding=2, context=0, train_admix=True, n_jobs=None, seed=94305, verbose=False):
+    def __init__(self, chm_len, window_size, num_ancestry, missing_encoding=2,
+                    context=0.5, train_admix=True, n_jobs=None, seed=94305, verbose=False):
 
         self.C = chm_len
         self.M = window_size
@@ -16,6 +18,8 @@ class Base():
         self.n_jobs = n_jobs
         self.seed = seed
         self.verbose = verbose
+
+        self.time = {}
 
     def init_base_models(self, model_factory):
         """
@@ -31,10 +35,6 @@ class Base():
         for w in range(self.W):
             self.models["model"+str(w*self.M)] = model_factory()
 
-    def filter_founders(self, X, y):
-        mask = np.where([np.all(row == row[0]) for row in y])[0]
-        return X[mask], y[mask]
-
     def train(self, X, y, verbose=True):
         """
         inputs:
@@ -42,11 +42,7 @@ class Base():
             - y: np.array of shape (N, C) where N is sample size and C chm length
         """
 
-        if not self.train_admix:
-            print("Filtering out admixed individuals")
-            print("Sample size before:", len(X))
-            X, y = self.filter_founders(X,y)
-            print("Sample size after:", len(X))
+        t = time()
 
         if self.context != 0.0:
             pad_left = np.flip(X[:,0:self.context],axis=1)
@@ -74,12 +70,16 @@ class Base():
         if verbose:
             print("")
 
+        self.time["train"] = time() - t
+
 
     def predict_proba(self, X):
         """
         returns 
             - B: base probabilities of shape (N,W,A)
         """
+
+        t = time()
 
         N = len(X)
         B = np.zeros( (N, self.W, self.A), dtype="float32" )
@@ -101,6 +101,8 @@ class Base():
             B[:,i,base_model.classes_] = base_model.predict_proba(X_w)
 
             start += self.M
+
+        self.time["inference"] = time() - t
             
         return B
     
@@ -108,7 +110,7 @@ class Base():
         B = self.predict_proba(X)
         return np.argmax(B, axis=-1)
 
-    def evaluate(self,X,y,verbose=True):
+    def evaluate(self,X,y):
 
         round_accr = lambda accr : round(np.mean(accr)*100,2)
 

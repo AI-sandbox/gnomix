@@ -4,20 +4,17 @@ import sys
 from time import time
 
 from Utils.Base.models import LogisticRegressionBase, RandomStringKernelBase
+from Utils.Smooth.models import XGB_Smoother, CRF_Smoother, CNN_Smoother
 
-from Utils.Smooth.xgb import XGB_Smoother
-from Utils.Smooth.crf import CRF_Smoother
-from Utils.Smooth.cnn import CNN_Smoother
+# from XGFix.XGFIX import XGFix
 
-from XGFix.XGFIX import XGFix
+class Gnomix():
 
-class XGMIX():
-
-    def __init__(self, C, M, S, A,
-                base=LogisticRegressionBase, smooth=XGB_Smoother, # base and smooth models
+    def __init__(self, C, M, A,
+                base=LogisticRegressionBase, smooth=CNN_Smoother, # base and smooth models
                 snp_pos=None, snp_ref=None, population_order=None, missing_encoding=2, # dataset specific, TODO: store in one object
                 n_jobs=None, path=None, # configs
-                calibrate=False, context_ratio=0.0, mode_filter=False, # hyperparams
+                calibrate=False, context_ratio=0.5, mode_filter=False, # hyperparams
                 seed=94305, verbose=False
     ):
         """
@@ -50,10 +47,10 @@ class XGMIX():
         self.calibrate = calibrate
   
         self.base = base(chm_len=self.C, window_size=self.M, num_ancestry=self.A,
-                            missing_encoding=missing_encoding, n_jobs=self.n_jobs,
-                            seed=self.seed, verbose=self.verbose)
+                            missing_encoding=missing_encoding, context=self.context,
+                            n_jobs=self.n_jobs, seed=self.seed, verbose=self.verbose)
 
-        self.smooth = smooth(n_windows=self.W, smooth_window_size=S, num_ancestry=self.A,
+        self.smooth = smooth(n_windows=self.W, num_ancestry=self.A,
                             n_jobs=self.n_jobs, calibrate=self.calibrate, mode_filter=mode_filter, 
                             seed=self.seed, verbose=self.verbose)
         

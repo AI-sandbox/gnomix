@@ -10,7 +10,7 @@ from Utils.utils import cM2nsnp, get_num_outs, read_genetic_map
 from Utils.preprocess import load_np_data, data_process, get_gen_0
 from Utils.postprocess import get_meta_data, write_msp_tsv, write_fb_tsv
 from Utils.visualization import plot_cm, CM
-from Utils.XGMix import XGMIX
+from Utils.gnomix import Gnomix
 from Admixture.Admixture import read_sample_map, split_sample_map, main_admixture
 from Admixture.fast_admix import main_admixture_fast
 
@@ -145,7 +145,7 @@ def train(chm, model_name, genetic_map_df, data_path, generations, window_size_c
     #               cores=n_cores, context_ratio=context_ratio,
     #               mode_filter_size=mode_filter_size, 
     #               base_params = [20,4], smooth_params=[100,smooth_depth])
-    model = XGMIX(C=chm_len, M=window_size_pos, S=smooth_size, A=num_anc, 
+    model = Gnomix(C=chm_len, M=window_size_pos, A=num_anc, 
                   snp_pos=snp_pos, snp_ref=snp_ref, population_order=pop_order,
                   calibrate=calibrate, n_jobs=n_cores, context_ratio=context_ratio)
     # other params: mode_filter_size

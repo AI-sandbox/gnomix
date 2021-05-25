@@ -2,15 +2,16 @@ import numpy as np
 from Utils.Smooth.utils import mode_filter
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
 from Utils.Smooth.Calibration import Calibrator
+from time import time
 
 class Smoother():
 
-    def __init__(self, n_windows, smooth_window_size, num_ancestry, model=None,
+    def __init__(self, n_windows, num_ancestry, smooth_window_size=75, model=None,
                 calibrate=None, n_jobs=None, seed=None, mode_filter=0, verbose=False):
 
-        self.S = (1+smooth_window_size)//2
         self.W = n_windows
         self.A = num_ancestry
+        self.S = smooth_window_size if smooth_window_size %2 else smooth_window_size-1
         self.model = model
         self.calibrate = calibrate
         self.calibrator = None
@@ -19,14 +20,23 @@ class Smoother():
         self.seed = seed
         self.verbose = verbose
 
+        self.time = {}
+
     def process_base_proba(self,B,y=None):
         return B, y # smoother doesn't pre-process by default
 
     def train(self,B,y):
+
+        t = time()
+
         B_s, y_s = self.process_base_proba(B, y)
         self.model.fit(B_s, y_s)
+        
+        self.time["train"] = time() - t
 
     def predict_proba(self, B):
+
+        t = time()
 
         B_s, _ = self.process_base_proba(B)
 
@@ -42,6 +52,8 @@ class Smoother():
                 print("No calibrator found, returning original probabilities.")
             else:
                 proba = self.calibrator.transform(proba)
+                
+        self.time["inference"] = time() - t
 
         return proba.reshape(-1, self.W, self.A)
 
@@ -49,6 +61,7 @@ class Smoother():
 
         proba = self.predict_proba(B)
         y_pred =  np.argmax(proba, axis=-1)
+
         if self.mode_filter != 0:
             y_pred = np.apply_along_axis(func1d=mode_filter, axis=1, arr=y_pred, size=self.mode_filter)
         return y_pred

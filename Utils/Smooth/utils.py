@@ -1,31 +1,29 @@
 import numpy as np
 from scipy import stats
 
-def slide_window(B, S, y=None, padding=None):
+def slide_window(B, S, y=None):
     """
     inputs
         - B (np.array: base probabilities of shape (N,W,A)
         - S (int): smoother window size 
 
     """
-
     N, W, A = B.shape
 
-    padding = padding if padding is not None else S
-
     # pad it.
-    pad_left = np.flip(B[:,0:padding,:],axis=1)
-    pad_right = np.flip(B[:,-padding:,:],axis=1)
+    pad = (S+1)//2
+    pad_left  = np.flip(B[:,0:pad,:],axis=1)
+    pad_right = np.flip(B[:,-pad:,:],axis=1)
     B_padded = np.concatenate([pad_left,B,pad_right],axis=1)
 
     # window it.
     X_slide = np.zeros((N,W,A*S),dtype="float32")
-    for ppl,dat in enumerate(B_padded):
-        for win in range(X_slide.shape[1]):
-            X_slide[ppl,win,:] = dat[win:win+S].ravel()
+    for ppl, dat in enumerate(B_padded):
+        for w in range(W):
+            X_slide[ppl,w,:] = dat[w:w+S].ravel()
 
     # reshape
-    X_slide = X_slide.reshape(-1,X_slide.shape[2])
+    X_slide = X_slide.reshape(N*W,A*S)
     y_slide = None if y is None else y.reshape(-1)
 
     return X_slide, y_slide

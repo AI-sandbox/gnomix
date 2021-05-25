@@ -2,14 +2,6 @@ import numpy as np
 import torch
 from torch import nn
 
-from Utils.Smooth.smooth import Smoother
-
-class CNN_Smoother(Smoother):
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.model = CNN(num_classes=self.A, num_features=self.S, verbose=self.verbose)
-
 class LAIDataset(torch.utils.data.Dataset):
     
     def __init__(self, data, labels):
@@ -30,7 +22,7 @@ class LAIDataset(torch.utils.data.Dataset):
 class CNN(nn.Module):
     
     def __init__(self, num_classes, num_features, lr=0.001, verbose=False):
-        super(CNN, self).__init__()
+        super().__init__()
         self.num_features = num_features
         self.num_classes = num_classes
         
@@ -43,9 +35,7 @@ class CNN(nn.Module):
         self.verbose = verbose
         
     def _get_conv_smoother(self):
-        layers = []
-        layers.append(nn.Conv1d(self.num_classes,self.num_classes,self.num_features,padding=(self.num_features-1)//2,padding_mode="reflection"))
-
+        layers = [ nn.Conv1d(self.num_classes,self.num_classes,self.num_features,padding=(self.num_features-1)//2,padding_mode="reflection") ]
         return nn.Sequential(*layers)
         
     def forward_tensors(self,base_out):
@@ -110,7 +100,6 @@ class CNN(nn.Module):
         
         return accuracy
     
-    # XGMix interface
     def fit(self, X, y, max_ep=250, val_every=50):
 
         X_torch, y_torch = as_torch_tensor(X, y)
