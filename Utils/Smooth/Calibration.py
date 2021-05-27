@@ -98,8 +98,7 @@ def plot_reliability_curve(pred_prob,y_cal,pop_order,method='Uncalibrated',bins=
 def comparison(uncalibrated_zs,calibrated_zs,ys,pop_type,pop_order):
     
     """
-    Compare probabilities of a population type before and after calibration
-    """
+    Compare probabilities of a population type before and after calibration and plot binned probabilities histogram   """
     # pop_type (int between 0 and len(pop_order) for which population the comparison needs to be
     
     fig, (ax1,ax2) = plt.subplots(nrows = 2, ncols=1, figsize = (10,10))
