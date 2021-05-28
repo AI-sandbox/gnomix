@@ -9,7 +9,7 @@ from time import time
 
 try:
     # if calling from XGMix
-    from Utils.utils import read_vcf, vcf_to_npy, fb2proba, npy_to_vcf
+    from src.utils import read_vcf, vcf_to_npy, fb2proba, npy_to_vcf
     from XGFix.phasing import *
     from XGFix.simple_switch import simple_switch
 except ModuleNotFoundError:

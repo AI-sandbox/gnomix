@@ -3,21 +3,21 @@ import numpy as np
 import os
 import pickle
 import sys
-from time import time
 
-from Utils.utils import run_shell_cmd, join_paths, read_vcf, vcf_to_npy, npy_to_vcf, update_vcf 
-from Utils.utils import cM2nsnp, get_num_outs, read_genetic_map
-from Utils.preprocess import load_np_data, data_process, get_gen_0
-from Utils.postprocess import get_meta_data, write_msp_tsv, write_fb_tsv
-from Utils.visualization import plot_cm, CM
-from Utils.gnomix import Gnomix
 from Admixture.Admixture import read_sample_map, split_sample_map, main_admixture
 from Admixture.fast_admix import main_admixture_fast
+
+from src.utils import run_shell_cmd, join_paths, read_vcf, vcf_to_npy, npy_to_vcf, update_vcf 
+from src.utils import cM2nsnp, get_num_outs, read_genetic_map
+from src.preprocess import load_np_data, data_process, get_gen_0
+from src.postprocess import get_meta_data, write_msp_tsv, write_fb_tsv
+from src.visualization import plot_cm
+
+from src.gnomix import Gnomix
 
 from XGFix.XGFIX import XGFix
 
 from config import verbose, run_simulation, founders_ratios, generations, rm_simulated_data
-# from config import num_outs
 from config import model_name, window_size_cM, smooth_size, missing, n_cores, r_admixed
 from config import retrain_base, calibrate, context_ratio, instance_name, mode_filter_size, smooth_depth
 
@@ -44,43 +44,14 @@ def load_model(path_to_model, verbose=True):
     else:
         model = pickle.load(open(path_to_model,"rb"))
 
-    # This is temorary while there are still pre-trained models missing those members
-    try:
-        model.calibrate
-    except AttributeError:
-        model.calibrate = None
-
-    # Same for mode filter
-    try:
-        model.mode_filter_size
-    except AttributeError:
-        model.mode_filter_size = 5
-
-    # Same for context_ratio
-    try:
-        model.context
-    except AttributeError:
-        model.context = 0
-
     return model
 
-def train(chm, model_name, genetic_map_df, data_path, generations, window_size_cM, 
-          smooth_size, missing, n_cores, verbose, instance_name, 
-          retrain_base, calibrate, context_ratio, mode_filter_size, smooth_depth, gen_0,
-          output_path):
+def get_data(data_path, chm, window_size_cM, generations, gen_0, genetic_map_df, validate=True, verbose=False):
 
     if verbose:
         print("Preprocessing data...")
     
-    # ------------------ Config ------------------
-    model_name += "_chm_" + chm
-    model_repo = join_paths(output_path, "models", verb=False)
-    model_repo = join_paths(model_repo, model_name, verb=False)
-    model_path = model_repo + "/" + model_name + ".pkl"
-
-    train1_paths = [data_path + "/chm" + chm + "/simulation_output/train1/gen_" + str(gen) + "/" for gen in generations]
-    train2_paths = [data_path + "/chm" + chm + "/simulation_output/train2/gen_" + str(gen) + "/" for gen in generations]
-    val_paths    = [data_path + "/chm" + chm + "/simulation_output/val/gen_"    + str(gen) + "/" for gen in generations]
+    # ------------------ Meta ------------------
 
     position_map_file   = data_path + "/chm"+ chm + "/positions.txt"
     reference_map_file  = data_path + "/chm"+ chm + "/references.txt"
@@ -89,106 +60,61 @@ def train(chm, model_name, genetic_map_df, data_path, generations, window_size_c
     snp_pos = np.loadtxt(position_map_file,  delimiter='\n').astype("int")
     snp_ref = np.loadtxt(reference_map_file, delimiter='\n', dtype=str)
     pop_order = np.genfromtxt(population_map_file, dtype="str")
-    chm_len = len(snp_pos)
-    num_anc = len(pop_order)
+    A = len(pop_order)
+    C = len(snp_pos)
+    M = cM2nsnp(cM=window_size_cM, chm=chm, chm_len_pos=C, genetic_map=genetic_map_df)
 
-    window_size_pos = cM2nsnp(cM=window_size_cM, chm=chm, chm_len_pos=chm_len, genetic_map=genetic_map_df)
-    
+    meta = {
+        "A": A, # number of ancestry
+        "C": C, # chm length
+        "M": M, # window size in SNPs
+        "snp_pos": snp_pos,
+        "snp_ref": snp_ref,
+        "pop_order": pop_order
+    }
+
     # ------------------ Process data ------------------
-    # gather feature data files (binary representation of variants)
-    X_fname = "mat_vcf_2d.npy"
-    X_train1_files = [p + X_fname for p in train1_paths]
-    X_train2_files = [p + X_fname for p in train2_paths]
-    X_val_files    = [p + X_fname for p in val_paths]
 
-    # gather label data files (population)
-    labels_fname = "mat_map.npy"
-    labels_train1_files = [p + labels_fname for p in train1_paths]
-    labels_train2_files = [p + labels_fname for p in train2_paths]
-    labels_val_files    = [p + labels_fname for p in val_paths]
+    def read(split, gen_0):
+        paths = [data_path + "/chm" + chm + "/simulation_output/"+split+"/gen_" + str(gen) + "/" for gen in generations]
+        X_files = [p + "mat_vcf_2d.npy" for p in paths]
+        labels_files = [p + "mat_map.npy" for p in paths]
+        X_raw, labels_raw = [load_np_data(f) for f in [X_files, labels_files]]
+        if gen_0:
+            X_raw_gen_0, y_raw_gen_0 = get_gen_0(data_path + "/chm" + chm, population_map_file, split)
+            X_raw = np.concatenate([X_raw, X_raw_gen_0])
+            labels_raw = np.concatenate([labels_raw, y_raw_gen_0])
+        X, y = data_process(X_raw, labels_raw, M)
+        return X, y
 
-    # load the data
-    train_val_files = [X_train1_files, labels_train1_files, X_train2_files, labels_train2_files, X_val_files, labels_val_files]
-    X_train1_raw, labels_train1_raw, X_train2_raw, labels_train2_raw, X_val_raw, labels_val_raw = [load_np_data(f) for f in train_val_files]
+    X_t1, y_t1 = read("train1", gen_0)
+    X_t2, y_t2 = read("train2", gen_0)
+    X_v, y_v   = read("val"   , False) if validate else (None, None)
 
-    # adding generation 0
-    if gen_0:
-        if verbose:
-            print("Including generation 0...")
-        
-        # get it
-        gen_0_sets = ["train1", "train2"]
-        X_train1_raw_gen_0, y_train1_raw_gen_0, X_train2_raw_gen_0, y_train2_raw_gen_0 = get_gen_0(data_path + "/chm" + chm, population_map_file, gen_0_sets)
+    data = ((X_t1, y_t1), (X_t2, y_t2), (X_v, y_v))
 
-        # add it
-        X_train1_raw = np.concatenate([X_train1_raw, X_train1_raw_gen_0])
-        labels_train1_raw = np.concatenate([labels_train1_raw, y_train1_raw_gen_0])
-        X_train2_raw = np.concatenate([X_train2_raw, X_train2_raw_gen_0])
-        labels_train2_raw = np.concatenate([labels_train2_raw, y_train2_raw_gen_0])
-
-        # delete it
-        del X_train1_raw_gen_0, y_train1_raw_gen_0, X_train2_raw_gen_0, y_train2_raw_gen_0 
-
-    # reshape according to window size 
-    X_t1, y_t1 = data_process(X_train1_raw, labels_train1_raw, window_size_pos, missing)
-    X_t2, y_t2 = data_process(X_train2_raw, labels_train2_raw, window_size_pos, missing)
-    X_v, y_v       = data_process(X_val_raw, labels_val_raw, window_size_pos, missing)
-
-    del X_train1_raw, X_train2_raw, X_val_raw, labels_train1_raw, labels_train2_raw, labels_val_raw
-
-    # ------------------ Train model ------------------    
-    # init, train, evaluate and save model
-    if verbose:
-        print("Initializing XGMix model and training...")
-    # model = XGMIX(chm_len, window_size_pos, smooth_size, num_anc, 
-    #               snp_pos, snp_ref, pop_order, calibrate=calibrate, 
-    #               cores=n_cores, context_ratio=context_ratio,
-    #               mode_filter_size=mode_filter_size, 
-    #               base_params = [20,4], smooth_params=[100,smooth_depth])
-    model = Gnomix(C=chm_len, M=window_size_pos, A=num_anc, 
-                  snp_pos=snp_pos, snp_ref=snp_ref, population_order=pop_order,
-                  calibrate=calibrate, n_jobs=n_cores, context_ratio=context_ratio)
-    # other params: mode_filter_size
-
-    model.train( data = ((X_t1, y_t1), (X_t2, y_t2), (X_v, y_v)), retrain_base=retrain_base, verbose=verbose)
-
-    # evaluate model
-    analysis_path = join_paths(model_repo, "analysis", verb=False)
-    CM(y_v.ravel(), model.predict(X_v).ravel(), pop_order, analysis_path, verbose)
-    print("Saving model at {}".format(model_path))
-    pickle.dump(model, open(model_path,"wb"))
-
-    # write the model parameters of type int, float, str into a file config.
-    # so there is more clarity on what the model parameters were.
-    # NOTE: Not tested fully yet. # TODO
-    model_config_path = os.path.join(model_repo,"config.txt")
-    print("Saving model info at {}".format(model_config_path))
-    model.write_config(model_config_path)
-
-    return model
+    return data, meta
 
 def main(args, verbose=True, **kwargs):
 
     run_simulation=kwargs.get("run_simulation")
     founders_ratios=kwargs.get("founders_ratios")
-    #num_outs=kwargs.get("num_outs")
     generations=kwargs.get("generations")
     rm_simulated_data=kwargs.get("rm_simulated_data")
     model_name=kwargs.get("model_name")
     window_size_cM=kwargs.get("window_size_cM")
-    smooth_size=kwargs.get("smooth_size")
-    missing=kwargs.get("missing")
     n_cores=kwargs.get("n_cores")
     retrain_base=kwargs.get("retrain_base")
     calibrate=kwargs.get("calibrate")
     context_ratio=kwargs.get("context_ratio")
     instance_name=kwargs.get("instance_name")
-    mode_filter_size=kwargs.get("mode_filter_size")
-    smooth_depth=kwargs.get("smooth_depth")
     r_admixed = kwargs.get("r_admixed")
     simulated_data_path=kwargs.get("simulated_data_path")
     # the above variable has to be a path that ends with /generated_data/
     # gotta be careful if using rm_simulated_data. NOTE
+
+    # option to bypass validation
+    validate = founders_ratios[-1] != 0
 
     output_path = args.output_basename if instance_name == "" else join_paths(args.output_basename,instance_name)
     if not os.path.exists(output_path):
@@ -196,6 +122,7 @@ def main(args, verbose=True, **kwargs):
     gen_map_df = read_genetic_map(args.genetic_map_file, args.chm)
 
     mode = args.mode # this needs to be done. master change 1.
+
     # The simulation can't handle generation 0, add it separetly
     gen_0 = 0 in generations
     generations = list(filter(lambda x: x != 0, generations))
@@ -203,7 +130,7 @@ def main(args, verbose=True, **kwargs):
         gen_0 = False
         generations = [0]+generations
 
-    np.random.seed(94305)
+    np.random.seed(94305) # TODO: move into config file, LAIData/simulation and model should take as argument
 
     # Either load pre-trained model or simulate data from reference file, init model and train it
     if mode == "pre-trained":
@@ -248,17 +175,50 @@ def main(args, verbose=True, **kwargs):
 
             if verbose:
                 print("Simulation done.")
-                print("-"*80+"\n"+"-"*80+"\n"+"-"*80)
+                print("-"*80)
         else:
             print("Using simulated data from " + data_path + " ...")
 
-        # Processing data, init and training model
-        model = train(args.chm, model_name, gen_map_df, data_path, generations,
-                        window_size_cM, smooth_size, missing, n_cores, verbose,
-                        instance_name, retrain_base, calibrate, context_ratio,
-                        mode_filter_size, smooth_depth, gen_0, output_path)
+        # Processing data
+        data, meta = get_data(data_path, args.chm, window_size_cM, generations, gen_0, gen_map_df, validate=validate, verbose=verbose)
+
+        # init model
+        model = Gnomix(C=meta["C"], M=meta["M"], A=meta["A"],
+                        snp_pos=meta["snp_pos"], snp_ref=meta["snp_ref"],
+                        population_order=meta["pop_order"], calibrate=calibrate,
+                        n_jobs=n_cores, context_ratio=context_ratio)
+
+        # train it
+        model.train(data=data, retrain_base=retrain_base, evaluate=True, verbose=verbose)
+
+        # store it
+        model_repo = join_paths(output_path, "models", verb=False)
+        model_repo = join_paths(model_repo, model_name + "_chm_" + args.chm, verb=False)
+        model_path = model_repo + "/" + model_name + "_chm_" + args.chm + ".pkl"
+        pickle.dump(model, open(model_path,"wb"))
+
+        # brief analysis
         if verbose:
-            print("-"*80+"\n"+"-"*80+"\n"+"-"*80)
+            print("Analyzing model performance...")
+        analysis_path = join_paths(model_repo, "analysis", verb=False)
+        cm_path = analysis_path+"/confusion_matrix_{}.txt"
+        cm_plot_path = analysis_path+"/confusion_matrix_{}_normalized.png"
+        analysis_sets = ["train", "val"] if validate else ["train"]
+        for d in analysis_sets:
+            cm, idx = model.Confusion_Matricies[d]
+            n_digits = int(np.ceil(np.log10(np.max(cm))))
+            np.savetxt(cm_path.format(d), cm, fmt='%-'+str(n_digits)+'.0f')
+            plot_cm(cm, labels=model.population_order[idx], path=cm_plot_path.format(d))
+            if verbose:
+                print("Estimated "+d+" accuracy: {}%".format(model.accuracies["smooth_"+d+"_acc"]))
+
+        # write the model parameters of type int, float, str into a file config TODO: test
+        model_config_path = os.path.join(model_repo, "config.txt")
+        model.write_config(model_config_path)
+
+        if verbose:
+            print("Model, info and analysis saved at {}".format(model_repo))
+            print("-"*80)
 
     # Predict the query data
     if args.query_file is not None:
@@ -311,7 +271,7 @@ def main(args, verbose=True, **kwargs):
 if __name__ == "__main__":
 
     # Citation
-    print("-"*80+"\n"+"-"*35+"  XGMix  "+"-"*36 +"\n"+"-"*80)
+    print("-"*80+"\n"+"-"*35+"  Gnomix  "+"-"*35 +"\n"+"-"*80)
     print(CLAIMER)
     print("-"*80+"\n"+"-"*80+"\n"+"-"*80)
 
@@ -327,9 +287,9 @@ if __name__ == "__main__":
         if len(sys.argv) > 1:
             print("Error: Incorrect number of arguments.")
         print("Usage when training a model from scratch:")
-        print("   $ python3 XGMIX.py <query_file> <genetic_map_file> <output_basename> <chr_nr> <phase> <reference_file> <sample_map_file>")
+        print("   $ python3 gnomix.py <query_file> <genetic_map_file> <output_basename> <chr_nr> <phase> <reference_file> <sample_map_file>")
         print("Usage when using a pre-trained model:")
-        print("   $ python3 XGMIX.py <query_file> <genetic_map_file> <output_basename> <chr_nr> <phase> <path_to_model>")
+        print("   $ python3 gnomix.py <query_file> <genetic_map_file> <output_basename> <chr_nr> <phase> <path_to_model>")
         sys.exit(0)
 
     # Deconstruct CL arguments
@@ -350,7 +310,7 @@ if __name__ == "__main__":
 
     # Run it
     if verbose:
-        print("Launching XGMix in", mode, "mode...")
+        print("Launching Gnomix in", mode, "mode...")
     main(args, verbose=verbose, run_simulation=run_simulation, founders_ratios=founders_ratios,
         generations=generations, rm_simulated_data=rm_simulated_data,
         model_name=model_name, window_size_cM=window_size_cM, smooth_size=smooth_size, 

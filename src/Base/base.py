@@ -109,12 +109,18 @@ class Base():
     def predict(self, X):
         B = self.predict_proba(X)
         return np.argmax(B, axis=-1)
-
-    def evaluate(self,X,y):
+        
+    def evaluate(self,X=None,y=None,B=None):
 
         round_accr = lambda accr : round(np.mean(accr)*100,2)
 
-        y_pred = self.predict(X)
+        if X is not None:
+            y_pred = self.predict(X)
+        elif B is not None:
+            y_pred = np.argmax(B, axis=-1)
+        else:
+            print("Error: Need either SNP input or estimated probabilities to evaluate.")
+
         accr = round_accr( accuracy_score(y.reshape(-1), y_pred.reshape(-1)) )
         accr_bal = round_accr( balanced_accuracy_score(y.reshape(-1), y_pred.reshape(-1)) )
 

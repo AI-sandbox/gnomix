@@ -43,6 +43,7 @@ class Calibrator():
         
         if self.method == 'Platt':
             print("Not implemented yet. Using Isotonic regression..")
+            self.method = "Isotonic"
             
         if self.method =='Isotonic':
 
@@ -54,13 +55,18 @@ class Calibrator():
                 self.models[i] = IsotonicRegression(out_of_bounds = 'clip').fit(proba[:,i], y_cal_ohe[:,i])
 
     def transform(self, proba):
+
+        if np.any([model is None for model in self.models]):
+            print("Warning: No trained calibrator found. Returning original probabilities.")
+            return proba
+        
         shape = proba.shape
         proba_flatten = proba.reshape(-1,self.n_classes)
         iso_prob = np.zeros((proba_flatten.shape[0],self.n_classes))
         for i in range(self.n_classes):    
             iso_prob[:,i] = self.models[i].transform(proba_flatten[:,i])
-        proba = self.normalize(iso_prob).reshape(*shape)
-        return proba
+        iso_prob = self.normalize(iso_prob).reshape(*shape)
+        return iso_prob
  
 def plot_reliability_curve(pred_prob,y_cal,pop_order,method='Uncalibrated',bins=10, legend=True):
     

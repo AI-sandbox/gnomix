@@ -74,7 +74,7 @@ def window_reshape(data, win_size):
 
     return window_data
 
-def data_process(X, labels, window_size, missing):
+def data_process(X, labels, window_size, missing=0.0):
     """ 
     Takes in 2 numpy arrays:
         - X is of shape (N, chm_len)
@@ -86,14 +86,17 @@ def data_process(X, labels, window_size, missing):
     """
 
     # Reshape labels into windows 
-    labels = window_reshape(labels, window_size)
+    y = window_reshape(labels, window_size)
 
     # simulates lacking of input
     if missing != 0:
         print("Simulating missing values...")
         X = simulate_missing_values(X, missing)
-        
-    return X, labels
+
+    X = np.array(X).astype("int8")
+    y = np.array(y).astype("int16")
+
+    return X, y
 
 def dropout_row(data, missing_percent):
     num_drops = int(len(data)*missing_percent)

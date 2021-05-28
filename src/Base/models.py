@@ -5,9 +5,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn import svm
 
-from Utils.Base.base import Base
-from Utils.Base.string_kernel import string_kernel, random_string_kernel
-from Utils.Base.string_kernel import string_kernel_singlethread, random_string_kernel_singlethread
+from src.Base.base import Base
+from src.Base.string_kernel import string_kernel, random_string_kernel
+from src.Base.string_kernel import string_kernel_singlethread, random_string_kernel_singlethread
 
 class LogisticRegressionBase(Base):
 

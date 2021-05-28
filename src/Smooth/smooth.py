@@ -1,7 +1,7 @@
 import numpy as np
-from Utils.Smooth.utils import mode_filter
+from src.Smooth.utils import mode_filter
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
-from Utils.Smooth.Calibration import Calibrator
+from src.Smooth.Calibration import Calibrator
 from time import time
 
 class Smoother():
@@ -66,10 +66,15 @@ class Smoother():
             y_pred = np.apply_along_axis(func1d=mode_filter, axis=1, arr=y_pred, size=self.mode_filter)
         return y_pred
 
-    def evaluate(self,B,y):
+    def evaluate(self,B=None,y=None,y_pred=None):
 
-        y_pred = self.predict(B)
         round_accr = lambda accr : round(np.mean(accr)*100,2)
+
+        if B is not None:
+            y_pred = self.predict(B)
+        elif y_pred is None:
+            print("Error: Need either Base probabilities or y predictions.")
+
         accr = round_accr( accuracy_score(y.reshape(-1), y_pred.reshape(-1)) )
         accr_bal = round_accr( balanced_accuracy_score(y.reshape(-1), y_pred.reshape(-1)) )
 

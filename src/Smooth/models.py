@@ -1,10 +1,10 @@
-from Utils.Smooth.smooth import Smoother
+from src.Smooth.smooth import Smoother
 
-from Utils.Smooth.utils import slide_window
+from src.Smooth.utils import slide_window
 
 from xgboost import XGBClassifier
-from Utils.Smooth.crf import CRF
-from Utils.Smooth.cnn import CNN
+from src.Smooth.crf import CRF
+from src.Smooth.cnn import CNN
 
 class XGB_Smoother(Smoother):
     

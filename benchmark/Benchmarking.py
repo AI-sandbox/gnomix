@@ -6,13 +6,13 @@ import sys
 
 # local
 sys.path.append('../../gnomix')
-from Utils.gnomix import Gnomix
-from Utils.preprocess import load_np_data, data_process
+from src.gnomix import Gnomix
+from src.preprocess import load_np_data, data_process
 
 # --------------------------------- Models ---------------------------------
 
-from Utils.Base.models import LogisticRegressionBase, LGBMBase, RandomStringKernelBase, StringKernelBase
-from Utils.Smooth.models import XGB_Smoother, CRF_Smoother, CNN_Smoother
+from src.Base.models import LogisticRegressionBase, LGBMBase, RandomStringKernelBase, StringKernelBase
+from src.Smooth.models import XGB_Smoother, CRF_Smoother, CNN_Smoother
 
 Bases = {
     "lgb": LGBMBase,

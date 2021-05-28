@@ -1,12 +1,8 @@
 import allel
 from collections import Counter
-import gzip
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
-import sys
-
-from Utils.utils import read_vcf, read_genetic_map
 
 def get_effective_pred(prediction, chm_len, window_size, model_idx):
     """
