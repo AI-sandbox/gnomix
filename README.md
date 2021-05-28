@@ -1,11 +1,11 @@
-# XGMix: Local-Ancestry Inference With Stacked XGBoost
+# Gnomix: High Resolution Ancestry Deconvolution for Next Generation Sequencing
 
-This repository includes a python implemenation of XGMix, a gradient boosting tree-based local-ancestry inference (ancestry deconvolution) method. 
+This repository includes a python implemenation of Gnomix, a fast and accurate Local Ancestry Method.
 
-XGMIX.py can be used in two ways:
+Gnomix can be used in two ways:
 
 - training a model from scratch using provided training data or 
-- loading a pre-trained XGMix model (see **Pre-Trained Models** below)
+- loading a pre-trained Gnomix model (see **Pre-Trained Models** below)
 
 In both cases the models are used to infer local ancestry for provided query data.
 
@@ -14,16 +14,16 @@ The dependencies are listed in *requirements.txt*. Assuming [pip](https://pip.py
 ```
 $ pip install -r requirements.txt
 ```
-When using the program for training a model, [BCFtools](http://samtools.github.io/bcftools/bcftools.html) must be installed and available in the PATH environment setting.
+If using the program for training a model, [BCFtools](http://samtools.github.io/bcftools/bcftools.html) must be installed and available in the PATH environment setting.
 
 ## Usage
 
 ### When Using Pre-Trained Models
-XGMIX.py loads and uses pre-trained XGMix models to predict the ancestry for a given *<query_file>* and chromosome number. 
+gnomix.py loads and uses a pre-trained Gnomix model to predict the ancestry for a given *<query_file>* and a chromosome. 
 
 To execute the program with a pre-trained model run:
 ```
-$ python3 XGMIX.py <query_file> <genetic_map_file> <output_basename> <chr_nr> <phase> <path_to_model> 
+$ python3 gnomix.py <query_file> <genetic_map_file> <output_basename> <chr_nr> <phase> <path_to_model> 
 ```
 
 where 
@@ -31,15 +31,14 @@ where
 - <*genetic_map_file*> is the genetic map file (see example in the **demo_data/** folder)
 - <*output_basename*>.msp.tsv and <*output_basename*>.fb.tsv is where the predictions are written (see details in **Output** below and an example in the **demo_data/** folder)
 - <*chr_nr*> is the chromosome number
-- <*phase*> is either True or False corresponding to the intent of using the predicted ancestry for phasing (see details in **Phasing** below and in the **XGFix/** folder)
+- <*phase*> is either True or False corresponding to the intent of using the predicted ancestry for phasing (see details in **Phasing** below and in the **gnofix/** folder)
 - <*path_to_model*> is a path to the model used for predictions (see **Pre-trained Models** below)
 
 ### When Training a Model From Scratch
-XGMix.py loads data from the *<reference_file>* 
 
 To execute the program when training a model run:
 ```
-$ python3 XGMIX.py <query_file> <genetic_map_file> <output_basename> <chr_nr> <phase> <reference_file> <sample_map_file>
+$ python3 gnomix.py <query_file> <genetic_map_file> <output_basename> <chr_nr> <phase> <reference_file> <sample_map_file>
 ```
 
 where the first 5 arguments are described above in the pre-trained setting and 
@@ -48,12 +47,12 @@ where the first 5 arguments are described above in the pre-trained setting and
 
 The program uses these two files as input to our simulation algorithm (see **pyadmix/**) to create training data for the model.
 
-### Calibration
-XGmix output probabilities might not reflect the true confidence / accuracy of the predictions. By setting to True calibration when training a new model, Isotonic Regression is used to match the predicted probabilities to calibrated probabilities. For example, in a calibrated model, predictions with a probability 80% will be correct 80% of the time.
-
 ### Advanced Options
 More advanced configuration settings can be found in *config.py*. 
 They include general settings, simulation settings and model settings. More details are given in the file itself.
+
+#### Calibration
+To ensure that gnomix outputs probability estimatesthat reflect it's true confidence and accuracy, we recommend using calibration. We use Isotonic Regression to map the predicted probabilities to calibrated probabilities where the latter is more likely to have predictions with confidence X% correct X% of the time.
 
 ## Output
 
@@ -94,7 +93,7 @@ In those cases, not removing the data and then setting *run_simulation* to False
 
 ## Pre-Trained Models
 
-Pre-trained models will soon be available for download from [XGMix-models](https://github.com/AI-sandbox/XGMix-models).
+Pre-trained models will soon be made available for download.
 
 When making predictions, the input to the model is an intersection of the pre-trained model SNP positions and the SNP positions from the <query_file>. That means that the set of positions that's only in the original training input is encoded as missing and the set of positions only in the <query_file> is discarded. When the script is executed, it will log the intersection-ratio as the performance will depend on how much of the original positions are missing. When the intersection is low, we recommend using a model trained with high percentage of missing data.
 
@@ -102,11 +101,9 @@ The models are trained on hg build 37 references from the following biogeographi
 
 ## Phasing
 
-
 ![Visualization of the process](XGFix/figures/XGFix.gif)
 
-
-Accurate phasing of genomic data is crucial for human demographic modeling and identity-by-descent analyses. It has been shown that leveraging information about an individual’s genomic ancestry improves performance of current phasing algorithms. XGFix is a method that uses local Ancestry Inference (LAI) to do exactly that. If you suspect your data might be badly phased (often the case when reference panel is small and/or diverse), we recommend using this option. See the **XGFix/** folder for more details. 
+Accurate phasing of genomic data is crucial for human demographic modeling and identity-by-descent analyses. It has been shown that leveraging information about an individual’s genomic ancestry improves performance of current phasing algorithms. Gnofix is a method that uses local Ancestry Inference to do exactly that. If you suspect your data might be badly phased (often the case when reference panel is small and/or diverse), we recommend using this option. See the **gnofix/** folder for more details. 
 
 ![Local Ancestry for Phasing Error Correction](XGFix/figures/laipec_resized.png)
 Sequenced haplotypes phased with a phasing software (left). LAI used to label haplotypes with ancestry predictions and phasing errors become evident (center). Phasing error correction using LAI is applied to correct phasing errors (right).
