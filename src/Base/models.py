@@ -1,3 +1,5 @@
+import numpy as np
+
 from sklearn.linear_model import LogisticRegression
 from xgboost import XGBClassifier
 from sklearn import svm
@@ -54,6 +56,8 @@ class RFBase(Base):
 
 class KNNBase(Base):
 
+    from sklearn.neighbors import KNeighborsClassifier
+
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -73,10 +77,10 @@ class SVMBase(Base):
 class StringKernelBase(Base):
 
     def __init__(self,  *args, **kwargs):
-
-        from sklearn.neighbors import KNeighborsClassifier
-
         super().__init__(*args, **kwargs)
+
+        assert int(np.__version__.split(".")[1]) >= 20, "String kernel implementation requires numpy versions 1.20+"
+
         self.train_admix = False # save computation
 
         self.kernel = string_kernel if self.n_jobs!=1 else string_kernel_singlethread
@@ -90,6 +94,9 @@ class RandomStringKernelBase(Base):
 
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        assert int(np.__version__.split(".")[1]) >= 20, "String kernel implementation requires numpy versions 1.20+"
+        
         self.train_admix = False # save computation
 
         self.kernel = random_string_kernel if self.n_jobs!=1 else random_string_kernel_singlethread

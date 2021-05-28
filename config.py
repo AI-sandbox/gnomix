@@ -3,7 +3,7 @@ verbose = True     # logging
 instance_name = "" # can be used for organizing simulation output and models
 
 # Simulatiation configuration
-run_simulation = False    # if you already simulated data, setting False will re-use the data
+run_simulation = True    # if you already simulated data, setting False will re-use the data
 founders_ratios = [0.8, 0.15, 0.05]
 # num_outs = [900, 180, 90] # how many individuals to simulate in each set
 r_admixed = 3.0 # number of individuals as a function of founders_ratios.
@@ -12,6 +12,7 @@ rm_simulated_data = False     # remove the simulated data after training the mod
 
 # Model configuration
 model_name = "model" # the complete name will be <model_name>_chm<chm>.pkl
+inference = "fast"   # "fast" for fast inference, use "best" for slower but possibly more accurate inference
 window_size_cM = 0.20# window size of the XGMix model in centiMorgans
 smooth_size = 75     # how many windows to aggregate over in second phase
 context_ratio = 0.0

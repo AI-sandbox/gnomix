@@ -18,8 +18,8 @@ from src.gnomix import Gnomix
 from XGFix.XGFIX import XGFix
 
 from config import verbose, run_simulation, founders_ratios, generations, rm_simulated_data
-from config import model_name, window_size_cM, smooth_size, missing, n_cores, r_admixed
-from config import retrain_base, calibrate, context_ratio, instance_name, mode_filter_size, smooth_depth
+from config import model_name, inference, window_size_cM, smooth_size, missing, n_cores, r_admixed
+from config import retrain_base, calibrate, context_ratio, instance_name
 
 CLAIMER = 'When using this software, please cite: \n' + \
           'Kumar, A., Montserrat, D.M., Bustamante, C. and Ioannidis, A. \n' + \
@@ -102,6 +102,7 @@ def main(args, verbose=True, **kwargs):
     generations=kwargs.get("generations")
     rm_simulated_data=kwargs.get("rm_simulated_data")
     model_name=kwargs.get("model_name")
+    inference=kwargs.get("inference")
     window_size_cM=kwargs.get("window_size_cM")
     n_cores=kwargs.get("n_cores")
     retrain_base=kwargs.get("retrain_base")
@@ -185,7 +186,8 @@ def main(args, verbose=True, **kwargs):
         # init model
         model = Gnomix(C=meta["C"], M=meta["M"], A=meta["A"],
                         snp_pos=meta["snp_pos"], snp_ref=meta["snp_ref"],
-                        population_order=meta["pop_order"], calibrate=calibrate,
+                        population_order=meta["pop_order"],
+                        mode=inference, calibrate=calibrate,
                         n_jobs=n_cores, context_ratio=context_ratio)
 
         # train it
@@ -313,7 +315,7 @@ if __name__ == "__main__":
         print("Launching Gnomix in", mode, "mode...")
     main(args, verbose=verbose, run_simulation=run_simulation, founders_ratios=founders_ratios,
         generations=generations, rm_simulated_data=rm_simulated_data,
-        model_name=model_name, window_size_cM=window_size_cM, smooth_size=smooth_size, 
+        model_name=model_name, inference=inference, window_size_cM=window_size_cM, smooth_size=smooth_size, 
         missing=missing, n_cores=n_cores, r_admixed=r_admixed,
         retrain_base=retrain_base, calibrate=calibrate, context_ratio=context_ratio, 
-        instance_name=instance_name, mode_filter_size=mode_filter_size, smooth_depth=smooth_depth)
+        instance_name=instance_name)

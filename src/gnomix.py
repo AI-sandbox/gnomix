@@ -9,8 +9,8 @@ from src.Smooth.models import XGB_Smoother, CRF_Smoother
 
 class Gnomix():
 
-    def __init__(self, C, M, A,
-                base=LogisticRegressionBase, smooth=XGB_Smoother, # base and smooth models
+    def __init__(self, C, M, A, 
+                base=None, smooth=None, mode="fast", # base and smooth models
                 snp_pos=None, snp_ref=None, population_order=None, missing_encoding=2, # dataset specific, TODO: store in one object
                 n_jobs=None, path=None, # configs
                 calibrate=False, context_ratio=0.5, mode_filter=False, # hyperparams
@@ -44,7 +44,12 @@ class Gnomix():
         # gnomix hyperparams
         self.context = int(self.M*context_ratio)
         self.calibrate = calibrate
-  
+
+        if base is None:
+            base = LogisticRegressionBase if mode=="fast" else RandomStringKernelBase
+        if smooth is None:
+            smooth = CRF_Smoother if mode=="fast" else XGB_Smoother
+
         self.base = base(chm_len=self.C, window_size=self.M, num_ancestry=self.A,
                             missing_encoding=missing_encoding, context=self.context,
                             n_jobs=self.n_jobs, seed=self.seed, verbose=self.verbose)
