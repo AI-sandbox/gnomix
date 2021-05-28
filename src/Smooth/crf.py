@@ -5,6 +5,7 @@ import sklearn_crfsuite
 class CRF:
 
     def __init__(self, solver="lbfgs", max_it=10000, verbose=False):
+
         self.CRF = sklearn_crfsuite.CRF(
             algorithm=solver,
             max_iterations=max_it,

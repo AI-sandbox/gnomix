@@ -5,7 +5,7 @@ import sys
 from time import time
 
 from src.Base.models import LogisticRegressionBase, RandomStringKernelBase
-from src.Smooth.models import XGB_Smoother, CRF_Smoother, CNN_Smoother
+from src.Smooth.models import XGB_Smoother, CRF_Smoother
 
 class Gnomix():
 

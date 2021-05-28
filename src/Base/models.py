@@ -1,8 +1,5 @@
 from sklearn.linear_model import LogisticRegression
 from xgboost import XGBClassifier
-from lightgbm import LGBMClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn import svm
 
 from src.Base.base import Base
@@ -32,6 +29,9 @@ class XGBBase(Base):
 class LGBMBase(Base):
 
     def __init__(self,  *args, **kwargs):
+        
+        from lightgbm import LGBMClassifier # This is to avoid requiring installation of lightgbm
+
         super().__init__(*args, **kwargs)
 
         self.init_base_models(
@@ -43,6 +43,9 @@ class LGBMBase(Base):
 class RFBase(Base):
 
     def __init__(self,  *args, **kwargs):
+
+        from sklearn.ensemble import RandomForestClassifier
+
         super().__init__(*args, **kwargs)
 
         self.init_base_models(
@@ -70,6 +73,9 @@ class SVMBase(Base):
 class StringKernelBase(Base):
 
     def __init__(self,  *args, **kwargs):
+
+        from sklearn.neighbors import KNeighborsClassifier
+
         super().__init__(*args, **kwargs)
         self.train_admix = False # save computation
 
