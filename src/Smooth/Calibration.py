@@ -7,7 +7,7 @@ from sklearn.calibration import  calibration_curve
 from sklearn.metrics import precision_score, f1_score, recall_score, roc_auc_score
 
 """
-This code uses library uncertianity-calibration from 
+This script uses library uncertianity-calibration to estimate calibration error from 
 @inproceedings{kumar2019calibration,
   author = {Ananya Kumar and Percy Liang and Tengyu Ma},
   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
@@ -31,10 +31,10 @@ class Calibrator():
         else:
             proba /= np.sum(proba, axis=1)[:, np.newaxis]
 
-        # XXX : for some reason all probas can be 0
+        # handle nan probs
         proba[np.isnan(proba)] = 1. / self.n_classes
 
-        # Deal with cases where the predicted probaability minimally exceeds 1.0
+        # handle when predicted probaability minimally exceeds 1.0
         proba[(1.0 < proba) & (proba <= 1.0 + 1e-5)] = 1.0
         
         return proba
@@ -104,8 +104,7 @@ def plot_reliability_curve(pred_prob,y_cal,pop_order,method='Uncalibrated',bins=
 def comparison(uncalibrated_zs,calibrated_zs,ys,pop_type,pop_order):
     
     """
-    Compare probabilities of a population type before and after calibration
-    """
+    Compare probabilities of a population type before and after calibration and plot binned probabilities histogram   """
     # pop_type (int between 0 and len(pop_order) for which population the comparison needs to be
     
     fig, (ax1,ax2) = plt.subplots(nrows = 2, ncols=1, figsize = (10,10))
