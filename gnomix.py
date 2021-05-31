@@ -28,7 +28,6 @@ CLAIMER = 'When using this software, please cite: \n' + \
           'ICLR, 2020, Workshop AI4AH \n' + \
           'https://www.biorxiv.org/content/10.1101/2020.04.21.053876v1'
 
-FAST_ADMIX = True
 np.random.seed(94305)
 
 class Struct:
@@ -127,9 +126,8 @@ def main(args, verbose=True, **kwargs):
     # The simulation can't handle generation 0, add it separetly
     gen_0 = 0 in generations
     generations = list(filter(lambda x: x != 0, generations))
-    if FAST_ADMIX:
-        gen_0 = False
-        generations = [0]+generations
+    gen_0 = False
+    generations = [0]+generations
 
     np.random.seed(94305) # TODO: move into config file, LAIData/simulation and model should take as argument
 
@@ -166,13 +164,9 @@ def main(args, verbose=True, **kwargs):
                 print("Running simulation...")
             num_outs = get_num_outs(sample_map_paths, r_admixed)
             num_outs_per_gen = [n//len(generations) for n in num_outs]
-            if FAST_ADMIX:
-                print("Fast admix...")
-                main_admixture_fast(args.chm, data_path, set_names, sample_map_paths, sample_map_idxs,
-                           args.reference_file, args.genetic_map_file, num_outs_per_gen, generations)
-            else:
-                main_admixture(args.chm, data_path, set_names, sample_map_paths, sample_map_idxs,
-                           args.reference_file, args.genetic_map_file, num_outs_per_gen, generations)
+            print("Running admixture...")
+            main_admixture_fast(args.chm, data_path, set_names, sample_map_paths, sample_map_idxs,
+                        args.reference_file, args.genetic_map_file, num_outs_per_gen, generations)
 
             if verbose:
                 print("Simulation done.")
