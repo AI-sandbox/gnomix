@@ -1,0 +1,29 @@
+verbose: True
+
+simulation:
+  run: True
+  path: /home/arvindsk/test/
+  splits:
+    names: [train1, train2, val]
+    ratios: [0.8,0.15,0.05]
+    gens:
+      train1: [0, 2, 4, 6, 8, 12, 16, 24, 32, 48]
+      train2: [0, 2, 4, 6, 8, 12, 16, 24, 32, 48]
+      val: [0, 2, 4, 6, 8, 12, 16, 24, 32, 48]
+  r_admixed: 3.0
+  rm_data: False
+
+model:
+  name: model
+  base:
+  smooth: 
+  inference: fast
+  window_size_cM: 0.2
+  smooth_size: 75
+  context_ratio: 0.0
+  missing: 0.0
+  retrain_base: True  # potentially remove...
+  calibrate: True
+  mode_filter_size: 5 # potentially remove...
+
+n_cores: 30         # how many units of cpu to use
