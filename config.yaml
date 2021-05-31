@@ -25,5 +25,4 @@ model:
   retrain_base: True  # potentially remove...
   calibrate: True
   mode_filter_size: 5 # potentially remove...
-
-n_cores: 30         # how many units of cpu to use
+  n_cores: 30         # how many units of cpu to use

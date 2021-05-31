@@ -294,6 +294,7 @@ class LAIDataset:
     def metadata(self):
         metadict = {
             "chm":self.chm,
+            "morgans":self.morgans,
             "num_snps":self.num_snps,
             "pos_snps":self.pos_snps,
             "ref_snps":self.ref_snps,
@@ -373,6 +374,7 @@ class LAIDataset:
             
         # write outputs
         if outdir is not None:
+            outdir = os.path.join(outdir,split)
             print("Writing simulation output to: ",outdir)
             write_output(outdir,simulated_samples)
             # TODO: optionally, we can even convert these to vcf and result (ancestry) files
