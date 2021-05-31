@@ -229,7 +229,7 @@ def write_output(root,dataset):
 class LAIDataset:
     
     
-    def __init__(self,chm,reference):
+    def __init__(self,chm,reference,genetic_map):
         self.chm = int(chm)
         
         # vcf data
@@ -242,9 +242,14 @@ class LAIDataset:
         
         self.call_data = vcf_data["calldata/GT"]
         self.vcf_samples = vcf_data["samples"]
+
+
+        # genetic map data
+        print("Getting genetic map info...")
+        self.morgans, self.breakpoint_prob = get_chm_info(genetic_map, self.pos_snps, self.chm)
         
     
-    def buildDataset(self, genetic_map, sample_map, sample_weights=None):
+    def buildDataset(self, sample_map, sample_weights=None):
         
         """
         reads in the above files and extacts info
@@ -255,10 +260,6 @@ class LAIDataset:
         
         """
         
-        
-        # genetic map data
-        print("Getting genetic map info...")
-        self.morgans, self.breakpoint_prob = get_chm_info(genetic_map, self.pos_snps, self.chm)
         
         # sample map data
         print("Getting sample map info...")

@@ -33,9 +33,6 @@ CLAIMER = 'When using this software, please cite: \n' + \
 
 np.random.seed(94305)
 
-class Struct:
-    def __init__(self, **entries):
-        self.__dict__.update(entries)
 
 def load_model(path_to_model, verbose=True):
     if verbose:
@@ -78,9 +75,10 @@ def get_data(data_path, chm, window_size_cM, generations, gen_0, genetic_map_df,
     # ------------------ Process data ------------------
 
     def read(split, gen_0):
-        paths = [data_path + "/chm" + chm + "/simulation_output/"+split+"/gen_" + str(gen) + "/" for gen in generations]
-        X_files = [p + "mat_vcf_2d.npy" for p in paths]
-        labels_files = [p + "mat_map.npy" for p in paths]
+
+        paths = [os.path.join(data_path,"simulation_output","gen_"+str(gen)) for gen in generations]
+        X_files = [p + "/mat_vcf_2d.npy" for p in paths]
+        labels_files = [p + "/mat_map.npy" for p in paths]
         X_raw, labels_raw = [load_np_data(f) for f in [X_files, labels_files]]
         if gen_0:
             X_raw_gen_0, y_raw_gen_0 = get_gen_0(data_path + "/chm" + chm, population_map_file, split)
