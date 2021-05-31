@@ -7,7 +7,7 @@ import os
 import pickle
 import sys
 
-from Admixture.Admixture import read_sample_map, split_sample_map, main_admixture
+from Admixture.Admixture import read_sample_map, split_sample_map
 from Admixture.fast_admix import main_admixture_fast
 
 from src.utils import run_shell_cmd, join_paths, read_vcf, vcf_to_npy, npy_to_vcf, update_vcf 
