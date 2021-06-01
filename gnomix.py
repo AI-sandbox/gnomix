@@ -149,11 +149,15 @@ def train_model(config, data_path, verbose):
     if model_name == None or model_name == "None":
         model_name = "model"
     inference=config["model"].get("inference")
+    if inference == None or inference == "None":
+        inference = "default"
     window_size_cM=config["model"].get("window_size_cM")
     n_cores=config["model"].get("n_cores")
     retrain_base=config["model"].get("retrain_base")
     calibrate=config["model"].get("calibrate")
     context_ratio=config["model"].get("context_ratio")
+    base = config["model"].get("base") # not used yet
+    smooth = config["model"].get("smooth") # not used yet
     # the above variable has to be a path that ends with /generated_data/
     # gotta be careful if using rm_simulated_data. NOTE
     chm = base_args["chm"]

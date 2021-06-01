@@ -10,7 +10,7 @@ from src.Smooth.models import XGB_Smoother, CRF_Smoother
 class Gnomix():
 
     def __init__(self, C, M, A, 
-                base=None, smooth=None, mode="fast", # base and smooth models
+                base=None, smooth=None, mode="default", # base and smooth models
                 snp_pos=None, snp_ref=None, population_order=None, missing_encoding=2, # dataset specific, TODO: store in one object
                 n_jobs=None, path=None, # configs
                 calibrate=False, context_ratio=0.5, mode_filter=False, # hyperparams
@@ -46,9 +46,27 @@ class Gnomix():
         self.calibrate = calibrate
 
         if base is None:
-            base = LogisticRegressionBase if mode=="fast" else RandomStringKernelBase
+            print("Base is none")
+            if mode == "fast":
+                print("Using logreg")
+                base = LogisticRegressionBase
+            elif mode == "best":
+                print("Using random string kernel")
+                base = RandomStringKernelBase
+            else:
+                print("Using logreg")
+                base = LogisticRegressionBase
         if smooth is None:
-            smooth = CRF_Smoother if mode=="fast" else XGB_Smoother
+            print("Smooth is none")
+            if mode == "fast":
+                print("Using CRF")
+                smooth = CRF_Smoother 
+            elif mode=="best":
+                print("Using XGB")
+                smooth = XGB_Smoother
+            else:
+                print("Using XGB")
+                smooth = XGB_Smoother
 
         self.base = base(chm_len=self.C, window_size=self.M, num_ancestry=self.A,
                             missing_encoding=missing_encoding, context=self.context,
