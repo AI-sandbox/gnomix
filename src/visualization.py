@@ -58,8 +58,9 @@ def plot_cm(cm, normalize=True, labels=None, figsize=(12,10), path=None):
     
     # normalize w.r.t. number of samples from class
     if normalize:
-        cm = cm/np.sum(cm, axis=1)
-        cm = np.nan_to_num(cm, copy=False, nan=0.0)
+        row_sums = cm.sum(axis=1)
+        row_sums = row_sums.reshape(-1,1)
+        cm = cm / row_sums
         
     df_cm = pd.DataFrame(cm, range(cm.shape[0]), range(cm.shape[1]))
     sns.set(font_scale=1.4) # for label size
