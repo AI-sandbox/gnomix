@@ -233,10 +233,12 @@ def simulate_splits(base_args,config):
         os.makedirs(outdir)
     
     data_path = os.path.join(outdir,"simulation_output")
-    os.makedirs(data_path)
+    if not os.path.exists(data_path):
+        os.makedirs(data_path)
 
-    sample_map_path = os.path.join(outdir,"sample_maps")
-    os.makedirs(sample_map_path)
+    sample_map_path = os.path.join(data_path,"sample_maps")
+    if not os.path.exists(sample_map_path):
+        os.makedirs(sample_map_path)
 
     # split sample map and write it.
     splits = config["simulation"]["splits"]["ratios"]
@@ -250,7 +252,7 @@ def simulate_splits(base_args,config):
     r_admixed = config["simulation"]["r_admixed"]
     num_outs = {}
     for split in splits:
-        num_outs[split] = int(len(laidataset.return_split())*r_admixed)
+        num_outs[split] = int(len(laidataset.return_split(split))*r_admixed)
 
     # simulate all splits
     # for split in splits:
@@ -263,6 +265,8 @@ def simulate_splits(base_args,config):
     generations = config["simulation"]["splits"]["gens"]
     for split in splits:
         split_path = os.path.join(data_path, split)
+        if not os.path.exists(split_path):
+            os.makedirs(split_path)
         for gen in generations[split]:
             laidataset.simulate(num_outs[split],
                                 split=split,
@@ -310,7 +314,7 @@ if __name__ == "__main__":
         base_args["reference_file"]  = sys.argv[6]
         base_args["sample_map_file"] = sys.argv[7]
         base_args["config_file"] = "./config.yaml"
-        if sys.argv[8] is not None:
+        if len(sys.argv) == 9:
             base_args["config_file"] = sys.argv[8]
     elif mode == "pre-trained":
         base_args["path_to_model"] = sys.argv[6]
@@ -322,6 +326,16 @@ if __name__ == "__main__":
     
     verbose = config["verbose"]
     # process args here...
+
+    # sanity checks here...
+    # train1 must have gen 0 and train2, val must not have it!
+    generations = config["simulation"]["splits"]["gens"]
+    config["simulation"]["splits"]["gens"]["train1"] = list(set(generations["train1"] + [0]))
+    config["simulation"]["splits"]["gens"]["train2"] = [gen for gen in generations["train2"] if gen != 0]
+    if generations.get("val"):
+        config["simulation"]["splits"]["gens"]["val"] = [gen for gen in generations["val"] if gen != 0]
+
+    # print(config["simulation"]["splits"]["gens"])
 
     # Run it
     if verbose:
@@ -337,13 +351,13 @@ if __name__ == "__main__":
             data_path = config["simulation"]["path"] # path with train1/ train2/ val/ metadata.yaml
 
         else:
-            simulate_splits() # will create the simulation_output folder
+            simulate_splits(base_args, config) # will create the simulation_output folder
             data_path = os.path.join(base_args["output_basename"],"simulation_output")
         
         # train the model
         model = train_model(config, data_path, verbose=verbose)
         
     # run inference if applicable.
-    if base_args["query_data"]:
+    if base_args["query_file"]:
         run_inference(base_args, model, verbose=verbose)
 

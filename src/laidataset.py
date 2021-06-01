@@ -350,7 +350,7 @@ class LAIDataset:
         
         # corner case
         if gen == 0:
-            return self.founders
+            return self.sample_map_data[self.sample_map_data["split"]==split]["founders"].tolist()
         
         # get the exact founder data based on split
         print("Simulating using split: ",split)

@@ -2,7 +2,7 @@ verbose: True
 
 simulation:
   run: True
-  path: /home/arvindsk/test/
+  path: /home/arvindsk/test/ # only matters if run is True
   splits:
     ratios: 
       train1: 0.8
@@ -13,7 +13,7 @@ simulation:
       train2: [0, 2, 4, 6, 8, 12, 16, 24, 32, 48]
       val: [0, 2, 4, 6, 8, 12, 16, 24, 32, 48]
   r_admixed: 3.0
-  rm_data: False
+  rm_data: False # only matters if run is True
 
 model:
   name: model
