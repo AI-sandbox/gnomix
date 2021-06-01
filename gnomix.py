@@ -103,7 +103,7 @@ def get_data(data_path, generations, window_size_cM):
         pop_list.append(pop_order[i])
     pop_order = np.array(pop_list)
 
-    A = len(pop_order.keys())
+    A = len(pop_order)
     C = len(snp_pos)
     M = int(round(window_size_cM*(C/(100*laidataset_meta["morgans"]))))
 
@@ -306,7 +306,7 @@ if __name__ == "__main__":
     mode = None
     if len(sys.argv) == 7:
         mode = "pre-trained" 
-    if len(sys.argv) == 8:
+    if len(sys.argv) == 8 or len(sys.argv) == 9:
         mode = "train"
 
     # Usage message
