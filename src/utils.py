@@ -8,6 +8,17 @@ from scipy.interpolate import interp1d
 import string
 import sys
 from time import time
+import pickle
+
+def save_dict(D, path):
+    with open(path, 'wb') as handle:
+        pickle.dump(D, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        
+def load_dict(path):
+    if not os.path.exists(path):
+        return {}
+    with open(path, 'rb') as handle:
+        return pickle.load(handle)
 
 def get_num_outs(sample_map_paths, r_admixed=1.0):
     # r_admixed: generated r_admixed * num-founders for each set

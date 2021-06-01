@@ -4,8 +4,10 @@ simulation:
   run: True
   path: /home/arvindsk/test/
   splits:
-    names: [train1, train2, val]
-    ratios: [0.8,0.15,0.05]
+    ratios: 
+      train1: 0.8
+      train2: 0.15
+      val: 0.05
     gens:
       train1: [0, 2, 4, 6, 8, 12, 16, 24, 32, 48]
       train2: [0, 2, 4, 6, 8, 12, 16, 24, 32, 48]

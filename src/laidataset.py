@@ -122,12 +122,12 @@ def build_founders(sample_map_data,gt_data,chm_length_snps):
         paternal = {}
 
         # let us use the first for maternal in the vcf file...
-        maternal["snps"] = gt_data[:,index,0]
-        paternal["snps"] = gt_data[:,index,1]
+        maternal["snps"] = gt_data[:,index,0].astype(np.uint8)
+        paternal["snps"] = gt_data[:,index,1].astype(np.uint8)
 
         # single ancestry assumption.
-        maternal["anc"] = np.array([i[1]["population_code"]]*chm_length_snps)
-        paternal["anc"] = np.array([i[1]["population_code"]]*chm_length_snps)
+        maternal["anc"] = np.array([i[1]["population_code"]]*chm_length_snps).astype(np.uint8)
+        paternal["anc"] = np.array([i[1]["population_code"]]*chm_length_snps).astype(np.uint8)
 
         # any more info like coordinates, prs can be added here.
 
@@ -237,8 +237,8 @@ class LAIDataset:
         vcf_data = read_vcf(reference,self.chm)
         self.pos_snps = vcf_data["variants/POS"].copy()
         self.num_snps = vcf_data["calldata/GT"].shape[0]
-        self.ref_snps = vcf_data["variants/REF"].copy()
-        self.alt_snps = vcf_data["variants/ALT"][:,0].copy()
+        self.ref_snps = vcf_data["variants/REF"].copy().astype(str)
+        self.alt_snps = vcf_data["variants/ALT"][:,0].copy().astype(str)
         
         self.call_data = vcf_data["calldata/GT"]
         self.vcf_samples = vcf_data["samples"]
@@ -374,7 +374,6 @@ class LAIDataset:
             
         # write outputs
         if outdir is not None:
-            outdir = os.path.join(outdir,split)
             print("Writing simulation output to: ",outdir)
             write_output(outdir,simulated_samples)
             # TODO: optionally, we can even convert these to vcf and result (ancestry) files
