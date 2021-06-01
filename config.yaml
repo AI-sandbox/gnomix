@@ -1,8 +1,8 @@
 verbose: True
 
 simulation:
-  run: False
-  path: /home/arvindsk/gnomix/notebook_tests/simulation_output/ # only matters if run is True
+  run: True
+  path: # only matters if run is True
   splits: # the way to avoid val is by removing it or making the ratio 0
     ratios: # these technically do not have to sum to 1, but better to.
       train1: 0.8

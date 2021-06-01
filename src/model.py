@@ -120,7 +120,7 @@ class Gnomix():
                 CM["val"] = self.conf_matrix(y=y_v, y_pred=y_v_pred)
 
             self.accuracies = Acc
-            self.Confusion_Matricies = CM
+            self.Confusion_Matrices = CM
 
         if retrain_base:
             # Store both training data in one np.array for memory efficency

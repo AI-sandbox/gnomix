@@ -208,7 +208,7 @@ def train_model(config, data_path, verbose):
     cm_plot_path = analysis_path+"/confusion_matrix_{}_normalized.png"
     analysis_sets = ["train", "val"] if validate else ["train"]
     for d in analysis_sets:
-        cm, idx = model.Confusion_Matricies[d]
+        cm, idx = model.Confusion_Matrices[d]
         n_digits = int(np.ceil(np.log10(np.max(cm))))
         np.savetxt(cm_path.format(d), cm, fmt='%-'+str(n_digits)+'.0f')
         plot_cm(cm, labels=model.population_order[idx], path=cm_plot_path.format(d))
