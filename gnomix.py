@@ -122,11 +122,14 @@ def get_data(data_path, generations, window_size_cM):
         X, y = data_process(X_raw, labels_raw, M)
         return X, y
 
-    X_t1, y_t1 = read("train1",generations["train1"])
-    X_t2, y_t2 = read("train2",generations["train2"])
+    X_t1, y_t1 = read("train1")
+    print("train1 shapes: ",X_t1.shape)
+    X_t2, y_t2 = read("train2")
+    print("train2 shapes: ",X_t2.shape)
     X_v, y_v = (None, None)
     if generations.get("val") is not None:
-        X_v, y_v   = read("val",generations["val"])
+        X_v, y_v   = read("val")
+        print("val shapes: ",X_v.shape)
 
     data = ((X_t1, y_t1), (X_t2, y_t2), (X_v, y_v))
 
@@ -148,8 +151,13 @@ def train_model(config, data_path, verbose):
     context_ratio=config["model"].get("context_ratio")
     # the above variable has to be a path that ends with /generated_data/
     # gotta be careful if using rm_simulated_data. NOTE
-    generations = config["simulation"]["splits"]["gens"]
     chm = base_args["chm"]
+
+    # generations: just make sure train1, train2 have gen0 and
+    # val does not have it.
+    generations = config["simulation"]["splits"]["gens"]
+    if generations.get("val"):
+        generations["val"] = [gen for gen in generations["val"] if gen != 0]
 
     # option to bypass validation
     ratios = config["simulation"]["splits"]["ratios"]
@@ -165,6 +173,8 @@ def train_model(config, data_path, verbose):
     # Set output path: master change 2
 
     # Processing data
+    if verbose:
+        print("Reading data...")
     data, meta = get_data(data_path, generations, window_size_cM)
 
     # init model
@@ -175,6 +185,8 @@ def train_model(config, data_path, verbose):
                     n_jobs=n_cores, context_ratio=context_ratio)
 
     # train it
+    if verbose:
+        print("Building model...")
     model.train(data=data, retrain_base=retrain_base, evaluate=True, verbose=verbose)
 
     # store it
@@ -249,10 +261,11 @@ def simulate_splits(base_args,config):
     save_dict(laidataset.metadata(), os.path.join(data_path,"metadata.pkl"))
 
     # get num_outs
+    generations = config["simulation"]["splits"]["gens"]
     r_admixed = config["simulation"]["r_admixed"]
     num_outs = {}
     for split in splits:
-        num_outs[split] = int(len(laidataset.return_split(split))*r_admixed)
+        num_outs[split] = int(len(laidataset.return_split(split))*r_admixed/len(generations[split]))
 
     # simulate all splits
     # for split in splits:
@@ -262,7 +275,6 @@ def simulate_splits(base_args,config):
     #       laidataset.simulate(10,split="train1",gen=10,outdir="/home/arvindsk/test/",return_out=False)
     if verbose:
         print("Running Simulation...")
-    generations = config["simulation"]["splits"]["gens"]
     for split in splits:
         split_path = os.path.join(data_path, split)
         if not os.path.exists(split_path):
@@ -327,14 +339,9 @@ if __name__ == "__main__":
     verbose = config["verbose"]
     # process args here...
 
-    # sanity checks here...
-    # train1 must have gen 0 and train2, val must not have it!
     generations = config["simulation"]["splits"]["gens"]
     config["simulation"]["splits"]["gens"]["train1"] = list(set(generations["train1"] + [0]))
-    config["simulation"]["splits"]["gens"]["train2"] = [gen for gen in generations["train2"] if gen != 0]
-    if generations.get("val"):
-        config["simulation"]["splits"]["gens"]["val"] = [gen for gen in generations["val"] if gen != 0]
-
+    config["simulation"]["splits"]["gens"]["train2"] = list(set(generations["train2"] + [0]))
     # print(config["simulation"]["splits"]["gens"])
 
     # Run it
@@ -347,6 +354,7 @@ if __name__ == "__main__":
     else:
         # make sure data is ready...
         if config["simulation"]["run"]==False and config["simulation"]["path"] is not None:
+            print("Using pre-simulated data from: ",config["simulation"]["path"])
             config["simulation"]["rm_data"] = False # this must be false if using pre-generated data regardless of what input is given for safety reasons!
             data_path = config["simulation"]["path"] # path with train1/ train2/ val/ metadata.yaml
 
@@ -355,6 +363,8 @@ if __name__ == "__main__":
             data_path = os.path.join(base_args["output_basename"],"simulation_output")
         
         # train the model
+        if verbose:
+            print("Training...")
         model = train_model(config, data_path, verbose=verbose)
         
     # run inference if applicable.

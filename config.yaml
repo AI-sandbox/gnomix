@@ -2,23 +2,23 @@ verbose: True
 
 simulation:
   run: True
-  path: /home/arvindsk/test/ # only matters if run is True
+  path: /home/arvindsk/gnomix/notebook_tests/simulation_output/ # only matters if run is True
   splits:
     ratios: 
       train1: 0.8
       train2: 0.15
       val: 0.05
     gens:
-      train1: [0, 2, 4, 6, 8, 12, 16, 24, 32, 48]
-      train2: [0, 2, 4, 6, 8, 12, 16, 24, 32, 48]
+      train1: [0, 2, 4, 6, 8, 12, 16, 24, 32, 48] # 0 is included by default
+      train2: [0, 2, 4, 6, 8, 12, 16, 24, 32, 48] # 0 is included by default
       val: [0, 2, 4, 6, 8, 12, 16, 24, 32, 48]
   r_admixed: 3.0
   rm_data: False # only matters if run is True
 
 model:
-  name: model
-  base:
-  smooth: 
+  name: model # default is model
+  base: # not supported yet
+  smooth: # not supported yet
   inference: fast
   window_size_cM: 0.2
   smooth_size: 75

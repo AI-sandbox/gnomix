@@ -337,7 +337,8 @@ class LAIDataset:
         # general purpose simulator: can simulate any generations, either n of gen g or 
         # just random n samples from gen 2 to 100.
         
-        assert(type(split)==str)    
+        assert(type(split)==str)   
+        print("Simulating using split: ",split) 
         
         # get generations for each sample to be simulated
         if gen == None:
@@ -346,14 +347,23 @@ class LAIDataset:
             
         else:
             gens = gen * np.ones((num_samples),dtype=int)
+            print("Simulating generation: ",gen)
         # print(gens)
         
         # corner case
         if gen == 0:
-            return self.sample_map_data[self.sample_map_data["split"]==split]["founders"].tolist()
+            simulated_samples =  self.sample_map_data[self.sample_map_data["split"]==split]["founders"].tolist()
+            if outdir is not None:
+                print("Writing simulation output to: ",outdir)
+                write_output(outdir,simulated_samples)
+        
+            # return the samples
+            if return_out:
+                return simulated_samples
+            else:
+                return
         
         # get the exact founder data based on split
-        print("Simulating using split: ",split)
         founders = self.sample_map_data[self.sample_map_data["split"]==split]["founders"].tolist()
         founders_weight = self.sample_map_data[self.sample_map_data["split"]==split]["sample_weight"].to_numpy()
         founders_weight = list(founders_weight/founders_weight.sum()) # renormalize to 1
