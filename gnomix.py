@@ -75,13 +75,13 @@ def run_inference(base_args, model, verbose):
         proba_query_window = model.predict_proba(X_query_phased)
     else: 
         label_pred_query_window = model.predict(X_query)
-        proba_query_window = model.predict_proba(X_query)
+        proba_query_window = model.predict_proba(X_query) # TODO: potentially change this so inference is run only once...
 
     # writing the result to disc
     if verbose:
         print("Writing inference to disc...")
     meta_data = get_meta_data(chm, model.snp_pos, query_vcf_data['variants/POS'], model.W, model.M, gen_map_df)
-    out_prefix = output_path + "/" + output_path.split("/")[-1]
+    out_prefix = output_path + "/" + "query_results" # NOTE: changed....
     write_msp_tsv(out_prefix, meta_data, label_pred_query_window, model.population_order, query_vcf_data['samples'])
     write_fb_tsv(out_prefix, meta_data, proba_query_window, model.population_order, query_vcf_data['samples'])
     
@@ -97,7 +97,12 @@ def get_data(data_path, generations, window_size_cM):
 
     snp_pos = laidataset_meta["pos_snps"]
     snp_ref = laidataset_meta["ref_snps"]
-    pop_order = laidataset_meta["pop_to_num"]
+    pop_order = laidataset_meta["num_to_pop"]
+    pop_list = []
+    for i in range(len(pop_order.keys())):
+        pop_list.append(pop_order[i])
+    pop_order = np.array(pop_list)
+
     A = len(pop_order.keys())
     C = len(snp_pos)
     M = int(round(window_size_cM*(C/(100*laidataset_meta["morgans"]))))
@@ -221,7 +226,8 @@ def train_model(config, data_path, verbose):
     if rm_simulated_data:
         if verbose:
             print("Removing simulated data...")
-        for split in generations.keys(): # train1, train2, val (if val is there)
+        splits_to_rem = ["train1","train2","val"] if validate else ["train1","train2"]
+        for split in splits_to_rem: # train1, train2, val (if val is there)
             chm_path = join_paths(data_path, split, verb=False)
             remove_data_cmd = "rm -r " + chm_path
             run_shell_cmd(remove_data_cmd, verbose=False)
@@ -331,27 +337,25 @@ if __name__ == "__main__":
     elif mode == "pre-trained":
         base_args["path_to_model"] = sys.argv[6]
 
-    # base_args is a dict
-    # update it with the config yaml
-    with open(base_args["config_file"],"r") as file:
-        config = yaml.load(file)
-    
-    verbose = config["verbose"]
-    # process args here...
-
-    generations = config["simulation"]["splits"]["gens"]
-    config["simulation"]["splits"]["gens"]["train1"] = list(set(generations["train1"] + [0]))
-    config["simulation"]["splits"]["gens"]["train2"] = list(set(generations["train2"] + [0]))
-    # print(config["simulation"]["splits"]["gens"])
-
-    # Run it
-    if verbose:
-        print("Launching Gnomix in", mode, "mode...")
     
     if mode == "pre-trained":
-        model = load_model(base_args["path_to_model"], verbose=verbose)
+        print("Launching in pre-trained mode...")
+        model = load_model(base_args["path_to_model"], verbose=True)
 
     else:
+        print("Launching in training mode...")
+        # base_args is a dict
+        # update it with the config yaml
+        with open(base_args["config_file"],"r") as file:
+            config = yaml.load(file)
+        
+        verbose = config["verbose"]
+        # process args here...
+
+        generations = config["simulation"]["splits"]["gens"]
+        config["simulation"]["splits"]["gens"]["train1"] = list(set(generations["train1"] + [0]))
+        config["simulation"]["splits"]["gens"]["train2"] = list(set(generations["train2"] + [0]))
+        # print(config["simulation"]["splits"]["gens"])
         # make sure data is ready...
         if config["simulation"]["run"]==False and config["simulation"]["path"] is not None:
             print("Using pre-simulated data from: ",config["simulation"]["path"])
@@ -369,5 +373,6 @@ if __name__ == "__main__":
         
     # run inference if applicable.
     if base_args["query_file"]:
-        run_inference(base_args, model, verbose=verbose)
+        print("Launching inference...")
+        run_inference(base_args, model, verbose=True)
 

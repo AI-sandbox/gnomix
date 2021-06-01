@@ -1,7 +1,7 @@
 verbose: True
 
 simulation:
-  run: True
+  run: False
   path: /home/arvindsk/gnomix/notebook_tests/simulation_output/ # only matters if run is True
   splits: # the way to avoid val is by removing it or making the ratio 0
     ratios: # these technically do not have to sum to 1, but better to.
