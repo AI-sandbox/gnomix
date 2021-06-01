@@ -3,8 +3,8 @@ verbose: True
 simulation:
   run: True
   path: /home/arvindsk/gnomix/notebook_tests/simulation_output/ # only matters if run is True
-  splits:
-    ratios: 
+  splits: # the way to avoid val is by removing it or making the ratio 0
+    ratios: # these technically do not have to sum to 1, but better to.
       train1: 0.8
       train2: 0.15
       val: 0.05
@@ -20,10 +20,10 @@ model:
   base: # not supported yet
   smooth: # not supported yet
   inference: fast
-  window_size_cM: 0.2
+  window_size_cM: 0.2 # another option could be num windows. #FEATURE
   smooth_size: 75
   context_ratio: 0.0
-  missing: 0.0
+  missing: 0.0 # potentially remove...
   retrain_base: True  # potentially remove...
   calibrate: True
   mode_filter_size: 5 # potentially remove...
