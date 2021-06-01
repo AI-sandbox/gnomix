@@ -50,8 +50,28 @@ where the first 5 arguments are described above in the pre-trained setting and
 The program uses these two files as input to our simulation algorithm (see **pyadmix/**) to create training data for the model.
 
 ### Advanced Options
-More advanced configuration settings can be found in *config.py*. 
-They include general settings, simulation settings and model settings. More details are given in the file itself.
+More advanced configuration settings can be found in *config.yaml*. 
+They include general settings, simulation settings and model settings. More details are given in the file itself. This can only be used if training a model from scratch. Simply pass the config file's path as the last argument. 
+```
+$ python3 gnomix.py <query_file> <genetic_map_file> <output_basename> <chr_nr> <phase> <reference_file> <sample_map_file> <config_file>
+```
+If no config is given, the program uses the default. The config file has advanced training options. Some of the parameters are
+- verbose (bool) - verbosity
+- simulation:
+  - run: (bool) - whether to run simulation or not
+  - path: (path) - if run is False, use data from this location. Must have been created by gnomix in the past.
+  - rm_data (bool) - whether to remove simulated data (if memory constrained). It is set to false if run is False
+  - r_admixed (float,positive) - number of simulated individuals generated = r_admixed x Size of sample map
+  - splits: must contain train1, train2 and optionally val. If val ratio is 0, val is  ignored. generations indicates simulated individuals' generations. train1, train2 have 0 by default and val cannot have 0
+- model:
+  - name (string) - model's name: default is "model"
+  - inference (string) - 3 possible options - best / fast / default. "best" uses random string kernel base + xgboost smoother. "fast" uses logistic regression base + crf smoother. "default" uses logistic regression base + xgboost smoother
+  - window_size_cM (float, positive) -  size of window in centiMorgans
+  - smooth_size (int, positive) - number of windows to be taken as context for smoother
+  - context_ratio (float between 0 and 1) - context of base model windows
+  - retrain_base (bool) - retrain base models with train2, val data for a grand final base model
+  - calibrate (bool) - if True, applies calibration on output probabilities
+  - n_cores (int, positive) - how many units of cpu to use
 
 #### Calibration
 To ensure that gnomix outputs probability estimatesthat reflect it's true confidence and accuracy, we recommend using calibration. We use Isotonic Regression to map the predicted probabilities to calibrated probabilities where the latter is more likely to have predictions with confidence X% correct X% of the time.
