@@ -152,7 +152,8 @@ def train_model(config, data_path, verbose):
     chm = base_args["chm"]
 
     # option to bypass validation
-    validate = True if generations.get("val") is not None else False
+    ratios = config["simulation"]["splits"]["ratios"]
+    validate = True if ratios.get("val") else False
 
     output_path = base_args["output_basename"]
     if not os.path.exists(output_path):
