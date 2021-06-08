@@ -8,10 +8,10 @@ import scipy.interpolate
 
 def read_vcf(reference, chm):
     # try reading the vcf file
-    vcf_data = allel.read_vcf(reference,region = str(chm))
+    vcf_data = allel.read_vcf(reference,region = chm)
     # try reading with name "chr"
     if vcf_data == None:
-        vcf_data = allel.read_vcf(reference,region = "chr"+str(chm))
+        vcf_data = allel.read_vcf(reference,region = "chr"+chm)
     # raise exception
     if vcf_data == None:
         raise Exception("VCF file does not contain chromosome: {}".format(chm))
@@ -230,7 +230,7 @@ class LAIDataset:
     
     
     def __init__(self,chm,reference,genetic_map):
-        self.chm = int(chm)
+        self.chm = chm
         
         # vcf data
         print("Reading vcf file...")
@@ -315,14 +315,6 @@ class LAIDataset:
         split_names, prop = zip(*self.splits.items())
         prop = np.array(prop) / np.sum(prop)
         self.sample_map_data["split"] = np.random.choice(split_names,size=len(self),replace=True,p=prop)
-
-        # failsafe - if no split was created above,
-        # randomly assign at least one founder to each split.
-        rnd_pos = np.random.choice(len(self),size=len(splits),replace=False)
-        for itr_spl, split in enumerate(splits):
-            if split not in self.sample_map_data["split"]:
-                self.sample_map_data["split"][rnd_pos[itr_spl]] = split
-        
 
         # write a sample map to outdir/split.map
         if outdir is not None:

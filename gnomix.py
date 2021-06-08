@@ -162,15 +162,16 @@ def train_model(config, data_path, verbose):
     # gotta be careful if using rm_simulated_data. NOTE
     chm = base_args["chm"]
 
-    # generations: just make sure train1, train2 have gen0 and
-    # val does not have it.
-    generations = config["simulation"]["splits"]["gens"]
-    if generations.get("val"):
-        generations["val"] = [gen for gen in generations["val"] if gen != 0]
-
     # option to bypass validation
     ratios = config["simulation"]["splits"]["ratios"]
     validate = True if ratios.get("val") else False
+
+    generations = config["simulation"]["splits"]["gens"]
+    if validate == False:
+        del generations["val"]
+    else:
+        generations["val"] = [gen for gen in generations["val"] if gen != 0]
+    print(generations)
 
     output_path = base_args["output_basename"]
     if not os.path.exists(output_path):
@@ -241,7 +242,7 @@ def train_model(config, data_path, verbose):
 def simulate_splits(base_args,config):
 
     # build LAIDataset object
-    chm = int(base_args["chm"])
+    chm = base_args["chm"] # string...
     reference = base_args["reference_file"]
     genetic_map = base_args["genetic_map_file"]
     sample_map = base_args["sample_map_file"]
@@ -356,6 +357,8 @@ if __name__ == "__main__":
         verbose = config["verbose"]
         # process args here...
 
+        if config["simulation"]["splits"]["ratios"].get("val") == 0:
+            del config["simulation"]["splits"]["ratios"]["val"]
         generations = config["simulation"]["splits"]["gens"]
         config["simulation"]["splits"]["gens"]["train1"] = list(set(generations["train1"] + [0]))
         config["simulation"]["splits"]["gens"]["train2"] = list(set(generations["train2"] + [0]))
