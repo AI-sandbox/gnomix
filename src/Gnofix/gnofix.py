@@ -1,22 +1,11 @@
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib import animation
 import numpy as np
 import pickle
-import seaborn as sns
 import sys
 from time import time
 
-try:
-    # if calling from XGMix
-    from src.utils import read_vcf, vcf_to_npy, fb2proba, npy_to_vcf
-    from XGFix.phasing import *
-    from XGFix.simple_switch import simple_switch
-except ModuleNotFoundError:
-    # if calling from XGFix
-    from utils import read_vcf, vcf_to_npy, fb2proba, npy_to_vcf
-    from phasing import *
-    from simple_switch import simple_switch
+from src.utils import read_vcf, vcf_to_npy, fb2proba, npy_to_vcf
+from src.Gnofix.phasing import *
+from src.Gnofix.simple_switch import simple_switch
 
 def mask_base_prob(base_prob, d=0):
     """
@@ -56,31 +45,6 @@ def check(Y_m, Y_p, w, base, check_criterion):
 
     return check
 
-def base_to_smooth_data(base_prob, sws, pad_size=None, labels=None):
-
-    base_prob = np.copy(base_prob)
-    N, W, A = base_prob.shape
-
-    if pad_size is None:
-        pad_size = (1+sws)//2
-
-    # pad it.
-    pad_left = np.flip(base_prob[:,0:pad_size,:],axis=1)
-    pad_right = np.flip(base_prob[:,-pad_size:,:],axis=1)
-    base_prob_padded = np.concatenate([pad_left,base_prob,pad_right],axis=1)
-
-    # window it.
-    windowed_data = np.zeros((N,W,A*sws),dtype="float32")
-    for ppl,dat in enumerate(base_prob_padded):
-        for win in range(windowed_data.shape[1]):
-            windowed_data[ppl,win,:] = dat[win:win+sws].ravel()
-
-    # reshape
-    windowed_data = windowed_data.reshape(-1,windowed_data.shape[2])
-    windowed_labels = None if labels is None else labels.reshape(-1)
-
-    return windowed_data, windowed_labels
-
 def load_smoother(path_to_smoother, verbose=True):
     if verbose:
         print("Loading smoother...")
@@ -92,7 +56,7 @@ def load_smoother(path_to_smoother, verbose=True):
 
     return smoother
 
-def XGFix(M, P, base_prob, smoother, max_it=50, non_lin_s=0, check_criterion="disc_smooth", max_center_offset=0, prob_comp="max", d=None, prior_switch_prob = 0.5,
+def gnofix(M, P, B, smoother, max_it=50, non_lin_s=0, check_criterion="disc_smooth", max_center_offset=0, prob_comp="max", d=None, prior_switch_prob = 0.5,
             naive_switch=None, end_naive_switch=None, padding=True, verbose=False):
 
     if verbose:
@@ -107,24 +71,22 @@ def XGFix(M, P, base_prob, smoother, max_it=50, non_lin_s=0, check_criterion="di
         print("probability comparison:", prob_comp)
         print("padding:", padding)
 
-    N, W, A = base_prob.shape 
-    sws = len(smoother.feature_importances_)//A # smoother size
+    _, W, A = B.shape
     window_size = len(M)//W # window size
 
     # initial position
     X_m, X_p = np.copy([M,P]).astype(int)
 
     # inferred labels of initial position
-    smooth_data, _ = base_to_smooth_data(base_prob, sws=sws) 
-    Y_m, Y_p = smoother.predict(smooth_data).reshape(2,W)
+    Y_m, Y_p = smoother.predict(B=B).reshape(2,W)
 
     # define windows to iterate through
-    centers = (np.arange(W-sws+1)+(sws-1)/2).astype(int)
+    centers = (np.arange(W-smoother.S+1)+(smoother.S-1)/2).astype(int)
     iter_windows = np.arange(1,W) if padding else centers
 
     # Track convergence and progression
     X_m_its = [] # monitor convergence
-    XGFix_tracker = (np.zeros_like(Y_m), np.ones_like(Y_p)) 
+    gnofix_tracker = (np.zeros_like(Y_m), np.ones_like(Y_p)) 
     history = np.array([Y_m, Y_p])
 
     # Fix
@@ -138,9 +100,9 @@ def XGFix(M, P, base_prob, smoother, max_it=50, non_lin_s=0, check_criterion="di
             # Naive switch: heuristic to catch obvious errors and save computations
             _, _, M_track, _, _ = simple_switch(Y_m,Y_p,slack=naive_switch,cont=False,verbose=False,animate=False)
             X_m, X_p = correct_phase_error(X_m, X_p, M_track, window_size)
-            base_prob = np.array(correct_phase_error(base_prob[0], base_prob[1], M_track, window_size))
-            smooth_data, _ = base_to_smooth_data(base_prob, sws=sws) 
-            Y_m, Y_p = smoother.predict(smooth_data).reshape(2,W)
+            B = np.array(correct_phase_error(B[0], B[1], M_track, window_size))
+            Y_m, Y_p = smoother.predict(B=B).reshape(2,W)
+
             history = np.dstack([history, [Y_m, Y_p]])
 
         # Stop if converged
@@ -155,7 +117,7 @@ def XGFix(M, P, base_prob, smoother, max_it=50, non_lin_s=0, check_criterion="di
         for w in iter_windows:
 
             # Heuristic to save computation, only check if there's a nuance
-            if check(Y_m, Y_p, w, base_prob, check_criterion):
+            if check(Y_m, Y_p, w, B, check_criterion):
 
                 # Different permutations depending on window position
                 if w in centers:
@@ -166,7 +128,7 @@ def XGFix(M, P, base_prob, smoother, max_it=50, non_lin_s=0, check_criterion="di
                     max_center_offset_w, non_lin_s_w = 0, 0
                 
                 # defining scope
-                scope_idxs = center + np.arange(sws) - int((sws-1)/2)
+                scope_idxs = center + np.arange(smoother.S) - int((smoother.S-1)/2)
 
                 # indices of pair-wise permutations
                 switch_idxs = []
@@ -176,7 +138,7 @@ def XGFix(M, P, base_prob, smoother, max_it=50, non_lin_s=0, check_criterion="di
 
                 # init collection of permutations and add the original
                 mps = [] 
-                m_orig, p_orig = np.copy(base_prob[:,scope_idxs,:])
+                m_orig, p_orig = np.copy(B[:,scope_idxs,:])
                 mps.append(m_orig); mps.append(p_orig) 
                 
                 # adding more permutations
@@ -184,7 +146,7 @@ def XGFix(M, P, base_prob, smoother, max_it=50, non_lin_s=0, check_criterion="di
                     switch_idx = np.concatenate([[scope_idxs[0]], switch_idx.reshape(-1), [scope_idxs[-1]+1]])
                     m, p = [], []
                     for s in range(len(switch_idx)-1):
-                        m_s, p_s = base_prob[:,np.arange(switch_idx[s],switch_idx[s+1]),:]
+                        m_s, p_s = B[:,np.arange(switch_idx[s],switch_idx[s+1]),:]
                         if s%2:
                             m_s, p_s = p_s, m_s
                         m.append(m_s); p.append(p_s)
@@ -192,8 +154,8 @@ def XGFix(M, P, base_prob, smoother, max_it=50, non_lin_s=0, check_criterion="di
                     mps.append(m); mps.append(p);
 
                 # get 2D probabilities for permutations
-                mps = np.array(mps) if d is None else mask_base_prob(mps, d=d)
-                outs = smoother.predict_proba( mps.reshape(len(mps),-1) ).reshape(-1,2,A)
+                mps = np.array(mps) if d is None else mask_B(mps, d=d)
+                outs = smoother.model.predict_proba( mps.reshape(len(mps),-1) ).reshape(-1,2,A)
 
                 # map permutation probabilities to a scalar (R^2 -> R) for comparison
                 if prob_comp=="prod":
@@ -212,22 +174,22 @@ def XGFix(M, P, base_prob, smoother, max_it=50, non_lin_s=0, check_criterion="di
                     m, p = [], []
                     switch_idx = np.concatenate([[0], best_switch, [W]])
                     for s in range(len(switch_idx)-1):
-                        m_s, p_s = base_prob[:,np.arange(switch_idx[s],switch_idx[s+1]),:]
+                        m_s, p_s = B[:,np.arange(switch_idx[s],switch_idx[s+1]),:]
                         if s%2:
                             m_s, p_s = p_s, m_s
                         m.append(m_s); p.append(p_s)
                     m, p = np.copy(np.concatenate(m,axis=0)), np.copy(np.concatenate(p,axis=0))
-                    base_prob = np.copy(np.array([m,p])) 
+                    B = np.copy(np.array([m,p])) 
 
                     # track the change
                     for switch in best_switch:
                         M_track, P_track = track_switch(np.zeros_like(Y_m), np.ones_like(Y_p), switch)
-                        XGFix_tracker = track_switch(XGFix_tracker[0], XGFix_tracker[1], switch)
+                        gnofix_tracker = track_switch(gnofix_tracker[0], gnofix_tracker[1], switch)
 
                     # correct inferred error on SNP level and re-label
                     X_m, X_p = correct_phase_error(X_m, X_p, M_track, window_size)
-                    smooth_data, _ = base_to_smooth_data(base_prob, sws=sws)  
-                    Y_m, Y_p = smoother.predict(smooth_data).reshape(2,W)
+                    Y_m, Y_p = smoother.predict(B=B).reshape(2,W)
+
                     history = np.dstack([history, [Y_m, Y_p]])
     
     if naive_switch:
@@ -235,9 +197,8 @@ def XGFix(M, P, base_prob, smoother, max_it=50, non_lin_s=0, check_criterion="di
     if end_naive_switch:
         _, _, M_track, _, _ = simple_switch(Y_m,Y_p,slack=end_naive_switch,cont=False,verbose=False,animate=False)
         X_m, X_p = correct_phase_error(X_m, X_p, M_track, window_size)
-        base_prob = np.array(correct_phase_error(base_prob[0], base_prob[1], M_track, window_size))
-        smooth_data, _ = base_to_smooth_data(base_prob, sws=sws) 
-        Y_m, Y_p = smoother.predict(smooth_data).reshape(2,W)
+        B = np.array(correct_phase_error(B[0], B[1], M_track, window_size))
+        Y_m, Y_p = smoother.predict(B).reshape(2,W)
         history = np.dstack([history, [Y_m, Y_p]])
 
     history = np.dstack([history, [Y_m, Y_p]])
@@ -245,44 +206,45 @@ def XGFix(M, P, base_prob, smoother, max_it=50, non_lin_s=0, check_criterion="di
     if verbose:
         print(); print("runtime:", np.round(time()-st))
     
-    return X_m, X_p, Y_m, Y_p, history, XGFix_tracker
+    return X_m, X_p, Y_m, Y_p, history, gnofix_tracker
 
 def main(query_file, fb_file, smoother_file, output_basename, chm, n_windows=None, verbose=False):
 
-    # Read X from query file
-    # TODO: does the npy need some modification? 
-    query_vcf_data = read_vcf(query_file, chm=chm, fields="*")
-    X = vcf_to_npy(query_vcf_data)
-    H, C = X.shape
-    N = H//2
+    assert False, "Usage from the command line has been temporarily suspended."
 
-    # Load a smoother
-    S = load_smoother(smoother_file)
+    # # Read X from query file
+    # # TODO: does the npy need some modification? 
+    # query_vcf_data = read_vcf(query_file, chm=chm, fields="*")
+    # X = vcf_to_npy(query_vcf_data)
+    # H, C = X.shape
+    # N = H//2
 
-    # Read base_prob from fb
-    base_prob = fb2proba(fb_file, n_wind=n_windows)
-    print(base_prob.shape)
-    H_, W, A = base_prob.shape
-    base_prob = base_prob.reshape(H//2,2,W,A)
-    assert H == H_, "Number of haplotypes from base probabilities must match number of query haplotypes"
+    # # Load a smoother
+    # S = load_smoother(smoother_file)
 
-    # Phase
-    X_phased = np.zeros((N,2,C), dtype=int)
-    Y_phased = np.zeros((N,2,W), dtype=int)
-    for i, X_i in enumerate(X.reshape(N,2,C)):
-        sys.stdout.write("\rPhasing individual %i/%i" % (i+1, N))
-        X_m, X_p = np.copy(X_i)
-        X_m, X_p, Y_m, Y_p, history, XGFix_tracker = XGFix(X_m, X_p, base_prob=base_prob[i], smoother=S,
-                                                           check_criterion="disc_base", verbose=True)
-        X_phased[i] = np.copy(np.array((X_m,X_p)))
-        Y_phased[i] = np.copy(np.array((Y_m,Y_p)))
-    X_phased = X_phased.reshape(H,C)
-    print()
+    # # Read base_prob from fb
+    # base_prob = fb2proba(fb_file, n_wind=n_windows)
+    # H_, W, A = base_prob.shape
+    # base_prob = base_prob.reshape(H//2,2,W,A)
+    # assert H == H_, "Number of haplotypes from base probabilities must match number of query haplotypes"
 
-    # Write results
-    if verbose:
-        print("Writing phased SNPs to disc...")
-    npy_to_vcf(query_vcf_data, X_phased, output_basename)
+    # # Phase
+    # X_phased = np.zeros((N,2,C), dtype=int)
+    # Y_phased = np.zeros((N,2,W), dtype=int)
+    # for i, X_i in enumerate(X.reshape(N,2,C)):
+    #     sys.stdout.write("\rPhasing individual %i/%i" % (i+1, N))
+    #     X_m, X_p = np.copy(X_i)
+    #     X_m, X_p, Y_m, Y_p, history, gnofix_tracker = gnofix(X_m, X_p, base_prob=base_prob[i], smoother=S,
+    #                                                        check_criterion="disc_base", verbose=True)
+    #     X_phased[i] = np.copy(np.array((X_m,X_p)))
+    #     Y_phased[i] = np.copy(np.array((Y_m,Y_p)))
+    # X_phased = X_phased.reshape(H,C)
+    # print()
+
+    # # Write results
+    # if verbose:
+    #     print("Writing phased SNPs to disc...")
+    # npy_to_vcf(query_vcf_data, X_phased, output_basename)
 
     return
 
@@ -300,11 +262,9 @@ if __name__ == "__main__":
         if len(sys.argv) > 1:
             print("Error: Incorrect number of arguments.")
         print("Usage:")
-        print("   $ python3 XGFIX.py <query_file> <fb_file> <smoother_file> <output_basename> <chm>")
+        print("   $ python3 gnofix.py <query_file> <fb_file> <smoother_file> <output_basename> <chm>")
         sys.exit(0)
 
     _, query_file, fb_file, smoother_file, output_basename, chm = sys.argv
 
-    main(query_file, fb_file, smoother_file, output_basename, chm, verbose=True)
-    # main(*sys.argv)
-    
+    main(query_file, fb_file, smoother_file, output_basename, chm, verbose=True)    

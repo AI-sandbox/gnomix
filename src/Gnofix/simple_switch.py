@@ -1,15 +1,7 @@
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib import animation
 import numpy as np
 import time
-import seaborn as sns
-import sys
 
-try:
-  from phasing import *
-except ModuleNotFoundError:
-  from XGFix.phasing import *
+from src.Gnofix.phasing import *
 
 # Value function calculation
 def seq_left_end(S, idx): 
