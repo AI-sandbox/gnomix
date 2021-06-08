@@ -14,7 +14,7 @@ class LogisticRegressionBase(Base):
         super().__init__(*args, **kwargs)
 
         self.init_base_models(
-            lambda : LogisticRegression(penalty="l1", C = 1., solver="liblinear", max_iter=1000)
+            lambda : LogisticRegression(penalty="l2", C = 3., solver="liblinear", max_iter=1000)
         )
 
 class XGBBase(Base):

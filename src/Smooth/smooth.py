@@ -19,6 +19,7 @@ class Smoother():
         self.n_jobs = n_jobs
         self.seed = seed
         self.verbose = verbose
+        self.gnofix = False
 
         self.time = {}
 
@@ -40,11 +41,6 @@ class Smoother():
 
         B_s, _ = self.process_base_proba(B)
 
-        # TODO:
-        # if phase:
-        #     X_phased, y_phased = self.phase(tt, calibrate=rtn_calibrated)
-        #     return y_phased
-
         proba = self.model.predict_proba(B_s)
         
         if self.calibrate:
@@ -60,7 +56,7 @@ class Smoother():
     def predict(self, B):
 
         proba = self.predict_proba(B)
-        y_pred =  np.argmax(proba, axis=-1)
+        y_pred = np.argmax(proba, axis=-1)
 
         if self.mode_filter != 0:
             y_pred = np.apply_along_axis(func1d=mode_filter, axis=1, arr=y_pred, size=self.mode_filter)

@@ -6,6 +6,7 @@ from time import time
 
 from src.Base.models import LogisticRegressionBase, RandomStringKernelBase
 from src.Smooth.models import XGB_Smoother, CRF_Smoother
+from src.Gnofix.gnofix import gnofix
 
 class Gnomix():
 
@@ -156,18 +157,16 @@ class Gnomix():
 
         self.time["training"] = round(time() - train_time_begin,2)
 
-    def predict(self,X,phase=False):
+    def predict(self,X):
 
         B = self.base.predict_proba(X)
         y_pred = self.smooth.predict(B)
-        # TODO: GNOFIX
         return y_pred
 
-    def predict_proba(self,X,phase=False):
+    def predict_proba(self,X):
 
         B = self.base.predict_proba(X)
         y_pred = self.smooth.predict_proba(B)
-        # TODO: GNOFIX
         return y_pred
 
     def write_config(self,fname):
@@ -177,29 +176,31 @@ class Gnomix():
                 if type(val) in [int,float,str,bool,np.float64,np.float32,np.int]:
                     f.write("{}\t{}\n".format(attr,val))
 
-    def phase(self,X,base=None,verbose=False):
+    def phase(self,X,B=None,verbose=False):
         """
         Wrapper for XGFix
         """
 
-        if self.smooth is None:
-            print("Smoother is not trained, returning original haplotypes")
-            return X, None
+        assert self.smooth is not None, "Smoother is not trained, returning original haplotypes"
+        assert self.smooth.gnofix, "Type of Smoother ({}) does not currently support re-phasing".format(self.smooth)
 
-        n_haplo, n_snp = X.shape
-        n_ind = n_haplo//2
-        X_phased = np.zeros((n_ind,2,n_snp), dtype=int)
-        Y_phased = np.zeros((n_ind,2,self.W), dtype=int)
+        N, C = X.shape
+        n = N//2
+        X_phased = np.zeros((n,2,C), dtype=int)
+        Y_phased = np.zeros((n,2,self.W), dtype=int)
 
-        for i, X_i in enumerate(X.reshape(n_ind,2,n_snp)):
-            sys.stdout.write("\rPhasing individual %i/%i" % (i+1, n_ind))
-            X_m, X_p = np.copy(X_i)
-            base_prob, _ = self._get_smooth_data(X_i, flat_base=True)
-            X_m, X_p, Y_m, Y_p, history, XGFix_tracker = XGFix(X_m, X_p, base_prob=base_prob, smoother=self.smooth, verbose=verbose)
-            X_phased[i] = np.copy(np.array((X_m,X_p)))
-            Y_phased[i] = np.copy(np.array((Y_m,Y_p)))
+        if B is None:
+            B = self.base.predict_proba(X)
+        B = B.reshape(n, 2, self.W, self.A)
+
+        for i, X_i in enumerate(X.reshape(n,2,C)):
+            sys.stdout.write("\rPhasing individual %i/%i" % (i+1, n))
+            X_m, X_p = X_i
+            X_m_, X_p_, Y_m_, Y_p_, history, tracker = gnofix(X_m, X_p, B=B[i], smoother=self.smooth, verbose=verbose)
+            X_phased[i] = np.copy(np.array((X_m_,X_p_)))
+            Y_phased[i] = np.copy(np.array((Y_m_,Y_p_)))
 
         print()
         
-        return X_phased.reshape(n_haplo, n_snp), Y_phased.reshape(n_haplo, self.W)
+        return X_phased.reshape(N, C), Y_phased.reshape(N, self.W)
 

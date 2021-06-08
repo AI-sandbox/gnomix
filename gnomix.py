@@ -1,6 +1,4 @@
-from pandas.core.indexes import base
 import yaml
-
 
 import gzip
 import numpy as np
@@ -61,8 +59,12 @@ def run_inference(base_args, model, verbose):
     if verbose:
         print("Inferring ancestry on query data...")
 
-    if base_args["phase"]:
-        X_query_phased, label_pred_query_window = model.phase(X_query)
+    B_query = model.base.predict_proba(X_query)
+    if not base_args["phase"]:
+        y_proba_query = model.smooth.predict_proba(B_query)
+        y_pred_query = np.argmax(y_proba_query, axis=-1)
+    else:
+        X_query_phased, y_pred_query = model.phase(X_query, B=B_query)
         if verbose:
             print("Writing phased SNPs to disc...")
         U = {
@@ -72,18 +74,16 @@ def run_inference(base_args, model, verbose):
         query_vcf_data = update_vcf(query_vcf_data, mask=vcf_idx, Updates=U)
         query_phased_prefix = output_path + "/" + "query_file_phased"
         npy_to_vcf(query_vcf_data, X_query_phased[:,fmt_idx], query_phased_prefix)
-        proba_query_window = model.predict_proba(X_query_phased)
-    else: 
-        label_pred_query_window = model.predict(X_query)
-        proba_query_window = model.predict_proba(X_query) # TODO: potentially change this so inference is run only once...
+        y_proba_query = model.predict_proba(X_query_phased)
+
 
     # writing the result to disc
     if verbose:
         print("Writing inference to disc...")
     meta_data = get_meta_data(chm, model.snp_pos, query_vcf_data['variants/POS'], model.W, model.M, gen_map_df)
     out_prefix = output_path + "/" + "query_results" # NOTE: changed....
-    write_msp_tsv(out_prefix, meta_data, label_pred_query_window, model.population_order, query_vcf_data['samples'])
-    write_fb_tsv(out_prefix, meta_data, proba_query_window, model.population_order, query_vcf_data['samples'])
+    write_msp_tsv(out_prefix, meta_data, y_pred_query, model.population_order, query_vcf_data['samples'])
+    write_fb_tsv(out_prefix, meta_data, y_proba_query, model.population_order, query_vcf_data['samples'])
     
     return
 
