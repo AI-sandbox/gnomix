@@ -315,8 +315,15 @@ class LAIDataset:
         split_names, prop = zip(*self.splits.items())
         prop = np.array(prop) / np.sum(prop)
         self.sample_map_data["split"] = np.random.choice(split_names,size=len(self),replace=True,p=prop)
+
+        # failsafe - if no split was created above,
+        # randomly assign at least one founder to each split.
+        rnd_pos = np.random.choice(len(self),size=len(splits),replace=False)
+        for itr_spl, split in enumerate(splits):
+            if split not in self.sample_map_data["split"]:
+                self.sample_map_data["split"][rnd_pos[itr_spl]] = split
         
-        
+
         # write a sample map to outdir/split.map
         if outdir is not None:
             print("Writing split sample map files to: ",outdir)
