@@ -370,6 +370,7 @@ class LAIDataset:
             raise Exception("Split does not exist!!!")
         
         # run simulation
+        print("Generating {} admixed samples".format(num_samples))
         simulated_samples = []
         for i in range(num_samples):
             
