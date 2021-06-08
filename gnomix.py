@@ -171,7 +171,7 @@ def train_model(config, data_path, verbose):
         del generations["val"]
     else:
         generations["val"] = [gen for gen in generations["val"] if gen != 0]
-    print(generations)
+    #print(generations)
 
     output_path = base_args["output_basename"]
     if not os.path.exists(output_path):
@@ -265,6 +265,12 @@ def simulate_splits(base_args,config):
 
     # split sample map and write it.
     splits = config["simulation"]["splits"]["ratios"]
+    if len(laidataset) <= 25:
+        if splits.get("val"):
+            print("WARNING!!!")
+            print("Too few samples to run validation")
+            print("Removing val...")
+            del config["simulation"]["splits"]["ratios"]["val"]
     laidataset.create_splits(splits,sample_map_path)
 
     # write metadata into data_path/metadata.yaml # TODO
@@ -275,8 +281,10 @@ def simulate_splits(base_args,config):
     generations = config["simulation"]["splits"]["gens"]
     r_admixed = config["simulation"]["r_admixed"]
     num_outs = {}
+    min_splits = {"train1":800,"train2":150,"val":50}
     for split in splits:
-        num_outs[split] = int(len(laidataset.return_split(split))*r_admixed/len(generations[split]))
+        total_sim = max(len(laidataset.return_split(split))*r_admixed, min_splits[split])
+        num_outs[split] = int(total_sim/len(generations[split]))
 
     # simulate all splits
     # for split in splits:
