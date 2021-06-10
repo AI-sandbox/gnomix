@@ -8,10 +8,10 @@ import scipy.interpolate
 
 def read_vcf(reference, chm):
     # try reading the vcf file
-    vcf_data = allel.read_vcf(reference,region = str(chm))
+    vcf_data = allel.read_vcf(reference,region = chm)
     # try reading with name "chr"
     if vcf_data == None:
-        vcf_data = allel.read_vcf(reference,region = "chr"+str(chm))
+        vcf_data = allel.read_vcf(reference,region = "chr"+chm)
     # raise exception
     if vcf_data == None:
         raise Exception("VCF file does not contain chromosome: {}".format(chm))
@@ -233,7 +233,7 @@ class LAIDataset:
 
         np.random.seed(seed)
 
-        self.chm = int(chm)
+        self.chm = chm
         
         # vcf data
         print("Reading vcf file...")
@@ -313,15 +313,17 @@ class LAIDataset:
         self.splits = splits
         split_names, prop = zip(*self.splits.items())
         prop = np.array(prop) / np.sum(prop)
-        self.sample_map_data["split"] = np.random.choice(split_names,size=len(self),replace=True,p=prop)
+        print(splits)
+        numbers = {}
+        numbers["train1"] = int(prop[0] * len(self))
+        numbers["train2"] = int(prop[1] * len(self)) if "val" in self.splits else len(self) - numbers["train1"]
+        numbers["val"] = len(self) - numbers["train1"] - numbers["train2"]
+        print("Split is as follows: ",numbers)
+        splits_list = ["train1"]*numbers["train1"] + ["train2"]*numbers["train2"] + ["val"]*numbers["val"]
+        np.random.shuffle(splits_list)
+        assert(len(splits_list) == len(self))
 
-        # failsafe - if no split was created above,
-        # randomly assign at least one founder to each split.
-        rnd_pos = np.random.choice(len(self),size=len(splits),replace=False)
-        for itr_spl, split in enumerate(splits):
-            if split not in self.sample_map_data["split"]:
-                self.sample_map_data["split"][rnd_pos[itr_spl]] = split
-        
+        self.sample_map_data["split"] = splits_list
 
         # write a sample map to outdir/split.map
         if outdir is not None:
@@ -377,6 +379,7 @@ class LAIDataset:
             raise Exception("Split does not exist!!!")
         
         # run simulation
+        print("Generating {} admixed samples".format(num_samples))
         simulated_samples = []
         for i in range(num_samples):
             
