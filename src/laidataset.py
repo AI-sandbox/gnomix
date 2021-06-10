@@ -314,7 +314,17 @@ class LAIDataset:
         self.splits = splits
         split_names, prop = zip(*self.splits.items())
         prop = np.array(prop) / np.sum(prop)
-        self.sample_map_data["split"] = np.random.choice(split_names,size=len(self),replace=True,p=prop)
+        print(splits)
+        numbers = {}
+        numbers["train1"] = int(prop[0] * len(self))
+        numbers["train2"] = int(prop[1] * len(self)) if "val" in self.splits else len(self) - numbers["train1"]
+        numbers["val"] = len(self) - numbers["train1"] - numbers["train2"]
+        print("Split is as follows: ",numbers)
+        splits_list = ["train1"]*numbers["train1"] + ["train2"]*numbers["train2"] + ["val"]*numbers["val"]
+        np.random.shuffle(splits_list)
+        assert(len(splits_list) == len(self))
+
+        self.sample_map_data["split"] = splits_list
 
         # write a sample map to outdir/split.map
         if outdir is not None:
