@@ -34,22 +34,6 @@ def map2npy(map_file, shape, pop_order):
         y[2*i:2*i+2] = a_numeric
     return y
 
-def get_gen_0(data_path, population_map_file, sets):
-    
-    gen_0_path = data_path + "/simulation_output"
-    pop_order = np.genfromtxt(population_map_file, dtype="str")
-    
-    out = []
-    for s in sets:
-        X_vcf = gen_0_path + "/"+s+"/founders.vcf"
-        y_map = gen_0_path + "/"+s+"/founders.map"
-        X_raw_gen_0 = vcf2npy(X_vcf)
-        y_raw_gen_0 = map2npy(y_map, X_raw_gen_0.shape, pop_order)
-        out.append(X_raw_gen_0)
-        out.append(y_raw_gen_0)
-    
-    return out
-
 def window_reshape(data, win_size):
     """
     Takes in data of shape (N, chm_len), aggregates labels and 

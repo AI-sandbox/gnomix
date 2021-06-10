@@ -27,8 +27,6 @@ CLAIMER = 'When using this software, please cite: \n' + \
           'ICLR, 2020, Workshop AI4AH \n' + \
           'https://www.biorxiv.org/content/10.1101/2020.04.21.053876v1'
 
-np.random.seed(94305)
-
 
 def load_model(path_to_model, verbose=True):
     if verbose:
@@ -158,8 +156,6 @@ def train_model(config, data_path, verbose):
     context_ratio=config["model"].get("context_ratio")
     base = config["model"].get("base") # not used yet
     smooth = config["model"].get("smooth") # not used yet
-    # the above variable has to be a path that ends with /generated_data/
-    # gotta be careful if using rm_simulated_data. NOTE
     chm = base_args["chm"]
 
     # generations: just make sure train1, train2 have gen0 and
@@ -176,8 +172,6 @@ def train_model(config, data_path, verbose):
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
-    np.random.seed(94305) # TODO: move into config file, LAIData/simulation and model should take as argument
-
     # Either load pre-trained model or simulate data from reference file, init model and train it
     # Set output path: master change 2
 
@@ -191,7 +185,7 @@ def train_model(config, data_path, verbose):
                     snp_pos=meta["snp_pos"], snp_ref=meta["snp_ref"],
                     population_order=meta["pop_order"],
                     mode=inference, calibrate=calibrate,
-                    n_jobs=n_cores, context_ratio=context_ratio)
+                    n_jobs=n_cores, context_ratio=context_ratio, seed=config["seed"])
 
     # train it
     if verbose:
@@ -247,7 +241,7 @@ def simulate_splits(base_args,config):
     sample_map = base_args["sample_map_file"]
     outdir = base_args["output_basename"]
 
-    laidataset = LAIDataset(chm, reference, genetic_map)
+    laidataset = LAIDataset(chm, reference, genetic_map, seed=config["seed"])
     laidataset.buildDataset(sample_map)
 
     # create output directories
@@ -359,7 +353,7 @@ if __name__ == "__main__":
         generations = config["simulation"]["splits"]["gens"]
         config["simulation"]["splits"]["gens"]["train1"] = list(set(generations["train1"] + [0]))
         config["simulation"]["splits"]["gens"]["train2"] = list(set(generations["train2"] + [0]))
-        # print(config["simulation"]["splits"]["gens"])
+
         # make sure data is ready...
         if config["simulation"]["run"]==False and config["simulation"]["path"] is not None:
             print("Using pre-simulated data from: ",config["simulation"]["path"])
@@ -379,4 +373,3 @@ if __name__ == "__main__":
     if base_args["query_file"]:
         print("Launching inference...")
         run_inference(base_args, model, verbose=True)
-

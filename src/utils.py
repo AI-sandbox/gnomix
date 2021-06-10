@@ -71,23 +71,6 @@ def read_vcf(vcf_file, chm=None, fields=None, verbose=False):
 
     return data
 
-def sample_map_to_matrix(map_path):
-    """
-    Handles the weird latin1 encoding of some sample maps
-    """
-
-    ff = open(map_path, "r", encoding="latin1")
-    matrix = []
-    loc_func = lambda x: ord(x.rstrip("\n"))
-    for i in ff.readlines()[1:]:
-        row = i.split("\t")[2:]
-        row = np.vectorize(loc_func)(row)
-        matrix.append(row-49)
-    matrix = np.asarray(matrix).T
-    ff.close()
-
-    return matrix
-
 def snp_intersection(pos1, pos2, verbose=False):
     """
     Finds interception of snps given two arrays of snp position 

@@ -47,27 +47,23 @@ class Gnomix():
         self.calibrate = calibrate
 
         if base is None:
-            print("Base is none")
             if mode == "fast":
-                print("Using logreg")
                 base = LogisticRegressionBase
             elif mode == "best":
-                print("Using random string kernel")
                 base = RandomStringKernelBase
             else:
-                print("Using logreg")
                 base = LogisticRegressionBase
+            if verbose:
+                print("Base models:", base)
         if smooth is None:
-            print("Smooth is none")
             if mode == "fast":
-                print("Using CRF")
                 smooth = CRF_Smoother 
             elif mode=="best":
-                print("Using XGB")
                 smooth = XGB_Smoother
             else:
-                print("Using XGB")
                 smooth = XGB_Smoother
+            if verbose:
+                print("Smoother:", smooth)
 
         self.base = base(chm_len=self.C, window_size=self.M, num_ancestry=self.A,
                             missing_encoding=missing_encoding, context=self.context,

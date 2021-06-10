@@ -1,20 +1,20 @@
-# XGFix 
+# Gnofix 
 
 ![Visualization of the process](figures/XGFix.gif)
 
 ## Motivation
 
-Accurate phasing of genomic data is crucial for human demographic modeling and identity-by-descent analyses. It has been shown that leveraging information about an individual’s genomic ancestry improves performance of current phasing algorithms. XGFix is a method that uses local Ancestry Inference (LAI) that does exactly that.
+Accurate phasing of genomic data is crucial for human demographic modeling and identity-by-descent analyses. It has been shown that leveraging information about an individual’s genomic ancestry improves performance of current phasing algorithms. Gnofix is a method that uses local Ancestry Inference (LAI) that does exactly that.
 
 ![Local Ancestry for Phasing Error Correction](figures/laipec_resized.png)
 Sequenced haplotypes phased with a phasing software (left). LAI used to label haplotypes with ancestry predictions and phasing errors become evident (center). Phasing error correction using LAI is applied to correct phasing errors (right).
 
 ## Method
 
-XGFix uses a trained smoother from XGMix to estimate the probability of a given sequence being from the distribution of a human haplotype (correctly phased) and leverages those estimates to iteratively switch parts along the haplotypes to ultimately find the most probable one. 
+Gnofix uses a trained smoother from XGMix to estimate the probability of a given sequence being from the distribution of a human haplotype (correctly phased) and leverages those estimates to iteratively switch parts along the haplotypes to ultimately find the most probable one. 
 
-![XGFix Diagram](figures/diagram_resized.png)
-- (a) Maternal and paternal haplotypes at a given iteration and a given step of XGFix. Dashed box marks the scope. 
+![Gnofix Diagram](figures/diagram_resized.png)
+- (a) Maternal and paternal haplotypes at a given iteration and a given step of Gnofix. Dashed box marks the scope. 
 - (b) Ancestry probabilities at windows in scope are extracted.
 - (c) Windows in scope are permuted (to form possible fixes).
 - (d)-(e) Permutations are passed through the smoother to obtain predictions and their confidence.

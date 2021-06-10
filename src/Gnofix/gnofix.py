@@ -3,7 +3,6 @@ import pickle
 import sys
 from time import time
 
-from src.utils import read_vcf, vcf_to_npy, fb2proba, npy_to_vcf
 from src.Gnofix.phasing import *
 from src.Gnofix.simple_switch import simple_switch
 

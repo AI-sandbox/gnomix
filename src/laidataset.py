@@ -229,7 +229,10 @@ def write_output(root,dataset):
 class LAIDataset:
     
     
-    def __init__(self,chm,reference,genetic_map):
+    def __init__(self,chm,reference,genetic_map,seed=94305):
+
+        np.random.seed(seed)
+
         self.chm = int(chm)
         
         # vcf data
@@ -243,7 +246,6 @@ class LAIDataset:
         self.call_data = vcf_data["calldata/GT"]
         self.vcf_samples = vcf_data["samples"]
 
-
         # genetic map data
         print("Getting genetic map info...")
         self.morgans, self.breakpoint_prob = get_chm_info(genetic_map, self.pos_snps, self.chm)
@@ -256,10 +258,7 @@ class LAIDataset:
         
         self: chm, num_snps, morgans, breakpoint_prob, splits, pop_to_num, num_to_pop
         sample_map_data => sample name, population, population code, (maternal, paternal, name), weight, split
-        
-        
         """
-        
         
         # sample map data
         print("Getting sample map info...")
