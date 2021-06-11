@@ -29,9 +29,9 @@ $ python3 gnomix.py <query_file> <genetic_map_file> <output_basename> <chr_nr> <
 ```
 
 where 
-- <*query_file*> is a .vcf or .vcf.gz file containing the query haplotypes which are to be analyzed (see example in the **demo_data/** folder)
-- <*genetic_map_file*> is the genetic map file (see example in the **demo_data/** folder)
-- <*output_basename*>.msp.tsv and <*output_basename*>.fb.tsv is where the predictions are written (see details in **Output** below and an example in the **demo_data/** folder)
+- <*query_file*> is a .vcf or .vcf.gz file containing the query haplotypes which are to be analyzed (see example in the **demo/data/** folder)
+- <*genetic_map_file*> is the genetic map file (see example in the **demo/data/** folder)
+- <*output_basename*>.msp.tsv and <*output_basename*>.fb.tsv is where the predictions are written (see details in **Output** below and an example in the **demo/data/** folder)
 - <*chr_nr*> is the chromosome number
 - <*phase*> is either True or False corresponding to the intent of using the predicted ancestry for phasing (see details in **Phasing** below and in the **gnofix/** folder)
 - <*path_to_model*> is a path to the model used for predictions (see **Pre-trained Models** below)
