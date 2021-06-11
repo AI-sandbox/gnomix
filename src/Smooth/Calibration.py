@@ -51,7 +51,7 @@ class Calibrator():
             lb = preprocessing.LabelBinarizer().fit(y)
             y_cal_ohe = lb.transform(y)
             
-            for i in range(self.n_classes):    
+            for i in range(self.n_classes):
                 self.models[i] = IsotonicRegression(out_of_bounds = 'clip').fit(proba[:,i], y_cal_ohe[:,i])
 
     def transform(self, proba):

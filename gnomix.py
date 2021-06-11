@@ -79,7 +79,7 @@ def run_inference(base_args, model, verbose):
     if verbose:
         print("Writing inference to disc...")
     meta_data = get_meta_data(chm, model.snp_pos, query_vcf_data['variants/POS'], model.W, model.M, gen_map_df)
-    out_prefix = output_path + "/" + "query_results" # NOTE: changed....
+    out_prefix = output_path + "/" + "query_results"
     write_msp_tsv(out_prefix, meta_data, y_pred_query, model.population_order, query_vcf_data['samples'])
     write_fb_tsv(out_prefix, meta_data, y_proba_query, model.population_order, query_vcf_data['samples'])
     
