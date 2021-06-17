@@ -1,22 +1,10 @@
-import allel
 import numpy as np
 import pandas as pd
 import os
 from collections import namedtuple
 import scipy.interpolate
 
-
-def read_vcf(reference, chm):
-    # try reading the vcf file
-    vcf_data = allel.read_vcf(reference,region = chm)
-    # try reading with name "chr"
-    if vcf_data == None:
-        vcf_data = allel.read_vcf(reference,region = "chr"+chm)
-    # raise exception
-    if vcf_data == None:
-        raise Exception("VCF file does not contain chromosome: {}".format(chm))
-        
-    return vcf_data
+from src.utils import read_vcf
 
 def get_chm_info(genetic_map,variants_pos,chm):
 
@@ -76,7 +64,6 @@ def get_sample_map_data(sample_map, sample_weights=None):
         else:
             ancestry_map[i] = curr
             curr += 1
-    # print("Ancestry map",ancestry_map)
     sample_map_data["population_code"] = sample_map_data["population"].apply(ancestry_map.get)
 
     if sample_weights is not None:
@@ -102,7 +89,6 @@ def build_founders(sample_map_data,gt_data,chm_length_snps):
     gt_data shape: (num_snps, num_samples, 2)
     
     """
-
 
     # building founders
     founders = []
@@ -280,10 +266,6 @@ class LAIDataset:
         self.sample_map_data["founders"] = build_founders(self.sample_map_data,self.call_data,self.num_snps)
         self.sample_map_data.drop(['index_in_reference'], axis=1, inplace=True)
         
-        # now split into train1, train2, val optionally...
-        self.sample_map_data["split"] = ["None"]*len(self.sample_map_data)
-        self.splits = {"None":len(self)}
-        
     def __len__(self):
         return len(self.sample_map_data)
     
@@ -303,35 +285,62 @@ class LAIDataset:
         }
         return metadict
         
+    def split_sample_map(self, ratios, split_names=None):
+        """
+        Given sample_ids, populations and the amount of data to be put into each set,
+        Split it such that all sets get even distribution of sample_ids for each population.
+        """
+
+        assert sum(ratios) == 1, "ratios must sum to 1"
+
+        split_names = ["set_"+str(i) for i in range(len(ratios))] if split_names is None else split_names
+        
+        set_ids = [[] for _ in ratios]
+        
+        for p in np.unique(self.sample_map_data["population"]):
+
+            # subselect population
+            pop_idx = self.sample_map_data["population"] == p
+            pop_sample_ids = list(np.copy(self.sample_map_data["sample"][pop_idx]))
+            n_pop = len(pop_sample_ids)
+
+            # find number of samples in each set
+            n_sets = [round(r*n_pop) for r in ratios]
+            while sum(n_sets) > n_pop:
+                n_sets[0] -= 1    
+            while sum(n_sets) < n_pop:
+                n_sets[-1] += 1
+
+            # divide the samples accordingly
+            for s, r in enumerate(ratios):
+                n_set = n_sets[s]
+                set_ids_idx = np.random.choice(len(pop_sample_ids),n_set,replace=False)
+                set_ids[s] += [[pop_sample_ids.pop(idx), p, split_names[s]] for idx in sorted(set_ids_idx,reverse=True)]
+
+        split_df = pd.DataFrame(np.concatenate(set_ids), columns=["sample", "population", "split"])
+        return split_df
+        
     def create_splits(self,splits,outdir=None):
         print("Splitting sample map...")
-        # create len(splits) splits
-        # splits is a dict with some proportions
         
+        # splits is a dict with some proportions, splits keys must be str
         assert(type(splits)==dict)
-        # splits keys must be str
         self.splits = splits
         split_names, prop = zip(*self.splits.items())
-        prop = np.array(prop) / np.sum(prop)
-        print(splits)
-        numbers = {}
-        numbers["train1"] = int(prop[0] * len(self))
-        numbers["train2"] = int(prop[1] * len(self)) if "val" in self.splits else len(self) - numbers["train1"]
-        numbers["val"] = len(self) - numbers["train1"] - numbers["train2"]
-        print("Split is as follows: ",numbers)
-        splits_list = ["train1"]*numbers["train1"] + ["train2"]*numbers["train2"] + ["val"]*numbers["val"]
-        np.random.shuffle(splits_list)
-        assert(len(splits_list) == len(self))
 
-        self.sample_map_data["split"] = splits_list
+        # normalize
+        prop = np.array(prop) / np.sum(prop)
+    
+        # split founders randomly within each ancestry
+        split_df = self.split_sample_map(ratios=prop, split_names=split_names)
+        self.sample_map_data = self.sample_map_data.merge(split_df, on=["sample", "population"])
 
         # write a sample map to outdir/split.map
         if outdir is not None:
             print("Writing split sample map files to: ",outdir)
             for split in splits:
                 split_file = os.path.join(outdir,split+".map")
-                split_data = self.return_split(split)[["sample","population"]].to_csv(split_file,sep="\t",header=False,index=False)
-                  
+                self.return_split(split)[["sample","population"]].to_csv(split_file,sep="\t",header=False,index=False)
         
     def return_split(self,split):
         if split in self.splits:
@@ -340,29 +349,33 @@ class LAIDataset:
             raise Exception("split does not exist!!!")
         
         
-    def simulate(self,num_samples,split="None",gen=None,outdir=None,return_out=True):
+    def simulate(self,num_samples,split="None",gen=None,outdir=None,return_out=True, verbose=False):
         
         # general purpose simulator: can simulate any generations, either n of gen g or 
         # just random n samples from gen 2 to 100.
         
-        assert(type(split)==str)   
-        print("Simulating using split: ",split) 
+        assert(type(split)==str)
+        if verbose:
+            print("Simulating using split: ",split) 
         
         # get generations for each sample to be simulated
         if gen == None:
             gens = np.random.randint(2,100,num_samples)
-            print("Simulating random generations...")
+            if verbose:
+                print("Simulating random generations...")
             
         else:
             gens = gen * np.ones((num_samples),dtype=int)
-            print("Simulating generation: ",gen)
+            if verbose:
+                print("Simulating generation: ",gen)
         # print(gens)
         
         # corner case
         if gen == 0:
             simulated_samples =  self.sample_map_data[self.sample_map_data["split"]==split]["founders"].tolist()
             if outdir is not None:
-                print("Writing simulation output to: ",outdir)
+                if verbose:
+                    print("Writing simulation output to: ",outdir)
                 write_output(outdir,simulated_samples)
         
             # return the samples
@@ -379,7 +392,8 @@ class LAIDataset:
             raise Exception("Split does not exist!!!")
         
         # run simulation
-        print("Generating {} admixed samples".format(num_samples))
+        if verbose:
+            print("Generating {} admixed samples".format(num_samples))
         simulated_samples = []
         for i in range(num_samples):
             
@@ -393,7 +407,8 @@ class LAIDataset:
             
         # write outputs
         if outdir is not None:
-            print("Writing simulation output to: ",outdir)
+            if verbose:
+                print("Writing simulation output to: ",outdir)
             write_output(outdir,simulated_samples)
             # TODO: optionally, we can even convert these to vcf and result (ancestry) files
         

@@ -15,11 +15,6 @@ from src.laidataset import LAIDataset
 
 from src.model import Gnomix
 
-
-# from config import verbose, run_simulation, founders_ratios, generations, rm_simulated_data
-# from config import model_name, inference, window_size_cM, smooth_size, missing, n_cores, r_admixed
-# from config import retrain_base, calibrate, context_ratio, instance_name
-
 CLAIMER = 'When using this software, please cite: \n' + \
           'Kumar, A., Montserrat, D.M., Bustamante, C. and Ioannidis, A. \n' + \
           '"XGMix: Local-Ancestry Inference With Stacked XGBoost" \n' + \
@@ -167,15 +162,12 @@ def train_model(config, data_path, verbose):
         del generations["val"]
     else:
         generations["val"] = [gen for gen in generations["val"] if gen != 0]
-    #print(generations)
 
     output_path = base_args["output_basename"]
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
     # Either load pre-trained model or simulate data from reference file, init model and train it
-    # Set output path: master change 2
-
     # Processing data
     if verbose:
         print("Reading data...")
@@ -280,12 +272,6 @@ def simulate_splits(base_args,config):
         total_sim = max(len(laidataset.return_split(split))*r_admixed, min_splits[split])
         num_outs[split] = int(total_sim/len(generations[split]))
 
-    # simulate all splits
-    # for split in splits:
-    #   create path
-    #   for gen in generations[split]:
-    #       simulate, write output
-    #       laidataset.simulate(10,split="train1",gen=10,outdir="/home/arvindsk/test/",return_out=False)
     if verbose:
         print("Running Simulation...")
     for split in splits:
@@ -351,13 +337,11 @@ if __name__ == "__main__":
 
     else:
         print("Launching in training mode...")
-        # base_args is a dict
-        # update it with the config yaml
         with open(base_args["config_file"],"r") as file:
             config = yaml.load(file)
         
-        verbose = config["verbose"]
         # process args here...
+        verbose = config["verbose"]
 
         if config["simulation"]["splits"]["ratios"].get("val") == 0:
             del config["simulation"]["splits"]["ratios"]["val"]

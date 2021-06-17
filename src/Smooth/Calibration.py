@@ -48,8 +48,8 @@ class Calibrator():
         if self.method =='Isotonic':
 
             # binarize class labels
-            lb = preprocessing.LabelBinarizer().fit(y)
-            y_cal_ohe = lb.transform(y)
+            lb = preprocessing.OneHotEncoder().fit(y.reshape(-1,1))
+            y_cal_ohe = lb.transform(y.reshape(-1,1)).toarray()
             
             for i in range(self.n_classes):
                 self.models[i] = IsotonicRegression(out_of_bounds = 'clip').fit(proba[:,i], y_cal_ohe[:,i])

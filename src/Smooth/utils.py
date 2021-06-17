@@ -24,7 +24,7 @@ def slide_window(B, S, y=None):
 
     # reshape
     X_slide = X_slide.reshape(N*W,A*S)
-    y_slide = None if y is None else y.reshape(-1)
+    y_slide = None if y is None else y.reshape(N*W)
 
     return X_slide, y_slide
 

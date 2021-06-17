@@ -57,7 +57,8 @@ def read_vcf(vcf_file, chm=None, fields=None, verbose=False):
     fields="*" extracts more information, take out if ruled unecessary
     """
     if fields is None:
-        fields = ['variants/CHROM', 'variants/POS', 'calldata/GT', 'variants/REF', 'samples']
+        # fields = ['variants/CHROM', 'variants/POS', 'calldata/GT', 'variants/REF', 'samples']
+        fields = "*"
 
     if vcf_file[-3:]==".gz":
         with gzip.open(vcf_file, 'rb') as vcf:
