@@ -13,9 +13,12 @@ class LogisticRegressionBase(Base):
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.base_multithread = True
+
         self.init_base_models(
             lambda : LogisticRegression(penalty="l2", C = 3., solver="liblinear", max_iter=1000)
         )
+
 
 class XGBBase(Base):
 

@@ -1,7 +1,10 @@
 import numpy as np
 import sys
+from numpy.lib.function_base import vectorize
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
 from time import time
+from multiprocessing import get_context
+import tqdm
 
 class Base():
 
@@ -18,6 +21,7 @@ class Base():
         self.n_jobs = n_jobs
         self.seed = seed
         self.verbose = verbose
+        self.base_multithread = False
 
         self.time = {}
 
@@ -31,23 +35,32 @@ class Base():
             - and the attributes
                 - classes_
         """
-        self.models = {}
-        for w in range(self.W):
-            self.models["model"+str(w*self.M)] = model_factory()
+        self.models = [model_factory() for _ in range(self.W)]
 
+    def pad(self,X):
+        pad_left = np.flip(X[:,0:self.context],axis=1)
+        pad_right = np.flip(X[:,-self.context:],axis=1)
+        return np.concatenate([pad_left,X,pad_right],axis=1)
+        
     def train(self, X, y, verbose=True):
         """
         inputs:
             - X: np.array of shape (N, C) where N is sample size and C chm length
             - y: np.array of shape (N, C) where N is sample size and C chm length
         """
+        try:
+            np.lib.stride_tricks.sliding_window_view
+            return self.train_vectorized(X, y)
+        except AttributeError:
+            print("Vectorized implementation requires numpy versions 1.20+.. Using loopy version..")
+            return self.train_loopy(X, y, verbose=verbose)
+
+    def train_loopy(self, X, y, verbose=True):
 
         t = time()
 
         if self.context != 0.0:
-            pad_left = np.flip(X[:,0:self.context],axis=1)
-            pad_right = np.flip(X[:,-self.context:],axis=1)
-            X = np.concatenate([pad_left,X,pad_right],axis=1)
+            X = self.pad(X)
 
         start = self.context
 
@@ -60,7 +73,7 @@ class Base():
                 X_w = X[:,start-self.context:]
 
             # train model
-            self.models["model"+str(i*self.M)].fit(X_w,y_w)
+            self.models[i].fit(X_w,y_w)
 
             start += self.M
 
@@ -72,6 +85,38 @@ class Base():
 
         self.time["train"] = time() - t
 
+    def train_base_model(self, b, X, y):
+        return b.fit(X, y)
+
+    def train_vectorized(self, X, y):
+
+        slide_window = np.lib.stride_tricks.sliding_window_view
+
+        t = time()
+
+        # pad
+        if self.context != 0.0:
+            X = self.pad(X)
+            
+        # convolve
+        M_ = self.M + 2*self.context        
+        idx = np.arange(0,self.C,self.M)[:-2]
+        X_b = slide_window(X, M_, axis=1)[:,idx,:]
+
+        # stack
+        train_args = tuple(zip( self.models[:-1], np.swapaxes(X_b,0,1), np.swapaxes(y,0,1)[:-1] ))
+        rem = self.C - self.M*self.W
+        train_args += ((self.models[-1], X[:,X.shape[1]-(M_+rem):], y[:,-1]),)
+
+        # train
+        log_iter = tqdm.tqdm(train_args, total=self.W, bar_format='{l_bar}{bar:40}{r_bar}{bar:-40b}')
+        if self.base_multithread:
+            with get_context("spawn").Pool() as pool:
+                self.models = pool.starmap(self.train_base_model, log_iter) 
+        else:
+            self.models = [self.train_base_model(*b) for b in log_iter]
+
+        self.time["train"] = time() - t
 
     def predict_proba(self, X):
         """
@@ -87,9 +132,7 @@ class Base():
         start = self.context
         
         if self.context != 0.0:
-            pad_left = np.flip(X[:,0:self.context],axis=1)
-            pad_right = np.flip(X[:,-self.context:],axis=1)
-            X = np.concatenate([pad_left,X,pad_right],axis=1)
+            X = self.pad(X)
         
         for i in range(self.W):
             X_w = X[:,start-self.context:start+self.context+self.M]
@@ -97,8 +140,7 @@ class Base():
             if i == self.W-1:
                 X_w = X[:,start-self.context:]
 
-            base_model = self.models["model"+str(i*self.M)]
-            B[:,i,base_model.classes_] = base_model.predict_proba(X_w)
+            B[:,i,self.models[i].classes_] = self.models[i].predict_proba(X_w)
 
             start += self.M
 
