@@ -328,11 +328,13 @@ class LAIDataset:
         in_split_data = self.sample_map_data[self.sample_map_data["split"]==in_split]
         in_pop = np.unique(in_split_data["population"])
 
-        for p in from_pop:
-            if p not in in_pop:
+        missing_pops = [p for p in from_pop if p not in in_pop]
+
+        if len(missing_pops) > 0:
+            print("WARNING: Small sample size from populations: {}".format(np.array(missing_pops)))
+            print("... Proceeding by including duplicates in both base- and smoother data...")
+            for p in missing_pops:
                 # add some amount of founders to in_pop
-                print("Warning! Small sample size from population: {}".format(p))
-                print("Proceeding by including duplicates in both base data and smoother data...")
                 from_founders = from_split_data[from_split_data["population"] == p].copy()
                 n_copies = min(ave_pop_size, len(from_founders))
                 copies = from_founders.sample(n_copies)
@@ -357,7 +359,6 @@ class LAIDataset:
 
         # write a sample map to outdir/split.map
         if outdir is not None:
-            print("Writing split sample map files to: ",outdir)
             for split in splits:
                 split_file = os.path.join(outdir,split+".map")
                 self.return_split(split)[["sample","population"]].to_csv(split_file,sep="\t",header=False,index=False)
