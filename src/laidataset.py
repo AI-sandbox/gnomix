@@ -319,7 +319,26 @@ class LAIDataset:
 
         split_df = pd.DataFrame(np.concatenate(set_ids), columns=["sample", "population", "split"])
         return split_df
-        
+
+    def include_all(self, from_split, in_split):
+        from_split_data = self.sample_map_data[self.sample_map_data["split"]==from_split]
+        from_pop = np.unique(from_split_data["population"])
+        ave_pop_size = np.round(len(from_split_data)/len(from_pop))
+
+        in_split_data = self.sample_map_data[self.sample_map_data["split"]==in_split]
+        in_pop = np.unique(in_split_data["population"])
+
+        for p in from_pop:
+            if p not in in_pop:
+                # add some amount of founders to in_pop
+                print("Warning! Small sample size from population: {}".format(p))
+                print("Proceeding by including duplicates in both base data and smoother data...")
+                from_founders = from_split_data[from_split_data["population"] == p].copy()
+                n_copies = min(ave_pop_size, len(from_founders))
+                copies = from_founders.sample(n_copies)
+                copies["split"] = [in_split]*n_copies
+                self.sample_map_data = self.sample_map_data.append(copies)
+
     def create_splits(self,splits,outdir=None):
         print("Splitting sample map...")
         
@@ -334,6 +353,7 @@ class LAIDataset:
         # split founders randomly within each ancestry
         split_df = self.split_sample_map(ratios=prop, split_names=split_names)
         self.sample_map_data = self.sample_map_data.merge(split_df, on=["sample", "population"])
+        self.include_all(from_split="train1",in_split="train2")
 
         # write a sample map to outdir/split.map
         if outdir is not None:
