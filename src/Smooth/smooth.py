@@ -28,6 +28,8 @@ class Smoother():
 
     def train(self,B,y):
 
+        assert len(np.unique(y)) == self.A, "Smoother training data does not include all populations"
+
         t = time()
 
         B_s, y_s = self.process_base_proba(B, y)
