@@ -121,13 +121,10 @@ def get_data(data_path, generations, window_size_cM):
         return X, y
 
     X_t1, y_t1 = read("train1")
-    print("train1 shapes: ",X_t1.shape)
     X_t2, y_t2 = read("train2")
-    print("train2 shapes: ",X_t2.shape)
     X_v, y_v = (None, None)
     if generations.get("val") is not None:
         X_v, y_v   = read("val")
-        print("val shapes: ",X_v.shape)
 
     data = ((X_t1, y_t1), (X_t2, y_t2), (X_v, y_v))
 
@@ -253,9 +250,7 @@ def simulate_splits(base_args,config):
     splits = config["simulation"]["splits"]["ratios"]
     if len(laidataset) <= 25:
         if splits.get("val"):
-            print("WARNING!!!")
-            print("Too few samples to run validation")
-            print("Removing val...")
+            print("WARNING: Too few samples to run validation.")
             del config["simulation"]["splits"]["ratios"]["val"]
     laidataset.create_splits(splits,sample_map_path)
 
@@ -338,7 +333,7 @@ if __name__ == "__main__":
     else:
         print("Launching in training mode...")
         with open(base_args["config_file"],"r") as file:
-            config = yaml.load(file)
+            config = yaml.load(file, Loader=yaml.UnsafeLoader)
         
         # process args here...
         verbose = config["verbose"]
