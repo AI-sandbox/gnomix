@@ -66,6 +66,13 @@ def read_vcf(vcf_file, chm=None, fields=None, verbose=False):
     else: 
         data = allel.read_vcf(vcf_file, region=chm, fields=fields)
 
+    if data is None:
+        if chm is None:
+            print("No data found in vcf file {}".format(vcf_file))
+        else:
+            print('Found no data in vcf file {} in region labeled "{}". Using all data from vcf instead...'.format(vcf_file, chm))
+            return read_vcf(vcf_file, None, fields, verbose)
+
     if verbose:    
         chmlen, n, _ = data["calldata/GT"].shape
         print("File read:", chmlen, "SNPs for", n, "individuals")
