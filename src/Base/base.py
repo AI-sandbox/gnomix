@@ -22,6 +22,7 @@ class Base():
         self.seed = seed
         self.verbose = verbose
         self.base_multithread = False
+        self.log_inference = False
 
         self.time = {}
 
@@ -56,6 +57,7 @@ class Base():
             return self.train_loopy(X, y, verbose=verbose)
 
     def train_loopy(self, X, y, verbose=True):
+        """Depricated"""
 
         t = time()
 
@@ -87,6 +89,9 @@ class Base():
 
     def train_base_model(self, b, X, y):
         return b.fit(X, y)
+
+    def predict_proba_base_model(self, b, X):
+        return b.predict_proba(X)
 
     def train_vectorized(self, X, y):
 
@@ -120,9 +125,58 @@ class Base():
 
     def predict_proba(self, X):
         """
+        inputs:
+            - X: np.array of shape (N, C) where N is sample size and C chm length
+            - y: np.array of shape (N, C) where N is sample size and C chm length
         returns 
             - B: base probabilities of shape (N,W,A)
         """
+        try:
+            np.lib.stride_tricks.sliding_window_view
+            return self.predict_proba_vectorized(X)
+        except AttributeError:
+            print("Vectorized implementation requires numpy versions 1.20+.. Using loopy version..")
+            return self.predict_proba_loopy(X)
+
+    def predict_proba_vectorized(self, X):
+
+        slide_window = np.lib.stride_tricks.sliding_window_view
+
+        t = time()
+
+        # pad
+        if self.context != 0.0:
+            X = self.pad(X)
+            
+        # convolve
+        M_ = self.M + 2*self.context        
+        idx = np.arange(0,self.C,self.M)[:-2]
+        X_b = slide_window(X, M_, axis=1)[:,idx,:]
+
+        # stack
+        base_args = tuple(zip( self.models[:-1], np.swapaxes(X_b,0,1) ))
+        rem = self.C - self.M*self.W
+        base_args += ((self.models[-1], X[:,X.shape[1]-(M_+rem):]), )
+
+        if self.log_inference:
+            base_args = tqdm.tqdm(base_args, total=self.W, bar_format='{l_bar}{bar:40}{r_bar}{bar:-40b}')
+
+        # predict proba
+        if self.base_multithread:
+            with get_context("spawn").Pool() as pool:
+                B = np.array(pool.starmap(self.predict_proba_base_model, base_args))
+        else:
+            B = np.array([self.predict_proba_base_model(*b) for b in base_args])
+
+        B = np.swapaxes(B, 0, 1)
+
+        self.time["inference"] = time() - t
+
+        return B
+
+
+    def predict_proba_loopy(self, X):
+        """Depricated"""
 
         t = time()
 
