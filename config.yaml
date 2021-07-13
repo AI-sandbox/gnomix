@@ -29,3 +29,6 @@ model:
   calibrate: True
   mode_filter_size: 5 # potentially remove...
   n_cores: 30         # how many units of cpu to use
+
+inference:
+  visualize_inference: False # visualize chromosome paintings

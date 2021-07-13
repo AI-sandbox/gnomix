@@ -35,7 +35,7 @@ def load_model(path_to_model, verbose=True):
 
     return model
 
-def run_inference(base_args, model, verbose):
+def run_inference(base_args, model, visualize, verbose):
 
     if verbose:
         print("Loading and processing query file...")
@@ -72,18 +72,19 @@ def run_inference(base_args, model, verbose):
 
     # writing the result to disc
     if verbose:
-        print("Writing inference to disc...")
+        print("Saving results...")
     meta_data = get_meta_data(chm, model.snp_pos, query_vcf_data['variants/POS'], model.W, model.M, gen_map_df)
     out_prefix = output_path + "/" + "query_results"
     write_msp_tsv(out_prefix, meta_data, y_pred_query, model.population_order, query_vcf_data['samples'])
     write_fb_tsv(out_prefix, meta_data, y_proba_query, model.population_order, query_vcf_data['samples'])
 
     # visualize results
-    vis_path = join_paths(output_path, "visual", verb=False)
-    msp_df = pd.read_csv(out_prefix+".msp.tsv", sep="\t", skiprows=[0])
-    for sample_id in query_vcf_data['samples']:
-        sample_path = join_paths(vis_path, sample_id, verb=False)
-        plot_chm(sample_id, msp_df, img_name=sample_path+"/chromosome_painting")
+    if visualize:
+        vis_path = join_paths(output_path, "visual", verb=False)
+        msp_df = pd.read_csv(out_prefix+".msp.tsv", sep="\t", skiprows=[0])
+        for sample_id in query_vcf_data['samples']:
+            sample_path = join_paths(vis_path, sample_id, verb=False)
+            plot_chm(sample_id, msp_df, img_name=sample_path+"/chromosome_painting")
 
     return
 
@@ -369,4 +370,4 @@ if __name__ == "__main__":
     # run inference if applicable.
     if base_args["query_file"]:
         print("Launching inference...")
-        run_inference(base_args, model, verbose=True)
+        run_inference(base_args, model, visualize=config["inference"]["visualize_inference"], verbose=True)
