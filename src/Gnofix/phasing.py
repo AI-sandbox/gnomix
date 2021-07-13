@@ -1,15 +1,14 @@
-import matplotlib
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from matplotlib import animation
 import numpy as np
-import os
 import pandas as pd
-from scipy import stats
 from scipy.interpolate import interp1d
 from sklearn.metrics import confusion_matrix
 import sys
 import seaborn as sns
+
 
 FIGSIZE = (20,1) # None
 MARKERSIZE = 100
@@ -395,9 +394,12 @@ def plot_matching_vs_dist(dist_scram, corr_scram, dists_corr, corrs_corr, labs, 
 
     plt.show()
 
-def plot_matching_vs_dist3(dists, corrs, labs, colors=None, n_bins=500, max_len_cM=15, figsize=(14,8), title="", alpha=1):
+def plot_matching_vs_dist3(dists, corrs, labs, colors=None, n_bins=500, max_len_cM=15, figsize=(14,8), title="", alpha=1, fz=None, figname=None):
 
     sns.set_style("white")
+    mpl.rcParams['xtick.labelsize'] = fz 
+    mpl.rcParams['ytick.labelsize'] = fz 
+    mpl.rcParams['legend.fontsize'] = fz
 
     haplo_len = len(dists[0])
     if colors is None:
@@ -423,9 +425,12 @@ def plot_matching_vs_dist3(dists, corrs, labs, colors=None, n_bins=500, max_len_
     ax.set_xlim(0,max_len_cM)
     ax.set_ylim(0,1)
     ax.set_title(title)
-    ax.set_xlabel("Distance between pairs (cM)")
-    ax.set_ylabel("Fraction of SNPs correctly phased")
+    ax.set_xlabel("Distance between pairs [cM]", fontsize=fz)
+    ax.set_ylabel("Fraction of SNP pairs correctly phased", fontsize=fz)
     
     fig.suptitle(title, fontsize=16)
+
+    if figname is not None:
+        plt.savefig(figname+'.svg', format='svg')
 
     plt.show()
