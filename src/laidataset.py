@@ -51,7 +51,7 @@ def get_chm_info(genetic_map,variants_pos,chm):
     return chm_length_morgans, bp
 
 def get_sample_map_data(sample_map, sample_weights=None):
-    sample_map_data = pd.read_csv(sample_map,delimiter="\t",header=None,comment="#")
+    sample_map_data = pd.read_csv(sample_map,delimiter="\t",header=None,comment="#", dtype="object")
     sample_map_data.columns = ["sample","population"]
 
     # creating ancestry map into integers from strings
