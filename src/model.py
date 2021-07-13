@@ -51,6 +51,8 @@ class Gnomix():
                 base = LogisticRegressionBase
             elif mode == "best":
                 base = RandomStringKernelBase
+            elif mode == "large":
+                base = LogisticRegressionBase
             else:
                 base = LogisticRegressionBase
             if verbose:
@@ -60,6 +62,9 @@ class Gnomix():
                 smooth = CRF_Smoother 
             elif mode=="best":
                 smooth = XGB_Smoother
+            if mode == "large":
+                from src.Smooth.models import CNN_Smoother
+                smooth = CNN_Smoother 
             else:
                 smooth = XGB_Smoother
             if verbose:
