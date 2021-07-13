@@ -4,7 +4,7 @@ from sklearn.metrics import confusion_matrix
 import sys
 from time import time
 
-from src.Base.models import LogisticRegressionBase, RandomStringKernelBase
+from src.Base.models import LogisticRegressionBase, CovRSKBase
 from src.Smooth.models import XGB_Smoother, CRF_Smoother
 from src.Gnofix.gnofix import gnofix
 
@@ -50,7 +50,7 @@ class Gnomix():
             if mode == "fast":
                 base = LogisticRegressionBase
             elif mode == "best":
-                base = RandomStringKernelBase
+                base = CovRSKBase
             elif mode == "large":
                 base = LogisticRegressionBase
             else:
