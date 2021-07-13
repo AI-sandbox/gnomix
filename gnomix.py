@@ -3,6 +3,7 @@ import yaml
 import gzip
 import numpy as np
 import os
+import pandas as pd
 import pickle
 import sys
 
@@ -10,7 +11,7 @@ from src.utils import run_shell_cmd, join_paths, read_vcf, vcf_to_npy, npy_to_vc
 from src.utils import read_genetic_map, save_dict, load_dict
 from src.preprocess import load_np_data, data_process
 from src.postprocess import get_meta_data, write_msp_tsv, write_fb_tsv
-from src.visualization import plot_cm
+from src.visualization import plot_cm, plot_chm
 from src.laidataset import LAIDataset
 
 from src.model import Gnomix
@@ -69,7 +70,6 @@ def run_inference(base_args, model, verbose):
         npy_to_vcf(query_vcf_data, X_query_phased[:,fmt_idx], query_phased_prefix)
         y_proba_query = model.predict_proba(X_query_phased)
 
-
     # writing the result to disc
     if verbose:
         print("Writing inference to disc...")
@@ -77,7 +77,14 @@ def run_inference(base_args, model, verbose):
     out_prefix = output_path + "/" + "query_results"
     write_msp_tsv(out_prefix, meta_data, y_pred_query, model.population_order, query_vcf_data['samples'])
     write_fb_tsv(out_prefix, meta_data, y_proba_query, model.population_order, query_vcf_data['samples'])
-    
+
+    # visualize results
+    vis_path = join_paths(output_path, "visual", verb=False)
+    msp_df = pd.read_csv(out_prefix+".msp.tsv", sep="\t", skiprows=[0])
+    for sample_id in query_vcf_data['samples']:
+        sample_path = join_paths(vis_path, sample_id, verb=False)
+        plot_chm(sample_id, msp_df, img_name=sample_path+"/chromosome_painting")
+
     return
 
 def get_data(data_path, generations, window_size_cM):
