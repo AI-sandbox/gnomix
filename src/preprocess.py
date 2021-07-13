@@ -77,8 +77,8 @@ def data_process(X, labels, window_size, missing=0.0):
         print("Simulating missing values...")
         X = simulate_missing_values(X, missing)
 
-    X = np.array(X).astype("int8")
-    y = np.array(y).astype("int16")
+    X = np.array(X, dtype="int8")
+    y = np.array(y, dtype="int16")
 
     return X, y
 
