@@ -5,8 +5,7 @@ from xgboost import XGBClassifier
 from sklearn import svm
 
 from src.Base.base import Base
-from src.Base.string_kernel import string_kernel, random_string_kernel
-from src.Base.string_kernel import string_kernel_singlethread, random_string_kernel_singlethread
+from src.Base.string_kernel import CovRSK, CovRSK_singlethread, string_kernel, string_kernel_singlethread
 
 class LogisticRegressionBase(Base):
 
@@ -84,25 +83,32 @@ class StringKernelBase(Base):
 
         assert int(np.__version__.split(".")[1]) >= 20, "String kernel implementation requires numpy versions 1.20+"
 
+        self.log_inference = True # display progress of predict proba
         self.train_admix = False # save computation
-
-        self.kernel = string_kernel if self.n_jobs!=1 else string_kernel_singlethread
+        self.base_multithread = True
+        self.kernel = string_kernel_singlethread if self.n_jobs==1 or self.base_multithread else string_kernel
 
         self.init_base_models(
             lambda : svm.SVC(kernel=self.kernel, probability=True)
         )
 
-
-class RandomStringKernelBase(Base):
+class CovRSKBase(Base):
 
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         assert int(np.__version__.split(".")[1]) >= 20, "String kernel implementation requires numpy versions 1.20+"
         
+        self.log_inference = True # display progress of predict proba
         self.train_admix = False # save computation
 
-        self.kernel = random_string_kernel if self.n_jobs!=1 else random_string_kernel_singlethread
+        if self.M < 500:
+            self.base_multithread = True
+            self.kernel = CovRSK_singlethread
+        else:
+            # More robust to memory
+            self.base_multithread = False
+            self.kernel = CovRSK
 
         self.init_base_models(
             lambda : svm.SVC(kernel=self.kernel, probability=True)
