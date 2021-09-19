@@ -1,8 +1,8 @@
-# Gnomix: High Resolution Ancestry Deconvolution for Next Generation Sequencing
+# Gnomix: High Resolution Ancestry Deconvolution for Next Generation Genomic Data
 
 This repository includes a python implemenation of Gnomix, a fast and accurate Local Ancestry Method.
 
-![Visualization of the process](doc/fig/gnomix.pdf)
+![Visualization of the process](doc/fig/gnomix_diagram.png)
 
 Gnomix can be used in two ways:
 
