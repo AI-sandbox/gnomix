@@ -74,7 +74,7 @@ If no config is given, the program uses the default. The config file has advance
   - n_cores (int, positive) - how many units of cpu to use
 
 #### Calibration
-To ensure that gnomix outputs probability estimatesthat reflect it's true confidence and accuracy, we recommend using calibration. We use Isotonic Regression to map the predicted probabilities to calibrated probabilities where the latter is more likely to have predictions with confidence X% correct X% of the time.
+To ensure that gnomix outputs probability estimates that reflect it's true confidence and accuracy, we recommend using calibration. We use Isotonic Regression to map the predicted probabilities to calibrated probabilities where the latter is more likely to have predictions with confidence X% correct X% of the time.
 
 ## Output
 
