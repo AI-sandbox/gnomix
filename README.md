@@ -2,7 +2,7 @@
 
 This repository includes a python implemenation of Gnomix, a fast and accurate Local Ancestry Method.
 
-![Visualization of the process](doc/fig/gnomix_diagram.png)
+![Visualization of the process](doc/fig/gnomix.pdf)
 
 Gnomix can be used in two ways:
 
