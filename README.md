@@ -58,11 +58,13 @@ The program uses these two files as input to our simulation algorithm (see **pya
 
 ### Advanced Options
 More advanced configuration settings can be found in *config.yaml*. 
-They include general settings, simulation settings and model settings. More details are given in the file itself. This can only be used if training a model from scratch. Simply pass the config file's path as the last argument. 
+They include general settings, simulation settings and model settings. More details are given in the file itself. If training a model from scratch you can also pass an alternative config file as the last argument:
+
 ```
 $ python3 gnomix.py <query_file> <genetic_map_file> <output_basename> <chr_nr> <phase> <reference_file> <sample_map_file> <config_file>
 ```
-If no config is given, the program uses the default. The config file has advanced training options. Some of the parameters are
+
+If no config is given, the program uses the default (*config.yaml*). The config file has advanced training options. Some of the parameters are
 - verbose (bool) - verbosity
 - simulation:
   - run: (bool) - whether to run simulation or not
@@ -80,15 +82,17 @@ If no config is given, the program uses the default. The config file has advance
   - calibrate (bool) - if True, applies calibration on output probabilities
   - n_cores (int, positive) - how many units of cpu to use
 
-#### Calibration
-To ensure that gnomix outputs probability estimates that reflect it's true confidence and accuracy, we recommend using calibration. We use Isotonic Regression to map the predicted probabilities to calibrated probabilities where the latter is more likely to have predictions with confidence X% correct X% of the time.
-
 ## Output
 
 The results (including predictions, trained models and analysis) are stored in the *<output_basename>* folder.
 
-### *<output_basename>/query_results*.msp
-The first line is a comment line, that specifies the order and encoding of populations, eg:
+### Predictions
+
+The inference is written to two files, one for a single ancestry estimates for each marker (qery_results.msp) and one for probability estimates for each ancestry at each marker (query_results.fb). Below, we describe the both files in more detail.
+
+#### query_results.msp
+
+In the query_results.msp file, the first line is a comment line, that specifies the order and encoding of populations, eg:
 #Sub_population order/code: golden_retriever=0 labrador_retriever=1 poodle poodle_small=2
 
 The second line specifies the column names, and every following line marks a genome position.
@@ -101,8 +105,9 @@ The first 6 columns specify
 
 The remaining columns give the predicted reference panel population for the given interval. A genotype has two haplotypes, so the number of predictions for a genotype is 2*(number of genotypes) and therefore the total number of columns in the file is 6 + 2*(number of genotypes)
 
-### *<output_basename>/query_results*.fb
-The first line is a comment line, that specifies the order of the populations, eg:
+#### query_results.fb
+
+In the query_results.fb file, the first line is a comment line, that specifies the order of the populations, eg:
 #reference_panel_population:	AFR	EUR	NAT
 
 The second line specifies the column names, and every following line marks a genome position.
@@ -121,7 +126,7 @@ The model's estimated accuracy is logged along with a confusion matrix which is 
 
 ### Simulated data
 The program simulates training data and stores in *<output_basename>/generated_data*. To automatically remove the created data when training is done,
-set *rm_simulated_data* to True in *config.py*. Note that in some cases, the simulated data can be re-used for training with similar settings. 
+set *rm_simulated_data* to True in *config.yaml*. Note that in some cases, the simulated data can be re-used for training with similar settings. 
 In those cases, not removing the data and then setting *run_simulation* to False will re-use the previously simulated data which can save a lot of time and compuation.
 
 ## Pre-Trained Models
@@ -141,11 +146,14 @@ Accurate phasing of genomic data is crucial for human demographic modeling and i
 ![Local Ancestry for Phasing Error Correction](src/Gnofix/figures/laipec_resized.png)
 Sequenced haplotypes phased with a phasing software (left). LAI is used to label haplotypes with ancestry predictions and phasing errors become evident (center). Phasing error correction using LAI is applied to correct phasing errors (right).
 
+## Calibration
+To ensure that gnomix outputs probability estimates that reflect it's true confidence and accuracy, we recommend using calibration. We use Isotonic Regression to map the predicted probabilities to calibrated probabilities where the latter is more likely to have predictions with confidence X% correct X% of the time.
+
 ## License
 
 **NOTICE**: This software is available for use free of charge for academic research use only. Commercial users, for profit companies or consultants, and non-profit institutions not qualifying as "academic research" must contact the [Stanford Office of Technology Licensing](https://otl.stanford.edu/) for a separate license. This applies to this repository directly and any other repository that includes source, executables, or git commands that pull/clone this repository as part of its function. Such repositories, whether ours or others, must include this notice. Academic users may fork this repository and modify and improve to suit their research needs, but also inherit these terms and must include a licensing notice to this effect.
 
-## Cite
+<!-- ## Cite
 
 #### When using this software, please cite: Kumar, A., Montserrat, D.M., Bustamante, C. and Ioannidis, A., "XGMix: Local-Ancestry Inference With Stacked XGBoost," International Conference on Learning Representations Workshops (ICLR, 2020, Workshop AI4AH).
 
@@ -171,7 +179,7 @@ https://arxiv.org/pdf/2004.12053.pdf
   journal={International Conference of Learning Representations Workshops, AI4CC},
   year={2020}
 }
-```
+``` -->
 
 
 
