@@ -71,14 +71,15 @@ If no config is given, the program uses the default (*config.yaml*). The config 
   - path: (path) - if run is False, use data from this location. Must have been created by gnomix in the past.
   - rm_data (bool) - whether to remove simulated data (if memory constrained). It is set to false if run is False
   - r_admixed (float,positive) - number of simulated individuals generated = r_admixed x Size of sample map
-  - splits: must contain train1, train2 and optionally val. If val ratio is 0, val is  ignored. generations indicates simulated individuals' generations. train1, train2 have 0 by default and val cannot have 0
+  - splits: must contain train1, train2 and optionally validation. If validation ratio is 0, validation is not performed
+  - generations indicates simulated individuals' generations. 
 - model:
   - name (string) - model's name: default is "model"
   - inference (string) - 3 possible options - best / fast / default. "best" uses random string kernel base + xgboost smoother. "fast" uses logistic regression base + crf smoother. "default" uses logistic regression base + xgboost smoother
   - window_size_cM (float, positive) -  size of window in centiMorgans
   - smooth_size (int, positive) - number of windows to be taken as context for smoother
   - context_ratio (float between 0 and 1) - context of base model windows
-  - retrain_base (bool) - retrain base models with train2, val data for a grand final base model
+  - retrain_base (bool) - retrain base models with train2, validation data for a final base model
   - calibrate (bool) - if True, applies calibration on output probabilities
   - n_cores (int, positive) - how many units of cpu to use
 
