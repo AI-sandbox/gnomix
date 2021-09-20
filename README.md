@@ -13,7 +13,7 @@ This repository includes a python implemenation of Gnomix, a fast and accurate l
 
 Gnomix can be used in two ways:
 
-- training a model from scratch using provided training data or 
+- training a model from scratch using reference training data or 
 - loading a pre-trained Gnomix model (see **Pre-Trained Models** below)
 
 In both cases the models are used to infer local ancestry for provided query data.
@@ -124,9 +124,9 @@ In those cases, not removing the data and then setting *run_simulation* to False
 
 Pre-trained models will soon be made available for download.
 
-When making predictions, the input to the model is an intersection of the pre-trained model SNP positions and the SNP positions from the <query_file>. That means that the set of positions that's only in the original training input is encoded as missing and the set of positions only in the <query_file> is discarded. When the script is executed, it will log the intersection-ratio as the performance will depend on how much of the original positions are missing. When the intersection is low, we recommend using a model trained with high percentage of missing data.
+When making predictions, the input to the model is an intersection of the pre-trained model SNP positions and the SNP positions from the <query_file>. That means that the set of positions that's only in the original training input (and not in the query samples) is encoded as missing, while the set of positions only in the <query_file> is discarded. When the script is executed, it will log the intersection-ratio as the performance will depend on how much of the original positions are missing. When the intersection is low, we recommend using a model trained with high percentage of missing data, or imputing the query samples to have all SNPs present in the pre-trained model.
 
-The models are trained on hg build 37 references from the following biogeographic regions: *Subsaharan African (AFR), African Hunter and Gatherer (AHG), East Asian (EAS), European (EUR), Native American (NAT), Oceanian (OCE), South Asian (SAS), and West Asian (WAS)* and labels and predicts them as 0, 1, .., 7 respectively. Populations used to train these ancestries are given in the reference at the bottom.
+The models are trained on hg build 37 references from the following biogeographic regions: *Subsaharan African (AFR), East Asian (EAS), European (EUR), Native American (NAT), Oceanian (OCE), South Asian (SAS), and West Asian (WAS)* and labels and predicts them as 0, 1, .., 6 respectively. The populations used to train these ancestries are given in the supplementary section of the reference provided at the bottom of this readme.
 
 ## Phasing
 
