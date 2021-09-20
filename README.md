@@ -6,7 +6,7 @@
 
 <!-- ![Visualization of the process](doc/fig/gnomix_diagram.png) -->
 
-<img align="right" src="doc/fig/gnomix_diagram.png" width=50% height=50%> 
+<img align="right" src="doc/fig/gnomix_diagram.png" width=58% height=58% > 
 
 This repository includes a python implemenation of Gnomix, a fast and accurate local ancestry method.
 
