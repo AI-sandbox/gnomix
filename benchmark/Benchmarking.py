@@ -6,19 +6,20 @@ import sys
 
 # local
 sys.path.append('../../gnomix')
-from src.gnomix import Gnomix
+from src.model import Gnomix
 from src.preprocess import load_np_data, data_process
 
 # --------------------------------- Models ---------------------------------
 
-from src.Base.models import LogisticRegressionBase, LGBMBase, RandomStringKernelBase, StringKernelBase
+from src.Base.models import LogisticRegressionBase, LGBMBase, StringKernelBase
 from src.Smooth.models import XGB_Smoother, CRF_Smoother, CNN_Smoother
+from src.Base.models import CovRSKBase
 
 Bases = {
     "lgb": LGBMBase,
     "logreg": LogisticRegressionBase,
-    "randomstringkernel": RandomStringKernelBase,
-    "stringkernel": StringKernelBase
+    "stringkernel": StringKernelBase,
+    "CovRSK": CovRSKBase
 }
 
 Smoothers = {
@@ -52,7 +53,7 @@ def get_data(data_path, M, gens, chm, verbose=False, only_founders=False):
             M: window size (in SNPs)
             C: chm size (in SNPs)
     """
-    test_gens = [_ for _ in gens if _!= 0] # without 0
+    test_gens = [g for g in gens if g!= 0] # without 0
 
     if only_founders:
         gens, test_gens = [0], [0]
@@ -182,13 +183,13 @@ def bm_train(bases, smooth, model_path, data_path, gens, chm, M=1000, verbose=Tr
 
     for b in bases:
         if verbose:
-            print("BASE:", b)
+            print("BASE:", b, flush=True)
 
-        base = Gnomix(C=meta["C"], M=meta["M"], A=meta["A"], base=Bases[b]).base
+        base = Gnomix(C=meta["C"], M=meta["M"], A=meta["A"], base=Bases[b], n_jobs=30).base
 
         # train
         if verbose:
-            print("Training base")
+            print("Training base", flush=True)
         if base.train_admix:
             base.train(X_t1, y_t1)
         else:
@@ -197,7 +198,7 @@ def bm_train(bases, smooth, model_path, data_path, gens, chm, M=1000, verbose=Tr
 
         # retrain
         if verbose:
-            print("Re-training base")
+            print("Re-training base", flush=True)
         if base.train_admix:
             base.train( np.concatenate([X_t1, X_t2]), np.concatenate([y_t1, y_t2]) )
         else:
@@ -213,7 +214,7 @@ def bm_train(bases, smooth, model_path, data_path, gens, chm, M=1000, verbose=Tr
 
     for b in bases:
 
-        print("Fetchinig base probabilites from", b, "base")
+        print("Fetchinig base probabilites from", b, "base", flush=True)
 
         base = pickle.load( open(os.path.join(base_dir,b + ".pkl"),"rb") )
         B_t2 = base.predict_proba(X_t2)
