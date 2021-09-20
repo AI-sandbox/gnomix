@@ -1,4 +1,4 @@
-<img align="left" src="doc/fig/gnome2.jpeg" width=14.1% height=14.1%> 
+<img align="left" src="doc/fig/gnome.jpeg" width=14.1% height=14.1%> 
 
 # High Resolution Ancestry Deconvolution for Next Generation Genomic Data 
 <br>

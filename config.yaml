@@ -2,33 +2,30 @@ verbose: True
 seed: 94305
 
 simulation:
-  run: True
-  path: # only matters if run is True
-  splits: # the way to avoid val is by removing it or making the ratio 0
-    ratios: # these technically do not have to sum to 1, but better to.
+  run: True # whether or not to run simulation (can be skipped if previously done)
+  path: # where to store the simulated data
+  splits:
+    ratios: # how to split the data
       train1: 0.8
       train2: 0.15
-      val: 0.05
-    gens:
+      val: 0.05 # set to 0 in order to not perform any validation
+    gens: # which generation to simulate
+      # not critical but some small accuracy can be squeezed if it better represents the query data
       train1: [0, 2, 4, 6, 8, 12, 16, 24, 32, 48] # 0 is included by default
       train2: [0, 2, 4, 6, 8, 12, 16, 24, 32, 48] # 0 is included by default
       val: [0, 2, 4, 6, 8, 12, 16, 24, 32, 48]
-  r_admixed: 1
-  rm_data: False # only matters if run is True
+  r_admixed: 1        # we simulate r_admixed*n_founders amound of admixed individuals
+  rm_data: False      # removes simulated data once it has been used
 
-model:
-  name: model # default is model
-  base: # not supported yet
-  smooth: # not supported yet
-  inference: default # best, fast are options. If blank, we would use default.
-  window_size_cM: 0.2 # another option could be num windows. #FEATURE
-  smooth_size: 75
-  context_ratio: 0.0
-  missing: 0.0 # potentially remove...
-  retrain_base: True  # potentially remove...
-  calibrate: True
-  mode_filter_size: 5 # potentially remove...
-  n_cores: 30         # how many units of cpu to use
+model: 
+  name: model         # model name for storing model + analysis
+  inference:          # If blank, we use default (best, fast are alternative options)
+  window_size_cM: 0.2 # size of each base window in centi Morgans
+  smooth_size: 75     # How many windows the smoothers see
+  context_ratio: 0.5  # context for each window will be context_ratio*window_size on each side
+  retrain_base: True  # retrains the base models once smoother data has been obtained
+  calibrate: True     # calibrate the output probabilities
+  n_cores:            # maximum number of CPUs to use
 
 inference:
-  visualize_inference: False # visualize chromosome paintings
+  visualize_inference: False # visualize chromosome paintings, beta version

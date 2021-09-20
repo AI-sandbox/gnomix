@@ -10,7 +10,7 @@ from src.Gnofix.gnofix import gnofix
 
 class Gnomix():
 
-    def __init__(self, C, M, A, 
+    def __init__(self, C, M, A, S,
                 base=None, smooth=None, mode="default", # base and smooth models
                 snp_pos=None, snp_ref=None, population_order=None, missing_encoding=2, # dataset specific, TODO: store in one object
                 n_jobs=None, path=None, # configs
@@ -21,14 +21,13 @@ class Gnomix():
         Inputs
            C: chromosome length in SNPs
            M: number of windows for chromosome segmentation
-           S: Smoother window size: number of windows considered for a smoother 
-                - (TODO: S is only a parameter for some smoother types, should we only have it defined there locally?)
            A: number of ancestry considered
         """
 
         self.C = C
         self.M = M
         self.A = A
+        self.S = S
         self.W = self.C//self.M # number of windows
 
         # configs
@@ -63,7 +62,7 @@ class Gnomix():
             elif mode=="best":
                 smooth = XGB_Smoother
             if mode == "large":
-                from src.Smooth.models import CNN_Smoother
+                from src.Smooth.models import CNN_Smoother # import here to avoid torch dependency
                 smooth = CNN_Smoother 
             else:
                 smooth = XGB_Smoother
@@ -74,7 +73,7 @@ class Gnomix():
                             missing_encoding=missing_encoding, context=self.context,
                             n_jobs=self.n_jobs, seed=self.seed, verbose=self.verbose)
 
-        self.smooth = smooth(n_windows=self.W, num_ancestry=self.A,
+        self.smooth = smooth(n_windows=self.W, num_ancestry=self.A, smooth_window_size=self.S,
                             n_jobs=self.n_jobs, calibrate=self.calibrate, mode_filter=mode_filter, 
                             seed=self.seed, verbose=self.verbose)
         

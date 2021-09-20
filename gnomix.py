@@ -143,19 +143,14 @@ def train_model(config, data_path, verbose):
     # data_path contains - train1/, train2/, val/, metadata, sample_maps/
 
     rm_simulated_data=config["simulation"]["rm_data"]
-    model_name=config["model"].get("name")
-    if model_name == None or model_name == "None":
-        model_name = "model"
-    inference=config["model"].get("inference")
-    if inference == None or inference == "None":
-        inference = "default"
+    model_name=config["model"].get("name", "model")
+    inference=config["model"].get("inference", "default")
     window_size_cM=config["model"].get("window_size_cM")
-    n_cores=config["model"].get("n_cores")
+    smooth_window_size=config["model"].get("smooth_size")
+    n_cores=config["model"].get("n_cores", None)
     retrain_base=config["model"].get("retrain_base")
     calibrate=config["model"].get("calibrate")
     context_ratio=config["model"].get("context_ratio")
-    base = config["model"].get("base") # not used yet
-    smooth = config["model"].get("smooth") # not used yet
     chm = base_args["chm"]
 
     # option to bypass validation
@@ -179,7 +174,7 @@ def train_model(config, data_path, verbose):
     data, meta = get_data(data_path, generations, window_size_cM)
 
     # init model
-    model = Gnomix(C=meta["C"], M=meta["M"], A=meta["A"],
+    model = Gnomix(C=meta["C"], M=meta["M"], A=meta["A"], S=smooth_window_size,
                     snp_pos=meta["snp_pos"], snp_ref=meta["snp_ref"],
                     population_order=meta["pop_order"],
                     mode=inference, calibrate=calibrate,
@@ -233,7 +228,7 @@ def train_model(config, data_path, verbose):
 def simulate_splits(base_args,config):
 
     # build LAIDataset object
-    chm = base_args["chm"] # string...
+    chm = base_args["chm"]
     reference = base_args["reference_file"]
     genetic_map = base_args["genetic_map_file"]
     sample_map = base_args["sample_map_file"]
@@ -327,22 +322,22 @@ if __name__ == "__main__":
     if mode == "train":
         base_args["reference_file"]  = sys.argv[6]
         base_args["sample_map_file"] = sys.argv[7]
-        base_args["config_file"] = "./config.yaml"
         if len(sys.argv) == 9:
             base_args["config_file"] = sys.argv[8]
     elif mode == "pre-trained":
         base_args["path_to_model"] = sys.argv[6]
 
-    
+    base_args["config_file"] = "./config.yaml"
+    with open(base_args["config_file"],"r") as file:
+        config = yaml.load(file, Loader=yaml.UnsafeLoader)
+
     if mode == "pre-trained":
         print("Launching in pre-trained mode...")
         model = load_model(base_args["path_to_model"], verbose=True)
 
     else:
         print("Launching in training mode...")
-        with open(base_args["config_file"],"r") as file:
-            config = yaml.load(file, Loader=yaml.UnsafeLoader)
-        
+
         # process args here...
         verbose = config["verbose"]
 

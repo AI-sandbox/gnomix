@@ -170,13 +170,11 @@ def admix(founders,founders_weight,gen,breakpoint_probability,chm_length_snps,ch
         
         breakpoints = np.concatenate(([0],breakpoints,[chm_length_snps]))
         
-        #print(breakpoints)
         # select paternal or maternal randomly and apply crossovers.
         for i in range(len(breakpoints)-1):
             begin = breakpoints[i]
             end = breakpoints[i+1]
-            # choose random founder for this segment
-            # then choose randomly paternal or maternal for this founder
+            # choose random founder for this segment, then choose random haplotype for this founder
             select_id = np.random.choice(len(founders),p=founders_weight)
             select = founders[select_id]
             choice = np.random.rand()>=0.5
@@ -389,7 +387,6 @@ class LAIDataset:
             gens = gen * np.ones((num_samples),dtype=int)
             if verbose:
                 print("Simulating generation: ",gen)
-        # print(gens)
         
         # corner case
         if gen == 0:

@@ -1,6 +1,5 @@
 import numpy as np
 import sys
-from numpy.lib.function_base import vectorize
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
 from time import time
 from multiprocessing import get_context
@@ -114,9 +113,9 @@ class Base():
         train_args += ((self.models[-1], X[:,X.shape[1]-(M_+rem):], y[:,-1]),)
 
         # train
-        log_iter = tqdm.tqdm(train_args, total=self.W, bar_format='{l_bar}{bar:40}{r_bar}{bar:-40b}')
+        log_iter = tqdm.tqdm(train_args, total=self.W, bar_format='{l_bar}{bar:40}{r_bar}{bar:-40b}', position=0, leave=True)
         if self.base_multithread:
-            with get_context("spawn").Pool() as pool:
+            with get_context("spawn").Pool(self.n_jobs) as pool:
                 self.models = pool.starmap(self.train_base_model, log_iter) 
         else:
             self.models = [self.train_base_model(*b) for b in log_iter]
@@ -127,7 +126,6 @@ class Base():
         """
         inputs:
             - X: np.array of shape (N, C) where N is sample size and C chm length
-            - y: np.array of shape (N, C) where N is sample size and C chm length
         returns 
             - B: base probabilities of shape (N,W,A)
         """
@@ -159,11 +157,11 @@ class Base():
         base_args += ((self.models[-1], X[:,X.shape[1]-(M_+rem):]), )
 
         if self.log_inference:
-            base_args = tqdm.tqdm(base_args, total=self.W, bar_format='{l_bar}{bar:40}{r_bar}{bar:-40b}')
+            base_args = tqdm.tqdm(base_args, total=self.W, bar_format='{l_bar}{bar:40}{r_bar}{bar:-40b}', position=0, leave=True)
 
         # predict proba
         if self.base_multithread:
-            with get_context("spawn").Pool() as pool:
+            with get_context("spawn").Pool(self.n_jobs) as pool:
                 B = np.array(pool.starmap(self.predict_proba_base_model, base_args))
         else:
             B = np.array([self.predict_proba_base_model(*b) for b in base_args])

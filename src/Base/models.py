@@ -5,7 +5,9 @@ from xgboost import XGBClassifier
 from sklearn import svm
 
 from src.Base.base import Base
-from src.Base.string_kernel import CovRSK, CovRSK_singlethread, string_kernel, string_kernel_singlethread
+from src.Base.string_kernel import CovRSK_DP_triangular_numbers, CovRSK_DP_triangular_numbers_multithread
+from src.Base.string_kernel import string_kernel_DP_triangular_numbers, string_kernel_DP_triangular_numbers_multithread
+from src.Base.string_kernel import poly_kernel, poly_kernel_multithread
 
 class LogisticRegressionBase(Base):
 
@@ -24,44 +26,120 @@ class XGBBase(Base):
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.base_multithread = True
+        n_jobs = self.n_jobs if not self.base_multithread else 1
+
         self.init_base_models(
             lambda : XGBClassifier(
                 n_estimators=20, max_depth=4, learning_rate=0.1, reg_lambda=1, reg_alpha=0,
-                thread=self.n_jobs, missing=self.missing_encoding, random_state=self.seed)
+                thread=n_jobs, missing=self.missing_encoding, random_state=self.seed)
         )
 
 class LGBMBase(Base):
 
     def __init__(self,  *args, **kwargs):
-        
-        from lightgbm import LGBMClassifier # This is to avoid requiring installation of lightgbm
-
         super().__init__(*args, **kwargs)
+
+        from lightgbm import LGBMClassifier 
+
+        self.base_multithread = True
+        n_jobs = self.n_jobs if not self.base_multithread else 1
 
         self.init_base_models(
             lambda : LGBMClassifier(
                 n_estimators=20, max_depth=4, learning_rate=0.1, reg_lambda=1, reg_alpha=0,
-                n_jobs=self.n_jobs, random_state=self.seed) # use np.nan for missing encoding
+                n_jobs=n_jobs, random_state=self.seed) # use np.nan for missing encoding
         )
 
 class RFBase(Base):
 
     def __init__(self,  *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         from sklearn.ensemble import RandomForestClassifier
 
-        super().__init__(*args, **kwargs)
+        self.base_multithread = True
+        n_jobs = self.n_jobs if not self.base_multithread else 1
 
         self.init_base_models(
-            lambda : RandomForestClassifier(n_estimators=20,max_depth=4,n_jobs=self.n_jobs) 
+            lambda : RandomForestClassifier(n_estimators=20,max_depth=4,n_jobs=n_jobs) 
         )
 
-class KNNBase(Base):
-
-    from sklearn.neighbors import KNeighborsClassifier
+class CBBase(Base):
 
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        import catboost
+
+        self.base_multithread = True
+        n_jobs = self.n_jobs if not self.base_multithread else 1
+
+        self.init_base_models(
+            lambda : catboost.CatBoostClassifier(n_estimators=20, max_depth=4, reg_lambda=1,
+                thread_count=n_jobs, verbose=0)
+        )
+
+class LDABase(Base):
+
+    def __init__(self,  *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+
+        self.base_multithread = True
+
+        self.init_base_models(
+            lambda : LinearDiscriminantAnalysis()
+        )
+
+class NBGaussianBase(Base):
+
+    def __init__(self,  *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        from sklearn.naive_bayes import GaussianNB
+        
+        self.base_multithread = True
+
+        self.init_base_models(
+            lambda : GaussianNB()
+        )
+
+class NBBernoulliBase(Base):
+
+    def __init__(self,  *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        from sklearn.naive_bayes import BernoulliNB
+        
+        self.base_multithread = True
+
+        self.init_base_models(
+            lambda : BernoulliNB(alpha=0)
+        )
+
+class NBMultinomialBase(Base):
+
+    def __init__(self,  *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        from sklearn.naive_bayes import MultinomialNB
+        
+        self.base_multithread = True
+
+        self.init_base_models(
+            lambda : MultinomialNB(alpha=0)
+        )
+
+class KNNBase(Base):
+    
+    def __init__(self,  *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        from sklearn.neighbors import KNeighborsClassifier
+
+        self.base_multithread = True
 
         self.init_base_models(
             lambda : KNeighborsClassifier(n_neighbors=1)
@@ -71,6 +149,10 @@ class SVMBase(Base):
 
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.log_inference = True # display progress of predict proba
+        self.train_admix = False # save computation
+        self.base_multithread = True
 
         self.init_base_models(
             lambda : svm.SVC(C=100., gamma=0.001, probability=True)
@@ -85,8 +167,26 @@ class StringKernelBase(Base):
 
         self.log_inference = True # display progress of predict proba
         self.train_admix = False # save computation
-        self.base_multithread = True
-        self.kernel = string_kernel_singlethread if self.n_jobs==1 or self.base_multithread else string_kernel
+        self.base_multithread = False # this multithreads along the base models instead of with in each window
+        # self.kernel = string_kernel_singlethread if self.n_jobs==1 or self.base_multithread else string_kernel
+        self.kernel = string_kernel_DP_triangular_numbers if self.n_jobs==1 or self.base_multithread else string_kernel_DP_triangular_numbers_multithread
+
+        self.init_base_models(
+            lambda : svm.SVC(kernel=self.kernel, probability=True)
+        )
+
+class PolynomialStringKernelBase(Base):
+
+    def __init__(self,  *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        assert int(np.__version__.split(".")[1]) >= 20, "String kernel implementation requires numpy versions 1.20+"
+
+        self.log_inference = True # display progress of predict proba
+        self.train_admix = False # save computation
+        self.base_multithread = False # this multithreads along the base models instead of with in each window
+        # self.kernel = string_kernel_singlethread if self.n_jobs==1 or self.base_multithread else string_kernel
+        self.kernel = poly_kernel if self.n_jobs==1 or self.base_multithread else poly_kernel_multithread
 
         self.init_base_models(
             lambda : svm.SVC(kernel=self.kernel, probability=True)
@@ -104,11 +204,11 @@ class CovRSKBase(Base):
 
         if self.M < 500:
             self.base_multithread = True
-            self.kernel = CovRSK_singlethread
+            self.kernel = CovRSK_DP_triangular_numbers
         else:
             # More robust to memory
             self.base_multithread = False
-            self.kernel = CovRSK
+            self.kernel = CovRSK_DP_triangular_numbers_multithread
 
         self.init_base_models(
             lambda : svm.SVC(kernel=self.kernel, probability=True)

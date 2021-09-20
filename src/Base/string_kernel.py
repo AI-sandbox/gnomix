@@ -2,129 +2,140 @@ import numpy as np
 import multiprocessing as mp
 from functools import partial
 
-def get_slide_window():
-    try:
-        return np.lib.stride_tricks.sliding_window_view 
-    except AttributeError:
-        print("Error: String kernel implementation requires numpy versions 1.20+")
-
-def sum_over_mZ_loopy(m,Z):
-    slide_window = get_slide_window()
-    return np.array( [np.sum(np.all( slide_window(z,m,axis=1), axis=2),axis=1) for z in Z ] , dtype=np.int16)
-
-def sum_over_mZ(m,Z):
-
-    # avoid memory crash
-    if np.prod(Z.shape)*m > (1500*1500*2000)*100:
-        return sum_over_mZ_loopy(m,Z)
-    
-    slide_window = get_slide_window()
-
-    return np.sum(np.all( slide_window(Z,m,axis=2), axis=3),axis=2,dtype=np.int16)
-
-def sum_over_zM(z, Ms):
-    slide_window = get_slide_window()
-    return np.sum([np.sum(np.all( slide_window(z,m,axis=1), axis=2),axis=1) for m in Ms], axis=0)
-
-def string_kernel(X, Y, K_max=None, n_jobs=None, m_axis="samples"):
-    
-    Z = np.array([np.equal(X_i, Y) for X_i in X])
-    Ms = range(1,Z.shape[-1]) if K_max is None else range(1,K_max)
-    
-    if n_jobs == 1 or m_axis is "None":
-        K = np.sum( np.array( [sum_over_mZ(m,Z) for m in Ms] ), axis=0 )
-
-    elif m_axis == "k-mers":
-        with mp.Pool(n_jobs) as pool:
-            sums = pool.map(partial(sum_over_mZ, Z=Z), Ms)
-        K = np.sum(sums,axis=0)
-
-    elif m_axis == "samples":
-        with mp.Pool(n_jobs) as pool:
-            K = np.array(pool.map(partial(sum_over_zM, Ms=Ms),  Z))
-
+def string_kernel_DP_triangular_numbers_(x,y):
+    z = x==y # O(M)
+    tri, K = 0, 0
+    for equal in z: # O(M)
+        if equal: # (1)
+            tri += 1 # O(1)
+            K += tri # O(1)
+        else:
+            tri = 0 # O(1)
     return K
 
-def string_kernel_singlethread(X, Y):
-    Z = np.array([np.equal(X_i, Y) for X_i in X])
-    return np.sum( np.array( [sum_over_mZ(m,Z) for m in range(Z.shape[-1])] ), axis=0 )
+def string_kernel_DP_triangular_numbers_vectorized(x,Y):
+    z = x==Y
+    tri = np.zeros(len(z), dtype=int)
+    K = np.zeros(len(z), dtype=int)
+    for equal in z.T:
+        tri += equal
+        tri[~equal] = 0 
+        K += tri
+    return K
 
-def CovSample(M, alpha, beta, seed=37):
+def string_kernel_DP_triangular_numbers(X,Y):
+    
+    Z = np.zeros((len(X), len(Y)), dtype=int)
+    for i, x in enumerate(X):
+        Z[i] = string_kernel_DP_triangular_numbers_vectorized(x,Y)
+
+    return Z
+
+def string_kernel_DP_triangular_numbers_multithread(X,Y,n_jobs=None):
+
+    Xn, Xm = X.shape
+    with mp.Pool(n_jobs) as pool:
+        K_list = pool.map(partial(string_kernel_DP_triangular_numbers_vectorized, Y=Y), X.reshape(Xn, 1, Xm))
+    
+    K = np.array(K_list).squeeze()
+    
+    return K
+
+## ------------------------------- Polynomial String Kernel ------------------------------- ##
+
+def poly_kernel_(x,y,p):
+    z = x==y # O(M)
+    contigs = []
+    counter = 0
+    for equal in z: # O(M)
+        if equal: # (1)
+            counter += 1 # O(1)
+        else:
+            contigs += [counter] # O(1)
+            counter = 0 # O(1)
+    contigs += [counter] # O(1)
+    contigs = np.array(contigs) # O(1)
+    return np.sum(contigs**p)/p # O(3M) + O(1)
+
+def poly_kernel(X,Y,p=1.2):
+    
+    Z = np.zeros((len(X), len(Y)), dtype=int)
+    for i, x in enumerate(X):
+        for j, y in enumerate(Y):
+            Z[i,j] = poly_kernel_(x,y,p=p)
+            
+    return Z
+
+def poly_kernel_multithread(X,Y,p=1.2,n_jobs=16):
+
+    Xn, Xm = X.shape
+    with mp.Pool(n_jobs) as pool:
+        K_list = pool.map(partial(poly_kernel, Y=Y, p=p), X.reshape(Xn, 1, Xm))
+    
+    K = np.array(K_list).squeeze()
+    
+    return K
+
+## ------------------------------- CovRSK ------------------------------- ##
+
+def ohe(idx, size):
+    out = np.zeros(size,dtype=int)
+    out[idx-1] = 1
+    return out
+
+def CovSample(M, alpha, beta, seed=1):
 
     np.random.seed(seed)
     
     Ms = [1]
     for m in range(2,M+1): 
-        if (1/m**beta)*(1-np.sqrt(alpha**(m-Ms[-1]))) >= np.random.rand():
+        if (1-(alpha**(m-Ms[-1]+1)))*(m**(-beta)) >= np.random.rand():
             Ms += [m]
 
     return Ms
 
-def CovRSK(X, Y, alpha=0.6, beta=1.0, n_jobs=None, seed=37):
-    
-    Z = np.array([np.equal(X_i, Y) for X_i in X])
-    Ms = CovSample(Z.shape[-1], alpha, beta, seed)
-
-    with mp.Pool(n_jobs) as pool:
-        K = np.array(pool.map(partial(sum_over_zM, Ms=Ms),  Z))
-
+def CovRSK_DP_triangular_numbers_vectorized(x,Y,Ms_ohe):
+    z = x==Y
+    K, tri, cov_tri = np.zeros((3, len(z)), dtype=int)
+    for equal in z.T:
+        tri += equal
+        mask = Ms_ohe[tri] == 1
+        cov_tri += mask*equal
+        tri[~equal] = 0
+        cov_tri[~equal] = 0
+        K += cov_tri
     return K
-
-def CovRSK_singlethread(X, Y, alpha=0.9, beta=0.5, seed=37):
     
-    Z = np.array([np.equal(X_i, Y) for X_i in X])
-    Ms = CovSample(Z.shape[-1], alpha, beta, seed)
-    return np.sum( np.array( [sum_over_mZ(m,Z) for m in Ms] ), axis=0 )
+def CovRSK_DP_triangular_numbers(X, Y, alpha=0.6, beta=1.0, n_jobs=None, seed=37):
 
+    Xn, Xm = X.shape
+    Ms = CovSample(Xm, alpha, beta, seed)
+    Ms_ohe = ohe(idx=np.array(Ms)+1, size=Xm+1)
+    
+    Z = np.zeros((len(X), len(Y)), dtype=int)
+    for i, x in enumerate(X):
+         Z[i] = CovRSK_DP_triangular_numbers_vectorized(x,Y,Ms_ohe=Ms_ohe)
+
+    return Z
+
+def CovRSK_DP_triangular_numbers_multithread(X, Y, alpha=0.6, beta=1.0, n_jobs=None, seed=37):
+    
+    Xn, Xm = X.shape
+    Ms = CovSample(Xm, alpha, beta, seed)
+    Ms_ohe = ohe(idx=np.array(Ms)+1, size=Xm+1)
+
+    func = partial(CovRSK_DP_triangular_numbers_vectorized, Y=Y,Ms_ohe=Ms_ohe)
+    with mp.Pool(n_jobs) as pool:
+        K_list = pool.map(func, X.reshape(Xn, 1, Xm))
+    
+    K = np.array(K_list).squeeze()
+    
+    return K
     
 ## ------------------------------- other kernels ------------------------------- ##
-
-def random_string_kernel_singlethread(X, Y, alpha=1, seed=37):
-    np.random.seed(seed)
-    Z = np.array([np.equal(X_i, Y) for X_i in X])
-    Ms = [m for m in range(1,Z.shape[-1]) if np.random.rand() < (1/m**alpha)]
-    return np.sum( np.array( [sum_over_mZ(m,Z) for m in Ms] ), axis=0 )
-
-def random_string_kernel(X, Y, alpha=1, n_jobs=None, m_axis="samples", seed=37):
-    
-    np.random.seed(seed)
-    Z = np.array([np.equal(X_i, Y) for X_i in X])
-    Ms = [m for m in range(1,Z.shape[-1]) if np.random.rand() <= (1/m**alpha)]
-    
-    if n_jobs == 1 or m_axis is "None":
-        K = np.sum( np.array( [sum_over_mZ(m,Z) for m in Ms] ), axis=0 )
-
-    elif m_axis == "k-mers":
-        with mp.Pool(n_jobs) as pool:
-            sums = pool.map(partial(sum_over_mZ, Z=Z), Ms)
-        K = np.sum(sums,axis=0)
-
-    elif m_axis == "samples":
-        with mp.Pool(n_jobs) as pool:
-            K = np.array(pool.map(partial(sum_over_zM, Ms=Ms),  Z))
-
-    return K
 
 def linear_kernel(X,Y):
     return np.dot(X,Y.T)
 
 def hamming_kernel(X, Y):
     return np.dot(X,Y.T) + np.dot((1-X), (1-Y).T)
-
-def substring_kernel_vectorized(X, Y, M=5, stride=1):
-
-    slide_window = get_slide_window()
-
-    nx, mx = X.shape
-    ny, my = Y.shape
-
-    K = np.zeros( (nx,ny) )
-    for i, X_i in enumerate(X):
-        Z_i = np.equal(X_i, Y).astype(int)
-        C = slide_window(Z_i,M,axis=1)[:,::stride]
-
-        for c in range(C.shape[1]):
-            for m in range(M):
-                K[i,:] += np.sum(np.all(slide_window(C[:,c],m,axis=1), axis=2),axis=1)
-
-    return K

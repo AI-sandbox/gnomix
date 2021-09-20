@@ -10,9 +10,6 @@ FIGSIZE = None
 MARKERSIZE = 100
 MAXCOLORS = 8
 
-# Define a LAI Colormap
-# CMAP = "tab20b"
-# LAI_PALETTE  = ["#A60303", "#8DA6F2", "#254F6B", "#613673",  "#75BFAA", "#AAAAAA", "#3457BF", "#D9414E" ]
 LAI_PALETTE  = ["#A60303", "#3457BF", "#75BFAA", "#613673",  "#8DA6F2", "#AAAAAA", "#254F6B", "#D9414E" ]
 CMAP = ListedColormap(LAI_PALETTE)
 
@@ -60,7 +57,8 @@ def plot_cm(cm, normalize=True, labels=None, figsize=(12,10), path=None):
     if normalize:
         row_sums = cm.sum(axis=1)
         row_sums = row_sums.reshape(-1,1)
-        cm = cm / row_sums
+        with np.errstate(all='ignore'):
+            cm = cm / row_sums
         
     df_cm = pd.DataFrame(cm, range(cm.shape[0]), range(cm.shape[1]))
     sns.set(font_scale=1.4) # for label size
