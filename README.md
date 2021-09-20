@@ -1,4 +1,4 @@
-<img align="left" src="doc/fig/gnome2.jpeg" width=15.4% height=15.4%> 
+<img align="left" src="doc/fig/gnome2.jpeg" width=14% height=14%> 
 
 # High Resolution Ancestry Deconvolution for Next Generation Genomic Data 
 <br>
@@ -6,7 +6,7 @@
 
 <!-- ![Visualization of the process](doc/fig/gnomix_diagram.png) -->
 
-<img align="right" src="doc/fig/gnomix_diagram.png" width=47% height=47%> 
+<img align="right" src="doc/fig/gnomix_diagram.png" width=60% height=60%> 
 
 This repository includes a python implemenation of Gnomix, a fast and accurate local ancestry method.
 
