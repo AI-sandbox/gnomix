@@ -76,11 +76,11 @@ def get_samples_from_msp_df(msp_df):
 
     return query_samples
     
-def write_msp_tsv(msp_prefix, meta_data, pred_labels, populations, query_samples):
+def write_msp(msp_prefix, meta_data, pred_labels, populations, query_samples):
     
     msp_data = np.concatenate([np.array(meta_data), pred_labels.T], axis=1).astype(str)
     
-    with open(msp_prefix+".msp.tsv", 'w') as f:
+    with open(msp_prefix+".msp", 'w') as f:
         # first line (comment)
         f.write("#Subpopulation order/codes: ")
         f.write("\t".join([str(pop)+"="+str(i) for i, pop in enumerate(populations)])+"\n")
@@ -92,7 +92,7 @@ def write_msp_tsv(msp_prefix, meta_data, pred_labels, populations, query_samples
             f.write("\t".join(msp_data[l,:]))
             f.write("\n")
 
-def write_fb_tsv(fb_prefix, meta_data, proba, ancestry, query_samples):
+def write_fb(fb_prefix, meta_data, proba, ancestry, query_samples):
     
     n_rows = meta_data.shape[0]
 
@@ -112,7 +112,7 @@ def write_fb_tsv(fb_prefix, meta_data, proba, ancestry, query_samples):
 
     fb_df = pd.concat((fb_meta_data.reset_index(drop=True), fb_prob_df),axis=1)
 
-    with open(fb_prefix+".fb.tsv", 'w') as f:
+    with open(fb_prefix+".fb", 'w') as f:
         # header
         f.write("#reference_panel_population:\t")
         f.write("\t".join(ancestry)+"\n")

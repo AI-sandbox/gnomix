@@ -38,7 +38,7 @@ $ python3 gnomix.py <query_file> <genetic_map_file> <output_basename> <chr_nr> <
 where 
 - <*query_file*> is a .vcf or .vcf.gz file containing the query haplotypes which are to be analyzed (see example in the **demo/data/** folder)
 - <*genetic_map_file*> is the genetic map file (see example in the **demo/data/** folder)
-- <*output_basename*>.msp.tsv and <*output_basename*>.fb.tsv is where the predictions are written (see details in **Output** below and an example in the **demo/data/** folder)
+- <*output_basename*> is where the results will be written (see details in **Output** below and an example in the **demo/data/** folder)
 - <*chr_nr*> is the chromosome number
 - <*phase*> is either True or False corresponding to the intent of using the predicted ancestry for phasing (see details in **Phasing** below and in the **gnofix/** folder)
 - <*path_to_model*> is a path to the model used for predictions (see **Pre-trained Models** below)
@@ -85,7 +85,9 @@ To ensure that gnomix outputs probability estimates that reflect it's true confi
 
 ## Output
 
-### *<output_basename>*.msp.tsv
+The results (including predictions, trained models and analysis) are stored in the *<output_basename>* folder.
+
+### *<output_basename>/query_results*.msp
 The first line is a comment line, that specifies the order and encoding of populations, eg:
 #Sub_population order/code: golden_retriever=0 labrador_retriever=1 poodle poodle_small=2
 
@@ -99,7 +101,7 @@ The first 6 columns specify
 
 The remaining columns give the predicted reference panel population for the given interval. A genotype has two haplotypes, so the number of predictions for a genotype is 2*(number of genotypes) and therefore the total number of columns in the file is 6 + 2*(number of genotypes)
 
-### *<output_basename>*.fb.tsv
+### *<output_basename>/query_results*.fb
 The first line is a comment line, that specifies the order of the populations, eg:
 #reference_panel_population:	AFR	EUR	NAT
 
@@ -113,10 +115,12 @@ The first 4 columns specify
 
 The remaining columns represent the query hapotypes and reference panel population and each line markes the estimated probability of the given genome position coming from the population. A genotype has two haplotypes, so the number of predictions for a genotype is 2*(number of genotypes)*(number of reference populations) and therefore the total number of columns in the file is 6 + 2*(number of genotypes)*(number of reference populations).
 
-### Model and simulated data
-When training a model, the resulting model will be stored in **./models**. That way it can be re-used for analyzing another dataset.
-The model's estimated accuracy is logged along with a confusion matrix which is stored in **./models/analysis**.
-The program simulates training data and stores in **./generated_data**. To automatically remove the created data when training is done,
+### Model
+When training a model, the resulting model will be stored in *<output_basename>/models*. That way it can be re-used for analyzing another dataset.
+The model's estimated accuracy is logged along with a confusion matrix which is stored in *<output_basename>/models/analysis*.
+
+### Simulated data
+The program simulates training data and stores in *<output_basename>/generated_data*. To automatically remove the created data when training is done,
 set *rm_simulated_data* to True in *config.py*. Note that in some cases, the simulated data can be re-used for training with similar settings. 
 In those cases, not removing the data and then setting *run_simulation* to False will re-use the previously simulated data which can save a lot of time and compuation.
 

@@ -10,7 +10,7 @@ import sys
 from src.utils import run_shell_cmd, join_paths, read_vcf, vcf_to_npy, npy_to_vcf, update_vcf 
 from src.utils import read_genetic_map, save_dict, load_dict
 from src.preprocess import load_np_data, data_process
-from src.postprocess import get_meta_data, write_msp_tsv, write_fb_tsv
+from src.postprocess import get_meta_data, write_msp, write_fb
 from src.visualization import plot_cm, plot_chm
 from src.laidataset import LAIDataset
 
@@ -75,13 +75,13 @@ def run_inference(base_args, model, visualize, verbose):
         print("Saving results...")
     meta_data = get_meta_data(chm, model.snp_pos, query_vcf_data['variants/POS'], model.W, model.M, gen_map_df)
     out_prefix = output_path + "/" + "query_results"
-    write_msp_tsv(out_prefix, meta_data, y_pred_query, model.population_order, query_vcf_data['samples'])
-    write_fb_tsv(out_prefix, meta_data, y_proba_query, model.population_order, query_vcf_data['samples'])
+    write_msp(out_prefix, meta_data, y_pred_query, model.population_order, query_vcf_data['samples'])
+    write_fb(out_prefix, meta_data, y_proba_query, model.population_order, query_vcf_data['samples'])
 
     # visualize results
     if visualize:
         vis_path = join_paths(output_path, "visual", verb=False)
-        msp_df = pd.read_csv(out_prefix+".msp.tsv", sep="\t", skiprows=[0])
+        msp_df = pd.read_csv(out_prefix+".msp", sep="\t", skiprows=[0])
         for sample_id in query_vcf_data['samples']:
             sample_path = join_paths(vis_path, sample_id, verb=False)
             plot_chm(sample_id, msp_df, img_name=sample_path+"/chromosome_painting")
