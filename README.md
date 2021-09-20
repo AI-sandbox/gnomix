@@ -1,12 +1,19 @@
-# Gnomix: High Resolution Ancestry Deconvolution for Next Generation Sequencing
+<img align="left" src="doc/fig/gnome2.jpeg" width=14.1% height=14.1%> 
 
-This repository includes a python implemenation of Gnomix, a fast and accurate Local Ancestry Method.
+# High Resolution Ancestry Deconvolution for Next Generation Genomic Data 
+<br>
+
 
 ![Visualization of the process](doc/fig/gnomix_diagram.png)
 
+<!-- <img align="right" src="doc/fig/gnomix_diagram.png" width=54% height=54% > 
+ -->
+ 
+This repository includes a python implemenation of Gnomix, a fast and accurate local ancestry method.
+
 Gnomix can be used in two ways:
 
-- training a model from scratch using provided training data or 
+- training a model from scratch using reference training data or 
 - loading a pre-trained Gnomix model (see **Pre-Trained Models** below)
 
 In both cases the models are used to infer local ancestry for provided query data.
@@ -74,7 +81,7 @@ If no config is given, the program uses the default. The config file has advance
   - n_cores (int, positive) - how many units of cpu to use
 
 #### Calibration
-To ensure that gnomix outputs probability estimatesthat reflect it's true confidence and accuracy, we recommend using calibration. We use Isotonic Regression to map the predicted probabilities to calibrated probabilities where the latter is more likely to have predictions with confidence X% correct X% of the time.
+To ensure that gnomix outputs probability estimates that reflect it's true confidence and accuracy, we recommend using calibration. We use Isotonic Regression to map the predicted probabilities to calibrated probabilities where the latter is more likely to have predictions with confidence X% correct X% of the time.
 
 ## Output
 
@@ -117,22 +124,22 @@ In those cases, not removing the data and then setting *run_simulation* to False
 
 Pre-trained models will soon be made available for download.
 
-When making predictions, the input to the model is an intersection of the pre-trained model SNP positions and the SNP positions from the <query_file>. That means that the set of positions that's only in the original training input is encoded as missing and the set of positions only in the <query_file> is discarded. When the script is executed, it will log the intersection-ratio as the performance will depend on how much of the original positions are missing. When the intersection is low, we recommend using a model trained with high percentage of missing data.
+When making predictions, the input to the model is an intersection of the pre-trained model SNP positions and the SNP positions from the <query_file>. That means that the set of positions that's only in the original training input (and not in the query samples) is encoded as missing, while the set of positions only in the <query_file> is discarded. When the script is executed, it will log the intersection-ratio as the performance will depend on how much of the original positions are missing. When the intersection is low, we recommend using a model trained with high percentage of missing data, or imputing the query samples to have all SNPs present in the pre-trained model.
 
-The models are trained on hg build 37 references from the following biogeographic regions: *Subsaharan African (AFR), African Hunter and Gatherer (AHG), East Asian (EAS), European (EUR), Native American (NAT), Oceanian (OCE), South Asian (SAS), and West Asian (WAS)* and labels and predicts them as 0, 1, .., 7 respectively.
+The models are trained on hg build 37 references from the following biogeographic regions: *Subsaharan African (AFR), East Asian (EAS), European (EUR), Native American (NAT), Oceanian (OCE), South Asian (SAS), and West Asian (WAS)* and labels and predicts them as 0, 1, .., 6 respectively. The populations used to train these ancestries are given in the supplementary section of the reference provided at the bottom of this readme.
 
 ## Phasing
 
 ![Visualization of the process](src/Gnofix/figures/XGFix.gif)
 
-Accurate phasing of genomic data is crucial for human demographic modeling and identity-by-descent analyses. It has been shown that leveraging information about an individual’s genomic ancestry improves performance of current phasing algorithms. Gnofix is a method that uses local Ancestry Inference to do exactly that. If you suspect your data might be badly phased (often the case when reference panel is small and/or diverse), we recommend using this option. See the **gnofix/** folder for more details. 
+Accurate phasing of genomic data is crucial for human demographic modeling and identity-by-descent analyses. It has been shown that leveraging information about an individual’s genomic ancestry improves performance of current phasing algorithms. Gnofix is a method that uses local ancestry inference to do exactly that. If you suspect your data might be badly phased (often the case when reference panel is small and/or diverse), we recommend using this option. See the **gnofix/** folder for more details. 
 
 ![Local Ancestry for Phasing Error Correction](src/Gnofix/figures/laipec_resized.png)
-Sequenced haplotypes phased with a phasing software (left). LAI used to label haplotypes with ancestry predictions and phasing errors become evident (center). Phasing error correction using LAI is applied to correct phasing errors (right).
+Sequenced haplotypes phased with a phasing software (left). LAI is used to label haplotypes with ancestry predictions and phasing errors become evident (center). Phasing error correction using LAI is applied to correct phasing errors (right).
 
 ## License
 
-**NOTICE**: This software is available for use free of charge for academic research use only. Commercial users, for profit companies or consultants, and non-profit institutions not qualifying as "academic research" must contact the [Stanford Office of Technology Licensing](https://otl.stanford.edu/) for a separate license. This applies to this repository directly and any other repository that includes source, executables, or git commands that pull/clone this repository as part of its function. Such repositories, whether ours or others, must include this notice. Academic users may fork this repository and modify and improve to suit their research needs, but also inherit these terms and must include a licensing notice to that effect.
+**NOTICE**: This software is available for use free of charge for academic research use only. Commercial users, for profit companies or consultants, and non-profit institutions not qualifying as "academic research" must contact the [Stanford Office of Technology Licensing](https://otl.stanford.edu/) for a separate license. This applies to this repository directly and any other repository that includes source, executables, or git commands that pull/clone this repository as part of its function. Such repositories, whether ours or others, must include this notice. Academic users may fork this repository and modify and improve to suit their research needs, but also inherit these terms and must include a licensing notice to this effect.
 
 ## Cite
 
