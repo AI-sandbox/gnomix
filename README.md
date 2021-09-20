@@ -32,13 +32,13 @@ gnomix.py loads and uses a pre-trained Gnomix model to predict the ancestry for 
 
 To execute the program with a pre-trained model run:
 ```
-$ python3 gnomix.py <query_file> <genetic_map_file> <output_basename> <chr_nr> <phase> <path_to_model> 
+$ python3 gnomix.py <query_file> <genetic_map_file> <output_folder> <chr_nr> <phase> <path_to_model> 
 ```
 
 where 
 - <*query_file*> is a .vcf or .vcf.gz file containing the query haplotypes which are to be analyzed (see example in the **demo/data/** folder)
 - <*genetic_map_file*> is the genetic map file (see example in the **demo/data/** folder)
-- <*output_basename*> is where the results will be written (see details in **Output** below and an example in the **demo/data/** folder)
+- <*output_folder*> is where the results will be written (see details in **Output** below and an example in the **demo/data/** folder)
 - <*chr_nr*> is the chromosome number
 - <*phase*> is either True or False corresponding to the intent of using the predicted ancestry for phasing (see details in **Phasing** below and in the **gnofix/** folder)
 - <*path_to_model*> is a path to the model used for predictions (see **Pre-trained Models** below)
@@ -47,7 +47,7 @@ where
 
 To execute the program when training a model run:
 ```
-$ python3 gnomix.py <query_file> <genetic_map_file> <output_basename> <chr_nr> <phase> <reference_file> <sample_map_file>
+$ python3 gnomix.py <query_file> <genetic_map_file> <output_folder> <chr_nr> <phase> <reference_file> <sample_map_file>
 ```
 
 where the first 5 arguments are described above in the pre-trained setting and 
@@ -61,7 +61,7 @@ More advanced configuration settings can be found in *config.yaml*.
 They include general settings, simulation settings and model settings. More details are given in the file itself. If training a model from scratch you can also pass an alternative config file as the last argument:
 
 ```
-$ python3 gnomix.py <query_file> <genetic_map_file> <output_basename> <chr_nr> <phase> <reference_file> <sample_map_file> <config_file>
+$ python3 gnomix.py <query_file> <genetic_map_file> <output_folder> <chr_nr> <phase> <reference_file> <sample_map_file> <config_file>
 ```
 
 If no config is given, the program uses the default (*config.yaml*). The config file has advanced training options. Some of the parameters are
@@ -84,9 +84,9 @@ If no config is given, the program uses the default (*config.yaml*). The config 
 
 ## Output
 
-The results (including predictions, trained models and analysis) are stored in the *<output_basename>* folder.
+The results (including predictions, trained models and analysis) are stored in the *<output_folder>*.
 
-### Predictions
+### Inference
 
 The inference is written to two files, one for a single ancestry estimates for each marker (qery_results.msp) and one for probability estimates for each ancestry at each marker (query_results.fb). Below, we describe the both files in more detail.
 
@@ -120,12 +120,16 @@ The first 4 columns specify
 
 The remaining columns represent the query hapotypes and reference panel population and each line markes the estimated probability of the given genome position coming from the population. A genotype has two haplotypes, so the number of predictions for a genotype is 2*(number of genotypes)*(number of reference populations) and therefore the total number of columns in the file is 6 + 2*(number of genotypes)*(number of reference populations).
 
+#### query_file_phased.vcf
+
+When using Gnofix for phasing error correctin (See Phasing below), the inference above will be performed on the query haplotype phased by Gnofix. These phased haplotypes will then also be exported to query_file_phased.vcf in the *<output_folder>*/ folder.
+
 ### Model
-When training a model, the resulting model will be stored in *<output_basename>/models*. That way it can be re-used for analyzing another dataset.
-The model's estimated accuracy is logged along with a confusion matrix which is stored in *<output_basename>/models/analysis*.
+When training a model, the resulting model will be stored in *<output_folder>/models*. That way it can be re-used for analyzing another dataset.
+The model's estimated accuracy is logged along with a confusion matrix which is stored in *<output_folder>/models/analysis*.
 
 ### Simulated data
-The program simulates training data and stores in *<output_basename>/generated_data*. To automatically remove the created data when training is done,
+The program simulates training data and stores it in *<output_folder>/generated_data*. To automatically remove the created data when training is done,
 set *rm_simulated_data* to True in *config.yaml*. Note that in some cases, the simulated data can be re-used for training with similar settings. 
 In those cases, not removing the data and then setting *run_simulation* to False will re-use the previously simulated data which can save a lot of time and compuation.
 
