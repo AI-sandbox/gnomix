@@ -158,33 +158,24 @@ To ensure that gnomix outputs probability estimates that reflect it's true confi
 
 **NOTICE**: This software is available for use free of charge for academic research use only. Commercial users, for profit companies or consultants, and non-profit institutions not qualifying as "academic research" must contact the [Stanford Office of Technology Licensing](https://otl.stanford.edu/) for a separate license. This applies to this repository directly and any other repository that includes source, executables, or git commands that pull/clone this repository as part of its function. Such repositories, whether ours or others, must include this notice. Academic users may fork this repository and modify and improve to suit their research needs, but also inherit these terms and must include a licensing notice to this effect.
 
-<!-- ## Cite
+## Cite
 
-#### When using this software, please cite: Kumar, A., Montserrat, D.M., Bustamante, C. and Ioannidis, A., "XGMix: Local-Ancestry Inference With Stacked XGBoost," International Conference on Learning Representations Workshops (ICLR, 2020, Workshop AI4AH).
+#### When using this software, please cite: 
+### Helgi Hilmarsson, Arvind S Kumar, Richa Rastogi, Carlos D Bustamante, Daniel Mas Montserrat, Alexander G Ioannidis: "High Resolution Ancestry Deconvolution for Next Generation Genomic Data"
 
-https://www.biorxiv.org/content/10.1101/2020.04.21.053876v1
+https://www.biorxiv.org/content/10.1101/2021.09.19.460980v1
 
 ```
-@article{kumar2020xgmix,
-  title={XGMix: Local-Ancestry Inference With Stacked XGBoost},
-  author={Kumar, Arvind and Montserrat, Daniel Mas and Bustamante, Carlos and Ioannidis, Alexander},
-  journal={International Conference of Learning Representations Workshops, AI4AH},
-  year={2020}
+@article {Hilmarsson2021.09.19.460980,
+	author = {Hilmarsson, Helgi and Kumar, Arvind S and Rastogi, Richa and Bustamante, Carlos D and Mas Montserrat, Daniel and Ioannidis, Alexander G},
+	title = {High Resolution Ancestry Deconvolution for Next Generation Genomic Data},
+	elocation-id = {2021.09.19.460980},
+	year = {2021},
+	doi = {10.1101/2021.09.19.460980},
+	publisher = {Cold Spring Harbor Laboratory},
+	abstract = {As genome-wide association studies and genetic risk prediction models are extended to globally diverse and admixed cohorts, ancestry deconvolution has become an increasingly important tool. Also known as local ancestry inference (LAI), this technique identifies the ancestry of each region of an individual{\textquoteright}s genome, thus permitting downstream analyses to account for genetic effects that vary between ancestries. Since existing LAI methods were developed before the rise of massive, whole genome biobanks, they are computationally burdened by these large next generation datasets. Current LAI algorithms also fail to harness the potential of whole genome sequences, falling well short of the accuracy that such high variant densities can enable. Here we introduce Gnomix, a set of algorithms that address each of these points, achieving higher accuracy and swifter computational performance than any existing LAI method, while also enabling portable models that are particularly useful when training data are not shareable due to privacy or other restrictions. We demonstrate Gnomix (and its swift phase correction counterpart Gnofix) on worldwide whole-genome data from both humans and canids and utilize its high resolution accuracy to identify the location of ancient New World haplotypes in the Xoloitzcuintle, dating back over 100 generations. Code is available at https://github.com/AI-sandbox/gnomixCompeting Interest StatementCDB is the founder and CEO of Galatea Bio Inc and on the boards of Genomics PLC and Etalon.},
+	URL = {https://www.biorxiv.org/content/early/2021/09/21/2021.09.19.460980},
+	eprint = {https://www.biorxiv.org/content/early/2021/09/21/2021.09.19.460980.full.pdf},
+	journal = {bioRxiv}
 }
-```
-
-#### You can also include its companion paper: Montserrat, D.M., Kumar, A., Bustamante, C. and Ioannidis, A., "Addressing Ancestry Disparities in Genomic Medicine: A Geographic-aware Algorithm," International Conference on Learning Representations Workshops (ICLR, 2020, Workshop AI4CC).
-
-https://arxiv.org/pdf/2004.12053.pdf
-
-```
-@article{montserrat2020addressing,
-  title={Addressing Ancestry Disparities in Genomic Medicine: A Geographic-aware Algorithm},
-  author={Montserrat, Daniel Mas and Kumar, Arvind and Bustamante, Carlos and Ioannidis, Alexander},
-  journal={International Conference of Learning Representations Workshops, AI4CC},
-  year={2020}
-}
-``` -->
-
-
 
