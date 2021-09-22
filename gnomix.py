@@ -1,11 +1,10 @@
-import yaml
-
 import gzip
 import numpy as np
 import os
 import pandas as pd
 import pickle
 import sys
+import yaml
 
 from src.utils import run_shell_cmd, join_paths, read_vcf, vcf_to_npy, npy_to_vcf, update_vcf 
 from src.utils import read_genetic_map, save_dict, load_dict
@@ -17,12 +16,9 @@ from src.laidataset import LAIDataset
 from src.model import Gnomix
 
 CLAIMER = 'When using this software, please cite: \n' + \
-          'Kumar, A., Montserrat, D.M., Bustamante, C. and Ioannidis, A. \n' + \
-          '"XGMix: Local-Ancestry Inference With Stacked XGBoost" \n' + \
-          'International Conference on Learning Representations Workshops \n' + \
-          'ICLR, 2020, Workshop AI4AH \n' + \
-          'https://www.biorxiv.org/content/10.1101/2020.04.21.053876v1'
-
+          'Helgi Hilmarsson, Arvind S Kumar, Richa Rastogi, Carlos D Bustamante, Daniel Mas Montserrat, Alexander G Ioannidis: \n' + \
+          '"High Resolution Ancestry Deconvolution for Next Generation Genomic Data" \n' + \
+          "https://www.biorxiv.org/content/10.1101/2021.09.19.460980v1"
 
 def load_model(path_to_model, verbose=True):
     if verbose:
