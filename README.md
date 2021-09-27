@@ -9,7 +9,7 @@
 <!-- <img align="right" src="doc/fig/gnomix_diagram.png" width=54% height=54% > 
  -->
  
-This repository includes a python implemenation of Gnomix, a fast and accurate local ancestry method.
+This repository includes a python implemenation of Gnomix, a fast, scalable, and accurate local ancestry method.
 
 Gnomix can be used in two ways:
 
@@ -72,10 +72,10 @@ If no config is given, the program uses the default (*config.yaml*). The config 
   - rm_data (bool) - whether to remove simulated data (if memory constrained). It is set to false if run is False
   - r_admixed (float,positive) - number of simulated individuals generated = r_admixed x Size of sample map
   - splits: must contain train1, train2 and optionally validation. If validation ratio is 0, validation is not performed
-  - generations indicates simulated individuals' generations. 
+  - generations indicates simulated individuals' generations since admixture. 
 - model:
   - name (string) - model's name: default is "model"
-  - inference (string) - 3 possible options - best / fast / default. "best" uses random string kernel base + xgboost smoother. "fast" uses logistic regression base + crf smoother. "default" uses logistic regression base + xgboost smoother
+  - inference (string) - 3 possible options - best / fast / default. "best" uses random string kernel base + xgboost smoother and is recommended for array data. "fast" uses logistic regression base + crf smoother. "default" uses logistic regression base + xgboost smoother and on whole genome has nearly the same accuracy as "best," but with much faster runtime.
   - window_size_cM (float, positive) -  size of window in centiMorgans
   - smooth_size (int, positive) - number of windows to be taken as context for smoother
   - context_ratio (float between 0 and 1) - context of base model windows
@@ -115,7 +115,7 @@ The second line specifies the column names, and every following line marks a gen
 
 The first 4 columns specify
 - the chromosome
-- mean of genetic marker's physical position in basepair units
+- mean of genetic marker's physical position in base pair units
 - mean of genetic position in centiMorgans
 - genetic marker index
 
@@ -138,7 +138,7 @@ In those cases, not removing the data and then setting *run_simulation* to False
 
 Pre-trained models will soon be made available for download.
 
-When making predictions, the input to the model is an intersection of the pre-trained model SNP positions and the SNP positions from the <query_file>. That means that the set of positions that's only in the original training input (and not in the query samples) is encoded as missing, while the set of positions only in the <query_file> is discarded. When the script is executed, it will log the intersection-ratio as the performance will depend on how much of the original positions are missing. When the intersection is low, we recommend using a model trained with high percentage of missing data, or imputing the query samples to have all SNPs present in the pre-trained model.
+When making predictions, the input to the model is an intersection of the pre-trained model SNP positions and the SNP positions from the <query_file>. That means that the set of positions that are only in the original training input used to create the model (and not in the query samples) are encoded as missing, while the set of positions only in the <query_file> are discarded. When the script is executed, it will log the intersection-ratio, as the performance will depend on how many of the original positions are missing. If the intersection is low, we recommend using a model trained with a high percentage of missing data, or imputing the query samples to have the full set of SNPs present in the pre-trained model.
 
 The models are trained on hg build 37 references from the following biogeographic regions: *Subsaharan African (AFR), East Asian (EAS), European (EUR), Native American (NAT), Oceanian (OCE), South Asian (SAS), and West Asian (WAS)* and labels and predicts them as 0, 1, .., 6 respectively. The populations used to train these ancestries are given in the supplementary section of the reference provided at the bottom of this readme.
 
