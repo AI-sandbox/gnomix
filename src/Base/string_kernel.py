@@ -24,18 +24,12 @@ def string_kernel_DP_triangular_numbers_vectorized(x,Y):
     return K
 
 def string_kernel_DP_triangular_numbers(X,Y):
-    
-    Z = np.zeros((len(X), len(Y)), dtype=int)
-    for i, x in enumerate(X):
-        Z[i] = string_kernel_DP_triangular_numbers_vectorized(x,Y)
-
-    return Z
+    return np.array([string_kernel_DP_triangular_numbers_vectorized(x,Y) for x in X])
 
 def string_kernel_DP_triangular_numbers_multithread(X,Y,n_jobs=None):
 
-    Xn, Xm = X.shape
     with mp.Pool(n_jobs) as pool:
-        K_list = pool.map(partial(string_kernel_DP_triangular_numbers_vectorized, Y=Y), X.reshape(Xn, 1, Xm))
+        K_list = pool.map(partial(string_kernel_DP_triangular_numbers_vectorized, Y=Y), X)
     
     K = np.array(K_list).squeeze()
     
@@ -59,12 +53,12 @@ def poly_kernel_(x,y,p):
 
 def poly_kernel(X,Y,p=1.2):
     
-    Z = np.zeros((len(X), len(Y)), dtype=int)
+    K = np.zeros((len(X), len(Y)), dtype=int)
     for i, x in enumerate(X):
         for j, y in enumerate(Y):
-            Z[i,j] = poly_kernel_(x,y,p=p)
+            K[i,j] = poly_kernel_(x,y,p=p)
             
-    return Z
+    return K
 
 def poly_kernel_multithread(X,Y,p=1.2,n_jobs=16):
 
@@ -106,27 +100,23 @@ def CovRSK_DP_triangular_numbers_vectorized(x,Y,Ms_ohe):
         K += cov_tri
     return K
     
-def CovRSK_DP_triangular_numbers(X, Y, alpha=0.6, beta=1.0, n_jobs=None, seed=37):
+def CovRSK_DP_triangular_numbers(X, Y, alpha=0.6, beta=1.0, seed=37):
 
     Xn, Xm = X.shape
     Ms = CovSample(Xm, alpha, beta, seed)
     Ms_ohe = ohe(idx=np.array(Ms)+1, size=Xm+1)
-    
-    Z = np.zeros((len(X), len(Y)), dtype=int)
-    for i, x in enumerate(X):
-         Z[i] = CovRSK_DP_triangular_numbers_vectorized(x,Y,Ms_ohe=Ms_ohe)
+    K = np.array([CovRSK_DP_triangular_numbers_vectorized(x,Y,Ms_ohe=Ms_ohe) for x in X])
 
-    return Z
+    return K
 
 def CovRSK_DP_triangular_numbers_multithread(X, Y, alpha=0.6, beta=1.0, n_jobs=None, seed=37):
     
     Xn, Xm = X.shape
     Ms = CovSample(Xm, alpha, beta, seed)
     Ms_ohe = ohe(idx=np.array(Ms)+1, size=Xm+1)
-
     func = partial(CovRSK_DP_triangular_numbers_vectorized, Y=Y,Ms_ohe=Ms_ohe)
     with mp.Pool(n_jobs) as pool:
-        K_list = pool.map(func, X.reshape(Xn, 1, Xm))
+        K_list = pool.map(func, X)
     
     K = np.array(K_list).squeeze()
     
