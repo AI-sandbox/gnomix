@@ -4,7 +4,7 @@ import os
 from collections import namedtuple
 import scipy.interpolate
 
-from src.utils import read_vcf
+from src.utils import read_vcf, read_genetic_map
 
 def get_chm_info(genetic_map,variants_pos,chm):
 
@@ -16,19 +16,10 @@ def get_chm_info(genetic_map,variants_pos,chm):
     variants: a npy array with numbers representing centi morgans
     
     """
-    chm = str(chm)
-    # read in genetic map and subset to chm number.
-    genetic_df = pd.read_csv(genetic_map,delimiter="\t",header=None,comment="#",dtype=str)
-    genetic_df.columns = ["chm","pos","cM"]
-    genetic_chm = genetic_df[genetic_df["chm"]==chm]
-
-    if len(genetic_chm) == 0:
-        genetic_chm = genetic_df[genetic_df["chm"]=="chr"+chm] # sometimes it is called chr22 instead of 22
-
-    genetic_chm = genetic_chm.astype({"chm":str,"pos":int,"cM":float})
+    genetic_chm = read_genetic_map(genetic_map_path=genetic_map, chm=chm)
 
     # get length of chm.
-    chm_length_morgans = max(genetic_chm["cM"])/100.0
+    chm_length_morgans = max(genetic_chm["pos_cm"])/100.0
 
     # get snp info - snps in the vcf file and their cm values.
     # then compute per position probability of being a breapoint.
@@ -41,7 +32,7 @@ def get_chm_info(genetic_map,variants_pos,chm):
     """
     # This adds 0 overhead to code runtime.
     # get interpolated values of all reference snp positions
-    genomic_intervals = scipy.interpolate.interp1d(x=genetic_chm["pos"].to_numpy(), y=genetic_chm["cM"].to_numpy(),fill_value="extrapolate")
+    genomic_intervals = scipy.interpolate.interp1d(x=genetic_chm["pos"].to_numpy(), y=genetic_chm["pos_cm"].to_numpy(),fill_value="extrapolate")
     genomic_intervals = genomic_intervals(variants_pos)
 
     # interpolation

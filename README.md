@@ -37,7 +37,7 @@ $ python3 gnomix.py <query_file> <genetic_map_file> <output_folder> <chr_nr> <ph
 
 where 
 - <*query_file*> is a .vcf or .vcf.gz file containing the query haplotypes which are to be analyzed (see example in the **demo/data/** folder)
-- <*genetic_map_file*> is the genetic map file (see example in the **demo/data/** folder)
+- <*genetic_map_file*> is the genetic map file. It's a .tsv file with 3 columns; chromosome number, SNP physical position and SNP genetic position. There should be no headers unless they start with "#". See example in the **demo/data/** folder.
 - <*output_folder*> is where the results will be written (see details in **Output** below and an example in the **demo/data/** folder)
 - <*chr_nr*> is the chromosome number
 - <*phase*> is either True or False corresponding to the intent of using the predicted ancestry for phasing (see details in **Phasing** below and in the **gnofix/** folder)
