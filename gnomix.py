@@ -16,7 +16,8 @@ from src.laidataset import LAIDataset
 from src.model import Gnomix
 
 CLAIMER = 'When using this software, please cite: \n' + \
-          'Helgi Hilmarsson, Arvind S Kumar, Richa Rastogi, Carlos D Bustamante, Daniel Mas Montserrat, Alexander G Ioannidis: \n' + \
+          'Helgi Hilmarsson, Arvind S Kumar, Richa Rastogi, Carlos D Bustamante, \n' + \
+          'Daniel Mas Montserrat, Alexander G Ioannidis: \n' + \
           '"High Resolution Ancestry Deconvolution for Next Generation Genomic Data" \n' + \
           "https://www.biorxiv.org/content/10.1101/2021.09.19.460980v1"
 
