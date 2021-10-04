@@ -28,5 +28,5 @@ model:
   n_cores:            # maximum number of CPUs to use
 
 inference:
-  snp_level_inference: True
+  snp_level_inference: False # output ancestry inference for each marker of the query file
   visualize_inference: False # visualize chromosome paintings, beta version
