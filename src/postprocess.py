@@ -119,3 +119,25 @@ def write_fb(fb_prefix, meta_data, proba, ancestry, query_samples):
         fb_df.to_csv(f, sep="\t", index=False)
 
     return
+
+def msp_to_lai(msp_file, lai_file, positions):
+    
+    msp_df = pd.read_csv(msp_file, sep="\t", comment="#", header=None)
+    data_window = np.array(msp_df.iloc[:, 6:])
+    n_reps = msp_df.iloc[:, 5].to_numpy()
+    assert np.sum(n_reps) == len(positions)
+    data_snp = np.concatenate([np.repeat([row], repeats=n_reps[i], axis=0) for i, row in enumerate(data_window)])
+
+    with open(msp_file) as f:
+        first_line = f.readline()
+        second_line = f.readline()
+        
+    header = second_line[:-1].split("\t")
+    samples = header[6:]
+    df = pd.DataFrame(data_snp, columns=samples, index=positions)
+
+    with open(lai_file, "w") as f:
+        f.write(first_line)
+    df.to_csv(lai_file, sep="\t", mode='a', index_label="position")
+    
+    return df

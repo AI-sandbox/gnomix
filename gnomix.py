@@ -9,7 +9,7 @@ import yaml
 from src.utils import run_shell_cmd, join_paths, read_vcf, vcf_to_npy, npy_to_vcf, update_vcf 
 from src.utils import read_genetic_map, save_dict, load_dict
 from src.preprocess import load_np_data, data_process
-from src.postprocess import get_meta_data, write_msp, write_fb
+from src.postprocess import get_meta_data, write_msp, write_fb, msp_to_lai
 from src.visualization import plot_cm, plot_chm
 from src.laidataset import LAIDataset
 
@@ -32,7 +32,7 @@ def load_model(path_to_model, verbose=True):
 
     return model
 
-def run_inference(base_args, model, visualize, verbose):
+def run_inference(base_args, model, visualize, snp_level=False, verbose=False):
 
     if verbose:
         print("Loading and processing query file...")
@@ -74,6 +74,10 @@ def run_inference(base_args, model, visualize, verbose):
     out_prefix = output_path + "/" + "query_results"
     write_msp(out_prefix, meta_data, y_pred_query, model.population_order, query_vcf_data['samples'])
     write_fb(out_prefix, meta_data, y_proba_query, model.population_order, query_vcf_data['samples'])
+
+    # write the snp level results (BETA)
+    if snp_level:
+        msp_to_lai(msp_file=out_prefix+".msp", lai_file=out_prefix+".lai", positions=query_vcf_data['variants/POS'])
 
     # visualize results
     if visualize:
@@ -362,4 +366,7 @@ if __name__ == "__main__":
     # run inference if applicable.
     if base_args["query_file"]:
         print("Launching inference...")
-        run_inference(base_args, model, visualize=config["inference"]["visualize_inference"], verbose=True)
+        run_inference(base_args, model, 
+                        visualize=config["inference"]["visualize_inference"],
+                        snp_level=config["inference"]["snp_level_inference"],
+                        verbose=True)
