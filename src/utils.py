@@ -154,6 +154,8 @@ def vcf_to_npy(vcf_data, snp_pos_fmt=None, snp_ref_fmt=None, miss_fill=2, return
     missing_mask = np.logical_and(mat_vcf_2d != 0, mat_vcf_2d != 1)
     mat_vcf_2d[missing_mask] = miss_fill
 
+    mat_vcf_2d = mat_vcf_2d.astype(np.int8)
+
     # return npy matrix
     if return_idx:
         return mat_vcf_2d, vcf_idx, fmt_idx
