@@ -22,6 +22,7 @@ class Base():
         self.verbose = verbose
         self.base_multithread = False
         self.log_inference = False
+        self.vectorize = True
 
         self.time = {}
 
@@ -48,11 +49,14 @@ class Base():
             - X: np.array of shape (N, C) where N is sample size and C chm length
             - y: np.array of shape (N, C) where N is sample size and C chm length
         """
-        try:
-            np.lib.stride_tricks.sliding_window_view
-            return self.train_vectorized(X, y)
-        except AttributeError:
-            print("Vectorized implementation requires numpy versions 1.20+.. Using loopy version..")
+        if self.vectorize:
+            try:
+                np.lib.stride_tricks.sliding_window_view
+                return self.train_vectorized(X, y)
+            except AttributeError:
+                print("Vectorized implementation requires numpy versions 1.20+.. Using loopy version..")
+                self.vectorize = False
+        if not self.vectorize:
             return self.train_loopy(X, y, verbose=verbose)
 
     def train_loopy(self, X, y, verbose=True):
@@ -129,11 +133,14 @@ class Base():
         returns 
             - B: base probabilities of shape (N,W,A)
         """
-        try:
-            np.lib.stride_tricks.sliding_window_view
-            return self.predict_proba_vectorized(X)
-        except AttributeError:
-            print("Vectorized implementation requires numpy versions 1.20+.. Using loopy version..")
+        if self.vectorize:
+            try:
+                np.lib.stride_tricks.sliding_window_view
+                return self.predict_proba_vectorized(X)
+            except AttributeError:
+                print("Vectorized implementation requires numpy versions 1.20+.. Using loopy version..")
+                self.vectorize = False
+        if not self.vectorize:
             return self.predict_proba_loopy(X)
 
     def predict_proba_vectorized(self, X):

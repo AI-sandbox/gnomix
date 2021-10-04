@@ -294,7 +294,7 @@ class LAIDataset:
             n_pop = len(pop_sample_ids)
 
             # find number of samples in each set
-            n_sets = [round(r*n_pop) for r in ratios]
+            n_sets = [int(round(r*n_pop)) for r in ratios]
             while sum(n_sets) > n_pop:
                 n_sets[0] -= 1    
             while sum(n_sets) < n_pop:
