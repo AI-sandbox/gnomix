@@ -96,7 +96,7 @@ The inference is written to two files, one for a single ancestry estimates for e
 In the query_results.msp file, the first line is a comment line, that specifies the order and encoding of populations, eg:
 #Sub_population order/code: golden_retriever=0 labrador_retriever=1 poodle poodle_small=2
 
-The second line specifies the column names, and every following line marks a genome position.
+The second line specifies the column names, and every following line marks an interval on the genome.
 
 The first 6 columns specify
 - the chromosome
@@ -111,7 +111,7 @@ The remaining columns give the predicted reference panel population for the give
 In the query_results.fb file, the first line is a comment line, that specifies the order of the populations, eg:
 #reference_panel_population:	AFR	EUR	NAT
 
-The second line specifies the column names, and every following line marks a genome position.
+The second line specifies the column names, and every following line marks an interval on the genome.
 
 The first 4 columns specify
 - the chromosome
@@ -120,6 +120,18 @@ The first 4 columns specify
 - genetic marker index
 
 The remaining columns represent the query hapotypes and reference panel population and each line markes the estimated probability of the given genome position coming from the population. A genotype has two haplotypes, so the number of predictions for a genotype is 2*(number of genotypes)*(number of reference populations) and therefore the total number of columns in the file is 6 + 2*(number of genotypes)*(number of reference populations).
+
+#### query_results.lai **(BETA)**
+
+The query_results.lai is an optional output that includes the inferred ancestry label for each marker in the query file. Please note that this feature is in beta stage and therefore the program does not export this file unless *snp_level_inference* is set to *True* in the *config.yaml* file.
+
+The first line of the output file is a comment line, that specifies the order and encoding of populations, eg:
+#Sub_population order/code: golden_retriever=0 labrador_retriever=1 poodle poodle_small=2
+just like in the msp file.
+
+The second line specifies the column names, and every following line marks a genome position.
+
+The first column indicates the physicial position of the SNP and the the remaining columns give the predicted reference panel population for the given interval. A genotype has two haplotypes, so the number of predictions for a genotype is 2*(number of genotypes) and therefore the total number of columns in the file is 1 + 2*(number of genotypes).
 
 #### query_file_phased.vcf
 
