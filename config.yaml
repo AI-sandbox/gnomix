@@ -28,4 +28,5 @@ model:
   n_cores:            # maximum number of CPUs to use
 
 inference:
+  snp_level_inference: True
   visualize_inference: False # visualize chromosome paintings, beta version
