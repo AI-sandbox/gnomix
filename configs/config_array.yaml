@@ -16,7 +16,7 @@ simulation:
 
 model: 
   name: model         # model name for storing model + analysis
-  inference:          # If blank, we use default (best, fast, large are alternative options)
+  inference: best     # If blank, we use default (best, fast, large are alternative options)
   window_size_cM: 0.2 # size of each base window in centi Morgans
   smooth_size: 75     # How many windows the smoothers see
   context_ratio: 0.5  # context for each window will be context_ratio*window_size on each side

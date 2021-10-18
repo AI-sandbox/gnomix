@@ -133,7 +133,7 @@ def get_data(data_path, generations, window_size_cM):
     X_t2, y_t2 = read("train2")
     X_v, y_v = (None, None)
     if generations.get("val") is not None:
-        X_v, y_v   = read("val")
+        X_v, y_v = read("val")
 
     data = ((X_t1, y_t1), (X_t2, y_t2), (X_v, y_v))
 
@@ -161,8 +161,6 @@ def train_model(config, data_path, verbose):
     generations = config["simulation"]["splits"]["gens"]
     if validate == False:
         del generations["val"]
-    else:
-        generations["val"] = [gen for gen in generations["val"] if gen != 0]
 
     output_path = base_args["output_basename"]
     if not os.path.exists(output_path):
@@ -226,7 +224,7 @@ def train_model(config, data_path, verbose):
 
     return model
     
-def simulate_splits(base_args,config):
+def simulate_splits(base_args,config,data_path):
 
     # build LAIDataset object
     chm = base_args["chm"]
@@ -242,7 +240,6 @@ def simulate_splits(base_args,config):
     if not os.path.exists(outdir):
         os.makedirs(outdir)
     
-    data_path = os.path.join(outdir,"simulation_output")
     if not os.path.exists(data_path):
         os.makedirs(data_path)
 
@@ -258,18 +255,19 @@ def simulate_splits(base_args,config):
             del config["simulation"]["splits"]["ratios"]["val"]
     laidataset.create_splits(splits,sample_map_path)
 
-    # write metadata into data_path/metadata.yaml # TODO
+    # TODO
+    # write metadata into data_path/metadata.yaml
     # check lines 94 to 96 where this is read...
     save_dict(laidataset.metadata(), os.path.join(data_path,"metadata.pkl"))
 
     # get num_outs
-    generations = config["simulation"]["splits"]["gens"]
+    split_generations = config["simulation"]["splits"]["gens"]
     r_admixed = config["simulation"]["r_admixed"]
     num_outs = {}
     min_splits = {"train1":800,"train2":150,"val":50}
     for split in splits:
         total_sim = max(len(laidataset.return_split(split))*r_admixed, min_splits[split])
-        num_outs[split] = int(total_sim/len(generations[split]))
+        num_outs[split] = int(total_sim/len(split_generations[split]))
 
     if verbose:
         print("Running Simulation...")
@@ -277,7 +275,7 @@ def simulate_splits(base_args,config):
         split_path = os.path.join(data_path, split)
         if not os.path.exists(split_path):
             os.makedirs(split_path)
-        for gen in generations[split]:
+        for gen in split_generations[split]:
             laidataset.simulate(num_outs[split],
                                 split=split,
                                 gen=gen,
@@ -344,19 +342,24 @@ if __name__ == "__main__":
 
         if config["simulation"]["splits"]["ratios"].get("val") == 0:
             del config["simulation"]["splits"]["ratios"]["val"]
-        generations = config["simulation"]["splits"]["gens"]
-        config["simulation"]["splits"]["gens"]["train1"] = list(set(generations["train1"] + [0]))
-        config["simulation"]["splits"]["gens"]["train2"] = list(set(generations["train2"] + [0]))
+
+        generations = config["simulation"]["gens"]
+        gens_with_zero = list(set(generations + [0]))
+        gens_without_zero = [generation for generation in generations if generation != 0]
+        config["simulation"]["splits"]["gens"] = {
+            "train1": gens_with_zero,
+            "train2": generations,
+            "val": gens_without_zero
+        }
 
         # make sure data is ready...
         if config["simulation"]["run"]==False and config["simulation"]["path"] is not None:
             print("Using pre-simulated data from: ",config["simulation"]["path"])
             config["simulation"]["rm_data"] = False # this must be false if using pre-generated data regardless of what input is given for safety reasons!
             data_path = config["simulation"]["path"] # path with train1/ train2/ val/ metadata.yaml
-
         else:
-            simulate_splits(base_args, config) # will create the simulation_output folder
-            data_path = os.path.join(base_args["output_basename"],"simulation_output")
+            data_path = os.path.join(base_args["output_basename"],"generated_data")
+            simulate_splits(base_args, config, data_path) # will create the simulation_output folder
         
         # train the model
         if verbose:

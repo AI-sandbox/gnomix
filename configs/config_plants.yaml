@@ -1,3 +1,5 @@
+# this config file has been used for applying gnomix on date palm datas
+
 verbose: True
 seed: 94305
 
@@ -15,14 +17,14 @@ simulation:
   rm_data: False      # removes simulated data once it has been used
 
 model: 
-  name: model         # model name for storing model + analysis
-  inference:          # If blank, we use default (best, fast, large are alternative options)
-  window_size_cM: 0.2 # size of each base window in centi Morgans
-  smooth_size: 75     # How many windows the smoothers see
-  context_ratio: 0.5  # context for each window will be context_ratio*window_size on each side
-  retrain_base: True  # retrain the base models once smoother data has been obtained
-  calibrate: True     # calibrate the output probabilities
-  n_cores:            # number of CPUs to use, default is maximum
+  name: model          # model name for storing model + analysis
+  inference: best      # If blank, we use default (best, fast, large are alternative options)
+  window_size_cM: 0.05 # size of each base window in centi Morgans
+  smooth_size: 25      # How many windows the smoothers see
+  context_ratio: 0.5   # context for each window will be context_ratio*window_size on each side
+  retrain_base: True   # retrain the base models once smoother data has been obtained
+  calibrate: True      # calibrate the output probabilities
+  n_cores:             # number of CPUs to use, default is maximum
 
 inference:
   snp_level_inference: False # output ancestry inference for each marker of the query file
