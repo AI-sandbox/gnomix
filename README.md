@@ -43,6 +43,13 @@ where
 - <*phase*> is either True or False corresponding to the intent of using the predicted ancestry for phasing (see details in **Phasing** below and in the **gnofix/** folder)
 - <*path_to_model*> is a path to the model used for predictions (see **Pre-trained Models** below)
 
+### Downloading pre-trained models
+In order to incorporate our pre-trained models into your pipeline, please use the following command to download pre-trained models for the whole human genome. The SNPs used for our pre-trained models are also published as a .bim file for every chromosome.
+```
+sh download_pretrained_models.sh
+```
+This creates a folder called **pretrained_gnomix_models**. For each chromosome, we publish a *default_model.pkl* which can be used as a pre-trained model in the <*path_to_model*> field and a *.bim* file as explained above. We recommend imputing missing variants if the proportion of missing variants is large with respect to the pretrained models' variants. The **default_model.pkl** is capable of performing continent-level Local ancestry inference on the following populations: African, East Asian, South Asian, European, Native American, Oceanian, West Asian.
+
 ### When Training a Model From Scratch
 
 To execute the program when training a model run:
