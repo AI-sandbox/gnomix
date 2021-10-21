@@ -48,7 +48,11 @@ In order to incorporate our pre-trained models into your pipeline, please use th
 ```
 sh download_pretrained_models.sh
 ```
-This creates a folder called **pretrained_gnomix_models**. For each chromosome, we publish a *default_model.pkl* which can be used as a pre-trained model in the <*path_to_model*> field and a *.bim* file as explained above. We recommend imputing missing variants if the proportion of missing variants is large with respect to the pretrained models' variants. The **default_model.pkl** is capable of performing continent-level Local ancestry inference on the following populations: African, East Asian, South Asian, European, Native American, Oceanian, West Asian.
+This creates a folder called **pretrained_gnomix_models**. For each chromosome, we publish a *default_model.pkl* which can be used as a pre-trained model in the <*path_to_model*> field and a *.bim* file as explained above.
+
+When making predictions, the input to the model is an intersection of the pre-trained model SNP positions and the SNP positions from the <query_file>. That means that the set of positions that are only in the original training input used to create the model (and not in the query samples) are encoded as missing, while the set of positions only in the <query_file> are discarded. When the script is executed, it will log the intersection-ratio, as the performance will depend on how many of the original positions are missing. If the intersection is low, we recommend using a model trained with a high percentage of missing data, or imputing the query samples to have the full set of SNPs present in the pre-trained model.
+
+The models named **default_model.pkl** are trained on hg build 37 references from the following biogeographic regions: *Subsaharan African (AFR), East Asian (EAS), European (EUR), Native American (NAT), Oceanian (OCE), South Asian (SAS), and West Asian (WAS)* and labels and predicts them as 0, 1, .., 6 respectively. The populations used to train these ancestries are given in the supplementary section of the reference provided at the bottom of this readme.
 
 ### When Training a Model From Scratch
 
@@ -152,14 +156,6 @@ The model's estimated accuracy is logged along with a confusion matrix which is 
 The program simulates training data and stores it in *<output_folder>/generated_data*. To automatically remove the created data when training is done,
 set *rm_simulated_data* to True in *config.yaml*. Note that in some cases, the simulated data can be re-used for training with similar settings. 
 In those cases, not removing the data and then setting *run_simulation* to False will re-use the previously simulated data which can save a lot of time and compuation.
-
-## Pre-Trained Models
-
-Pre-trained models will soon be made available for download.
-
-When making predictions, the input to the model is an intersection of the pre-trained model SNP positions and the SNP positions from the <query_file>. That means that the set of positions that are only in the original training input used to create the model (and not in the query samples) are encoded as missing, while the set of positions only in the <query_file> are discarded. When the script is executed, it will log the intersection-ratio, as the performance will depend on how many of the original positions are missing. If the intersection is low, we recommend using a model trained with a high percentage of missing data, or imputing the query samples to have the full set of SNPs present in the pre-trained model.
-
-The models are trained on hg build 37 references from the following biogeographic regions: *Subsaharan African (AFR), East Asian (EAS), European (EUR), Native American (NAT), Oceanian (OCE), South Asian (SAS), and West Asian (WAS)* and labels and predicts them as 0, 1, .., 6 respectively. The populations used to train these ancestries are given in the supplementary section of the reference provided at the bottom of this readme.
 
 ## Phasing
 
