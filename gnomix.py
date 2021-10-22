@@ -286,6 +286,8 @@ def simulate_splits(base_args,config,data_path):
 
 
 if __name__ == "__main__":
+    
+    print("...")
 
     # Citation
     print("-"*80+"\n"+"-"*35+"  Gnomix  "+"-"*35 +"\n"+"-"*80)
@@ -334,6 +336,14 @@ if __name__ == "__main__":
         print("Launching in pre-trained mode...")
         model = load_model(base_args["path_to_model"], verbose=True)
 
+        # Update changable model parameters for this particular execution
+        model.n_cores = config["model"].get("n_cores", None)
+        model.calibrate = config["model"].get("calibrate")
+        model.smooth.calibrate = config["model"].get("calibrate")
+        
+        # TEMPORARY FOR BACKWARDS COMPATIBILITY FOR MODELS TRAINED BEFORE 10/2021
+        model.base.vectorize = True
+
     else:
         print("Launching in training mode...")
 
@@ -368,6 +378,7 @@ if __name__ == "__main__":
         
     # run inference if applicable.
     if base_args["query_file"]:
+
         print("Launching inference...")
         run_inference(base_args, model, 
                         visualize=config["inference"]["visualize_inference"],
