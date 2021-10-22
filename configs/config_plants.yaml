@@ -23,7 +23,7 @@ model:
   smooth_size: 25      # How many windows the smoothers see
   context_ratio: 0.5   # context for each window will be context_ratio*window_size on each side
   retrain_base: True   # retrain the base models once smoother data has been obtained
-  calibrate: True      # calibrate the output probabilities
+  calibrate: False      # calibrate the output probabilities
   n_cores:             # number of CPUs to use, default is maximum
 
 inference:
