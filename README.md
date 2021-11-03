@@ -9,7 +9,7 @@
 <!-- <img align="right" src="doc/fig/gnomix_diagram.png" width=54% height=54% > 
  -->
  
-This repository includes a python implemenation of Gnomix, a fast, scalable, and accurate local ancestry method.
+This repository includes a python implementation of Gnomix, a fast, scalable, and accurate local ancestry method.
 
 Gnomix can be used in two ways:
 
@@ -23,7 +23,6 @@ The dependencies are listed in *requirements.txt*. Assuming [pip](https://pip.py
 ```
 $ pip install -r requirements.txt
 ```
-If using the program for training a model, [BCFtools](http://samtools.github.io/bcftools/bcftools.html) must be installed and available in the PATH environment setting.
 
 ## Usage
 
