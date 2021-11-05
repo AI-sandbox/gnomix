@@ -11,7 +11,7 @@ Sequenced haplotypes phased with a phasing software (left). LAI used to label ha
 
 ## Method
 
-Gnofix uses a trained smoother from Gnomix to estimate the probability of a given sequence being from the distribution of a human haplotype (correctly phased) and leverages those estimates to iteratively switch parts along the haplotypes to ultimately find the most probable one. 
+Gnofix uses a trained smoother from G-Nomix to estimate the probability of a given sequence being from the distribution of a human haplotype (correctly phased) and leverages those estimates to iteratively switch parts along the haplotypes to ultimately find the most probable one. 
 
 ![Gnofix Diagram](figures/diagram_resized.png)
 - (a) Maternal and paternal haplotypes at a given iteration and a given step of Gnofix. Dashed box marks the scope. 
