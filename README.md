@@ -9,12 +9,12 @@
 <!-- <img align="right" src="doc/fig/gnomix_diagram.png" width=54% height=54% > 
  -->
  
-This repository includes a python implementation of Gnomix, a fast, scalable, and accurate local ancestry method.
+This repository includes a python implementation of G-Nomix, a fast, scalable, and accurate local ancestry method.
 
-Gnomix can be used in two ways:
+G-Nomix can be used in two ways:
 
 - training a model from scratch using reference training data or 
-- loading a pre-trained Gnomix model (see **Pre-Trained Models** below)
+- loading a pre-trained G-Nomix model (see **Pre-Trained Models** below)
 
 In both cases the models are used to infer local ancestry for provided query data.
 
@@ -27,7 +27,7 @@ $ pip install -r requirements.txt
 ## Usage
 
 ### When Using Pre-Trained Models
-gnomix.py loads and uses a pre-trained Gnomix model to predict the ancestry for a given *<query_file>* and a chromosome. 
+gnomix.py loads and uses a pre-trained G-Nomix model to predict the ancestry for a given *<query_file>* and a chromosome. 
 
 To execute the program with a pre-trained model run:
 ```
