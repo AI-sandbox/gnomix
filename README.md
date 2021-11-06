@@ -1,4 +1,4 @@
-<img align="left" src="doc/fig/G-Nomix.png" width=20% height=20%> 
+<img align="left" src="doc/fig/G-Nomix.png" width=18.5% height=18.5%> 
 
 # High Resolution Ancestry Deconvolution for Next Generation Genomic Data 
 <br>
