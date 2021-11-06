@@ -9,6 +9,7 @@ import string
 import sys
 from time import time
 import pickle
+import gzip
 
 def save_dict(D, path):
     with open(path, 'wb') as handle:
@@ -342,5 +343,11 @@ def read_headers(vcf_file):
             for line in f.readlines():
                 if line[0:2] == "##":
                     header += line
+                    
+    elif vcf_file.endswith(".vcf.gz"):
+        with gzip.open(vcf_file, "r") as f:
+            for line in f.readlines():
+                if line[0:2].decode("utf-8") == "##":
+                    header += line.decode("utf-8")
 
     return header
