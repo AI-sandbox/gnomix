@@ -7,7 +7,7 @@ import sys
 import yaml
 
 from src.utils import run_shell_cmd, join_paths, read_vcf, vcf_to_npy, npy_to_vcf, update_vcf 
-from src.utils import read_genetic_map, save_dict, load_dict
+from src.utils import read_genetic_map, save_dict, load_dict, read_headers
 from src.preprocess import load_np_data, data_process
 from src.postprocess import get_meta_data, write_msp, write_fb, msp_to_lai
 from src.visualization import plot_cm, plot_chm
@@ -64,7 +64,9 @@ def run_inference(base_args, model, visualize, snp_level=False, verbose=False):
         }
         query_vcf_data = update_vcf(query_vcf_data, mask=vcf_idx, Updates=U)
         query_phased_prefix = output_path + "/" + "query_file_phased"
-        npy_to_vcf(query_vcf_data, X_query_phased[:,fmt_idx], query_phased_prefix)
+        inf_headers = read_headers(query_file)
+        npy_to_vcf(query_vcf_data, X_query_phased[:,fmt_idx], query_phased_prefix, headers=inf_headers)
+        # copy header to preserve it
         y_proba_query = model.predict_proba(X_query_phased)
 
     # writing the result to disc
