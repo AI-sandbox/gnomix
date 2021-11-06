@@ -12,7 +12,7 @@ class Gnomix():
 
     def __init__(self, C, M, A, S,
                 base=None, smooth=None, mode="default", # base and smooth models
-                snp_pos=None, snp_ref=None, population_order=None, missing_encoding=2, # dataset specific, TODO: store in one object
+                snp_pos=None, snp_ref=None, snp_alt=None, population_order=None, missing_encoding=2, # dataset specific, TODO: store in one object
                 n_jobs=None, path=None, # configs
                 calibrate=False, context_ratio=0.5, mode_filter=False, # hyperparams
                 seed=94305, verbose=False
@@ -39,6 +39,7 @@ class Gnomix():
         # data
         self.snp_pos = snp_pos
         self.snp_ref = snp_ref
+        self.snp_alt = snp_alt
         self.population_order = population_order
 
         # gnomix hyperparams

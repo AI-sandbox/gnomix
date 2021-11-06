@@ -60,7 +60,7 @@ def run_inference(base_args, model, visualize, snp_level=False, verbose=False):
             print("Writing phased SNPs to disc...")
         U = {
             "variants/REF": model.snp_ref[fmt_idx],
-            "variants/ALT": np.expand_dims(np.repeat("NA", len(fmt_idx)),axis=1)
+            "variants/ALT": model.snp_alt[fmt_idx].reshape(len(fmt_idx),1)
         }
         query_vcf_data = update_vcf(query_vcf_data, mask=vcf_idx, Updates=U)
         query_phased_prefix = output_path + "/" + "query_file_phased"
@@ -99,6 +99,7 @@ def get_data(data_path, generations, window_size_cM):
 
     snp_pos = laidataset_meta["pos_snps"]
     snp_ref = laidataset_meta["ref_snps"]
+    snp_alt = laidataset_meta["alt_snps"]
     pop_order = laidataset_meta["num_to_pop"]
     pop_list = []
     for i in range(len(pop_order.keys())):
@@ -115,6 +116,7 @@ def get_data(data_path, generations, window_size_cM):
         "M": M, # window size in SNPs
         "snp_pos": snp_pos,
         "snp_ref": snp_ref,
+        "snp_alt":snp_alt,
         "pop_order": pop_order
     }
 
@@ -174,7 +176,7 @@ def train_model(config, data_path, verbose):
 
     # init model
     model = Gnomix(C=meta["C"], M=meta["M"], A=meta["A"], S=smooth_window_size,
-                    snp_pos=meta["snp_pos"], snp_ref=meta["snp_ref"],
+                    snp_pos=meta["snp_pos"], snp_ref=meta["snp_ref"], snp_alt=meta["snp_alt"],
                     population_order=meta["pop_order"],
                     mode=inference, calibrate=calibrate,
                     n_jobs=n_cores, context_ratio=context_ratio, seed=config["seed"])
