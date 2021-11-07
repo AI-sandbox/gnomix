@@ -9,6 +9,7 @@ import string
 import sys
 from time import time
 import pickle
+import gzip
 
 def save_dict(D, path):
     with open(path, 'wb') as handle:
@@ -248,13 +249,14 @@ def get_name(name_len=8):
     letters = string.ascii_lowercase + string.ascii_uppercase + string.digits
     return ''.join(random.choice(letters) for i in range(name_len)) 
 
-def npy_to_vcf(reference, npy, results_file, verbose=False):
+def npy_to_vcf(reference, npy, results_file, verbose=False, headers=""):
     """
     - reference: str path to reference file which provides metadata for the results
                  or alternatively, a allel.read_vcf output
     - npy: npy matrix - shape: (num_samples, num_snps)
            make sure npy file has same snp positions
     - results_file: str output vcf path
+    - headers: what to put on top - make sure ends with \n
     
     this is a very light version of npy_to_vcf for LAI applications
     
@@ -297,7 +299,7 @@ def npy_to_vcf(reference, npy, results_file, verbose=False):
     df['POS']    = data["variants/POS"]
     df["ID"]     = data["variants/ID"]
     df["REF"]    = data["variants/REF"]
-    df["VAR"]    = data["variants/ALT"][:,0] # ONLY THE FIRST SINCE WE ONLY CARE ABOUT BI-ALLELIC SNPS HERE FOR NOW
+    df["ALT"]    = data["variants/ALT"][:,0] # ONLY THE FIRST SINCE WE ONLY CARE ABOUT BI-ALLELIC SNPS HERE FOR NOW
     df["QUAL"]   = data["variants/QUAL"]
     df["FILTER"] = ["PASS"]*chmlen
     df["INFO"]   = ["."]*chmlen
@@ -320,8 +322,9 @@ def npy_to_vcf(reference, npy, results_file, verbose=False):
 
     # write header
     with open(results_file,"w") as f:
+        f.write(headers)
         f.write("##fileformat=VCFv4.1\n")
-        f.write("##source=pyadmix (XGMix)\n")
+        f.write("##source=gnomix.py\n")
         f.write('##FORMAT=<ID=GT,Number=1,Type=String,Description="Phased Genotype">\n')
         f.write("#"+"\t".join(df.columns)+"\n") # mandatory header
     
@@ -329,3 +332,22 @@ def npy_to_vcf(reference, npy, results_file, verbose=False):
     df.to_csv(results_file,sep="\t",index=False,mode="a",header=False)
     
     return
+
+
+def read_headers(vcf_file):
+
+    header = ""
+
+    if vcf_file.endswith(".vcf"):
+        with open(vcf_file,"r") as f:
+            for line in f.readlines():
+                if line[0:2] == "##":
+                    header += line
+                    
+    elif vcf_file.endswith(".vcf.gz"):
+        with gzip.open(vcf_file, "r") as f:
+            for line in f.readlines():
+                if line[0:2].decode("utf-8") == "##":
+                    header += line.decode("utf-8")
+
+    return header
