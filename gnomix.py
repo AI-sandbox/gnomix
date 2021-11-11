@@ -9,7 +9,7 @@ import yaml
 from src.utils import run_shell_cmd, join_paths, read_vcf, vcf_to_npy, npy_to_vcf, update_vcf 
 from src.utils import read_genetic_map, save_dict, load_dict, read_headers
 from src.preprocess import load_np_data, data_process
-from src.postprocess import get_meta_data, write_msp, write_fb, msp_to_lai
+from src.postprocess import get_meta_data, write_msp, write_fb, msp_to_lai, msp_to_bed
 from src.visualization import plot_cm, plot_chm
 from src.laidataset import LAIDataset
 
@@ -32,7 +32,7 @@ def load_model(path_to_model, verbose=True):
 
     return model
 
-def run_inference(base_args, model, visualize, snp_level=False, verbose=False):
+def run_inference(base_args, model, visualize, snp_level=False, bed_file_output=False, verbose=False):
 
     if verbose:
         print("Loading and processing query file...")
@@ -57,7 +57,7 @@ def run_inference(base_args, model, visualize, snp_level=False, verbose=False):
     else:
         X_query_phased, y_pred_query = model.phase(X_query, B=B_query)
         if verbose:
-            print("Writing phased SNPs to disc...")
+            print("Writing phased SNPs to disk...")
         U = {
             "variants/REF": model.snp_ref[fmt_idx],
             "variants/ALT": model.snp_alt[fmt_idx].reshape(len(fmt_idx),1)
@@ -69,7 +69,7 @@ def run_inference(base_args, model, visualize, snp_level=False, verbose=False):
         # copy header to preserve it
         y_proba_query = model.predict_proba(X_query_phased)
 
-    # writing the result to disc
+    # writing the result to disk
     if verbose:
         print("Saving results...")
     meta_data = get_meta_data(chm, model.snp_pos, query_vcf_data['variants/POS'], model.W, model.M, gen_map_df)
@@ -79,7 +79,13 @@ def run_inference(base_args, model, visualize, snp_level=False, verbose=False):
 
     # write the snp level results (BETA)
     if snp_level:
-        msp_to_lai(msp_file=out_prefix+".msp", lai_file=out_prefix+".lai", positions=query_vcf_data['variants/POS'])
+        msp_to_lai(msp_file=out_prefix+".msp", positions=query_vcf_data['variants/POS'], lai_file=out_prefix+".lai")
+
+    if bed_file_output:
+        bed_root = output_path + "/" + "query_results_bed"
+        if not os.path.exists(bed_root):
+            os.makedirs(bed_root)
+        msp_to_bed(msp_file=out_prefix+".msp", root=bed_root, pop_order=model.population_order)
 
     # visualize results
     if visualize:
@@ -387,4 +393,5 @@ if __name__ == "__main__":
         run_inference(base_args, model, 
                         visualize=config["inference"]["visualize_inference"],
                         snp_level=config["inference"]["snp_level_inference"],
+                        bed_file_output=config["inference"]["bed_file_output"],
                         verbose=True)
