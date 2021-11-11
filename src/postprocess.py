@@ -1,8 +1,9 @@
-import allel
 from collections import Counter
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
+import os
+
 
 def get_effective_pred(prediction, chm_len, window_size, model_idx):
     """
@@ -120,7 +121,7 @@ def write_fb(fb_prefix, meta_data, proba, ancestry, query_samples):
 
     return
 
-def msp_to_lai(msp_file, lai_file, positions):
+def msp_to_lai(msp_file, positions, lai_file=None):
     
     msp_df = pd.read_csv(msp_file, sep="\t", comment="#", header=None)
     data_window = np.array(msp_df.iloc[:, 6:])
@@ -136,8 +137,59 @@ def msp_to_lai(msp_file, lai_file, positions):
     samples = header[6:]
     df = pd.DataFrame(data_snp, columns=samples, index=positions)
 
-    with open(lai_file, "w") as f:
-        f.write(first_line)
-    df.to_csv(lai_file, sep="\t", mode='a', index_label="position")
+    if lai_file is not None:
+        with open(lai_file, "w") as f:
+            f.write(first_line)
+        df.to_csv(lai_file, sep="\t", mode='a', index_label="position")
     
     return df
+
+def get_bed_data(msp_df, sample, pop_order=None):
+    
+    ancestry_label = lambda pop_numeric: pop_numeric if pop_order is None else pop_order[pop_numeric]
+    
+    chm, spos, sgpos = [ [val] for val in msp_df[["#chm", "spos", "sgpos"]].iloc[0] ]
+    epos, egpos = [], []
+    anc = msp_df[sample].iloc[0]
+    ancestry_labels = [ ancestry_label(anc) ]
+    
+    for i, row_anc in enumerate(msp_df[sample].iloc[1:]):
+        row = i+1
+        if row_anc != anc:
+            anc = row_anc
+            epos.append(msp_df["epos"].iloc[row-1])
+            egpos.append(msp_df["egpos"].iloc[row-1])
+            chm.append(msp_df["#chm"].iloc[row])
+            ancestry_labels.append(ancestry_label(row_anc))
+            spos.append(msp_df["spos"].iloc[row])
+            sgpos.append(msp_df["sgpos"].iloc[row])
+            
+    epos.append(msp_df["epos"].iloc[-1])
+    egpos.append(msp_df["egpos"].iloc[-1])
+    
+    bed_data = {
+        "chm": np.array(chm).astype(int),
+        "spos": np.array(spos).astype(int),
+        "epos": np.array(epos).astype(int),
+        "ancestry": ancestry_labels,
+        "sgpos": sgpos,
+        "egpos": egpos
+    }
+    return bed_data
+
+def msp_to_bed(msp_file, root, pop_order=None):
+
+    with open(msp_file) as f:
+        _ = f.readline()
+        second_line = f.readline()
+
+    header = second_line.split("\t")
+    msp_df = pd.read_csv(msp_file, sep="\t", comment="#", names=header)
+    
+    samples = header[6:]
+    
+    for sample in samples:
+        sample_file_name = os.path.join(root, sample.replace(".", "_")+".bed")
+        sample_bed_data = get_bed_data(msp_df, sample, pop_order=pop_order)
+        sample_bed_df = pd.DataFrame(sample_bed_data)
+        sample_bed_df.to_csv(sample_file_name, sep="\t", index=False)
