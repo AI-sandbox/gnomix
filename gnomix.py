@@ -334,6 +334,7 @@ if __name__ == "__main__":
         'chm': sys.argv[3],
         'phase': True if sys.argv[4].lower() == "true" else False
     }
+    base_args["config_file"] = "./config.yaml"
     if mode == "train":
         base_args["genetic_map_file"] = sys.argv[5]
         base_args["reference_file"]  = sys.argv[6]
@@ -343,7 +344,6 @@ if __name__ == "__main__":
     elif mode == "pre-trained":
         base_args["path_to_model"] = sys.argv[6]
 
-    base_args["config_file"] = "./config.yaml"
     with open(base_args["config_file"],"r") as file:
         config = yaml.load(file, Loader=yaml.UnsafeLoader)
 
