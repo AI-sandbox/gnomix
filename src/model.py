@@ -83,6 +83,12 @@ class Gnomix():
         self.time = {}
         self.accuracies = {}
 
+        # gen map df
+        self.gen_map_df = {}
+
+    def write_gen_map_df(self,gen_map_df):
+        self.gen_map_df = gen_map_df
+
     def conf_matrix(self, y, y_pred):
 
         cm = confusion_matrix(y.reshape(-1), y_pred.reshape(-1))

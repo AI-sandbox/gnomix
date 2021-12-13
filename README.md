@@ -24,16 +24,15 @@ $ pip install -r requirements.txt
 ## Usage
 
 ### When Using Pre-Trained Models
-gnomix.py loads and uses a pre-trained G-Nomix model to predict the ancestry for a given *<query_file>* and a chromosome. 
+gnomix.py loads and uses a pre-trained G-Nomix model to predict the ancestry for a given *<query_file>* and a chromosome.
 
 To execute the program with a pre-trained model run:
 ```
-$ python3 gnomix.py <query_file> <genetic_map_file> <output_folder> <chr_nr> <phase> <path_to_model> 
+$ python3 gnomix.py <query_file> <output_folder> <chr_nr> <phase> <path_to_model> 
 ```
 
 where 
 - <*query_file*> is a .vcf or .vcf.gz file containing the query haplotypes which are to be analyzed (see example in the **demo/data/** folder)
-- <*genetic_map_file*> is the genetic map file. It's a .tsv file with 3 columns; chromosome number, SNP physical position and SNP genetic position. There should be no headers unless they start with "#". See example in the **demo/data/** folder.
 - <*output_folder*> is where the results will be written (see details in **Output** below and an example in the **demo/data/** folder)
 - <*chr_nr*> is the chromosome number
 - <*phase*> is either True or False corresponding to the intent of using the predicted ancestry for phasing (see details in **Phasing** below and in the **gnofix/** folder)
@@ -54,21 +53,22 @@ The models named **default_model.pkl** are trained on hg build 37 references fro
 
 To execute the program when training a model run:
 ```
-$ python3 gnomix.py <query_file> <genetic_map_file> <output_folder> <chr_nr> <phase> <reference_file> <sample_map_file>
+$ python3 gnomix.py <query_file> <output_folder> <chr_nr> <phase> <genetic_map_file> <reference_file> <sample_map_file>
 ```
 
-where the first 5 arguments are described above in the pre-trained setting and 
+where the first 4 arguments are described above in the pre-trained setting and 
+- <*genetic_map_file*> is the genetic map file. It's a .tsv file with 3 columns; chromosome number, SNP physical position and SNP genetic position. There should be no headers unless they start with "#". See example in the **demo/data/** folder.
 - <*reference_file*> is a .vcf or .vcf.gz file containing the reference haplotypes (in any order)
 - <*sample_map_file*> is a sample map file matching reference samples to their respective reference populations
 
-The program uses these two files as input to our simulation algorithm (see **pyadmix/**) to create training data for the model.
+The program uses these two files as input to our simulation algorithm (see **pyadmix/**) to create training data for the model. Also, note that when running inference on the trained models, the <*query_file*> needs to have the same build as the genetic map used to train the model. (For instance, in the case of humans, it is build37 or build38)
 
 ### Advanced Options
 More advanced configuration settings can be found in *config.yaml*. 
 They include general settings, simulation settings and model settings. More details are given in the file itself. If training a model from scratch you can also pass an alternative config file as the last argument:
 
 ```
-$ python3 gnomix.py <query_file> <genetic_map_file> <output_folder> <chr_nr> <phase> <reference_file> <sample_map_file> <config_file>
+$ python3 gnomix.py <query_file> <output_folder> <chr_nr> <phase> <genetic_map_file> <reference_file> <sample_map_file> <config_file>
 ```
 
 If no config is given, the program uses the default (*config.yaml*). The config file has advanced training options. Some of the parameters are

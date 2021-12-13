@@ -40,7 +40,7 @@ def run_inference(base_args, model, visualize, snp_level=False, bed_file_output=
     query_file = base_args["query_file"]
     chm = base_args["chm"]
     output_path = base_args["output_basename"]
-    gen_map_df = read_genetic_map(base_args["genetic_map_file"], chm)
+    gen_map_df = model.gen_map_df
 
     # Load and process user query vcf file
     query_vcf_data = read_vcf(query_file, chm=chm, fields="*")
@@ -218,6 +218,8 @@ def train_model(config, data_path, verbose):
     # write the model parameters of type int, float, str into a file config TODO: test
     model_config_path = os.path.join(model_repo, "config.txt")
     model.write_config(model_config_path)
+    # write gentic map df
+    model.write_gen_map_df(load_dict(os.path.join(data_path,"gen_map_df.pkl")))
 
     if verbose:
         print("Model, info and analysis saved at {}".format(model_repo))
@@ -269,6 +271,9 @@ def simulate_splits(base_args,config,data_path):
     # write metadata into data_path/metadata.yaml
     # check lines 94 to 96 where this is read...
     save_dict(laidataset.metadata(), os.path.join(data_path,"metadata.pkl"))
+    # Save genetic map df and store it inside model later after training
+    gen_map_df = read_genetic_map(genetic_map, chm)
+    save_dict(gen_map_df, os.path.join(data_path,"gen_map_df.pkl"))
 
     # get num_outs
     split_generations = config["simulation"]["splits"]["gens"]
@@ -316,21 +321,22 @@ if __name__ == "__main__":
         if len(sys.argv) > 1:
             print("Error: Incorrect number of arguments.")
         print("Usage when training a model from scratch:")
-        print("   $ python3 gnomix.py <query_file> <genetic_map_file> <output_basename> <chr_nr> <phase> <reference_file> <sample_map_file>")
+        print("   $ python3 gnomix.py <query_file> <output_basename> <chr_nr> <phase> <genetic_map_file> <reference_file> <sample_map_file>")
         print("Usage when using a pre-trained model:")
-        print("   $ python3 gnomix.py <query_file> <genetic_map_file> <output_basename> <chr_nr> <phase> <path_to_model>")
+        print("   $ python3 gnomix.py <query_file> <output_basename> <chr_nr> <phase> <path_to_model>")
         sys.exit(0)
 
     # Deconstruct CL arguments
     base_args = {
         'mode': mode,
         'query_file': sys.argv[1] if sys.argv[1].strip() != "None" else None,
-        'genetic_map_file': sys.argv[2],
-        'output_basename': sys.argv[3],
-        'chm': sys.argv[4],
-        'phase': True if sys.argv[5].lower() == "true" else False
+        'output_basename': sys.argv[2],
+        'chm': sys.argv[3],
+        'phase': True if sys.argv[4].lower() == "true" else False
     }
+    base_args["config_file"] = "./config.yaml"
     if mode == "train":
+        base_args["genetic_map_file"] = sys.argv[5]
         base_args["reference_file"]  = sys.argv[6]
         base_args["sample_map_file"] = sys.argv[7]
         if len(sys.argv) == 9:
@@ -338,7 +344,6 @@ if __name__ == "__main__":
     elif mode == "pre-trained":
         base_args["path_to_model"] = sys.argv[6]
 
-    base_args["config_file"] = "./config.yaml"
     with open(base_args["config_file"],"r") as file:
         config = yaml.load(file, Loader=yaml.UnsafeLoader)
 
