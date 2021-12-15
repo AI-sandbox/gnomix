@@ -28,6 +28,8 @@ The dependencies are listed in *requirements.txt*. Assuming [pip](https://pip.py
 $ pip install -r requirements.txt
 ```
 
+The combined runtime for the above processes should be around 2 minutes on a normal laptop
+
 ## Usage
 
 ### When Using Pre-Trained Models
