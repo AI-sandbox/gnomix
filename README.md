@@ -28,7 +28,11 @@ The dependencies are listed in *requirements.txt*. Assuming [pip](https://pip.py
 $ pip install -r requirements.txt
 ```
 
-The combined runtime for the above processes should be around 2 minutes on a normal laptop
+The combined runtime for the cloning and the dependency installation should be around 2 minutes on a normal laptop.
+
+The software has been tested on:
+- Linux: Ubuntu 18.04.5
+- macOS: Monterey (12.0.1)
 
 ## Usage
 
