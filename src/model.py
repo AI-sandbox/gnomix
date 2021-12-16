@@ -3,6 +3,7 @@ import pickle
 from sklearn.metrics import confusion_matrix
 import sys
 from time import time
+from copy import deepcopy
 
 from src.Base.models import LogisticRegressionBase, CovRSKBase
 from src.Smooth.models import XGB_Smoother
@@ -87,7 +88,7 @@ class Gnomix():
         self.gen_map_df = {}
 
     def write_gen_map_df(self,gen_map_df):
-        self.gen_map_df = gen_map_df
+        self.gen_map_df = deepcopy(gen_map_df)
 
     def conf_matrix(self, y, y_pred):
 

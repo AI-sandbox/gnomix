@@ -193,6 +193,8 @@ def train_model(config, data_path, verbose):
     if verbose:
         print("Building model...")
     model.train(data=data, retrain_base=retrain_base, evaluate=True, verbose=verbose)
+    # write gentic map df
+    model.write_gen_map_df(load_dict(os.path.join(data_path,"gen_map_df.pkl")))
 
     # store it
     model_repo = join_paths(output_path, "models", verb=False)
@@ -218,8 +220,6 @@ def train_model(config, data_path, verbose):
     # write the model parameters of type int, float, str into a file config TODO: test
     model_config_path = os.path.join(model_repo, "config.txt")
     model.write_config(model_config_path)
-    # write gentic map df
-    model.write_gen_map_df(load_dict(os.path.join(data_path,"gen_map_df.pkl")))
 
     if verbose:
         print("Model, info and analysis saved at {}".format(model_repo))
