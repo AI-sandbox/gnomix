@@ -76,6 +76,15 @@ where the first 4 arguments are described above in the pre-trained setting and
 
 The program uses these two files as input to our simulation algorithm (see **pyadmix/**) to create training data for the model. Also, note that when running inference on the trained models, the <*query_file*> needs to have the same build as the genetic map used to train the model. (For instance, in the case of humans, it is build37 or build38)
 
+### Demo
+
+After downloading our pre-trained models, one can demo the software in inference mode by running:
+```
+python3 gnomix.py demo/data/small_query_chr22.vcf.gz demo_output 22 True pretrained_gnomix_models/chr22/model_chm_22.pkl
+```
+This small query file contains only 9 samples of European, East Asian and African ancestry. 
+When the executioin finishes (around a minute on a standard laptop), the instance can analyzed for example in the file demo_output/quer_results.msp where we expect to see those three ancestries having been inferred.
+
 ### Advanced Options
 More advanced configuration settings can be found in *config.yaml*. 
 They include general settings, simulation settings and model settings. More details are given in the file itself. If training a model from scratch you can also pass an alternative config file as the last argument:
