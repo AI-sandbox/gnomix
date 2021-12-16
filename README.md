@@ -82,8 +82,9 @@ After downloading our pre-trained models, one can demo the software in inference
 ```
 python3 gnomix.py demo/data/small_query_chr22.vcf.gz demo_output 22 True pretrained_gnomix_models/chr22/model_chm_22.pkl
 ```
-This small query file contains only 9 samples of European, East Asian and African ancestry. 
-When the executioin finishes (around a minute on a standard laptop), the instance can analyzed for example in the file demo_output/quer_results.msp where we expect to see those three ancestries having been inferred.
+This small query file contains only 9 samples of European, East Asian and African ancestry. The executioin should take around a minute on a standard laptop. The inference can be analyzed, for example in the file demo_output/quer_results.msp, where we expect to see those three ancestries being inferred. For more details on those analysis, see the section on output below.
+
+For more demos with training and larger datasets, see the notebook *demo.ipynb*.
 
 ### Advanced Options
 More advanced configuration settings can be found in *config.yaml*. 
