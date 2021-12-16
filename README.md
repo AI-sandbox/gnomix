@@ -30,7 +30,7 @@ $ pip install -r requirements.txt
 
 The combined runtime for the cloning and the dependency installation should be around 2 minutes on a normal laptop.
 
-The software has been tested on:
+The software has been tested in Python 3.7.4 on the following operating systems:
 - Linux: Ubuntu 18.04.5
 - macOS: Monterey (12.0.1)
 
