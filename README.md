@@ -15,11 +15,24 @@ G-Nomix can be used in two ways:
 
 In both cases the models are used to infer local ancestry for provided query data.
 
-## Dependencies
+## Installation and Dependencies
+
+To intsall the software, nagvigate to the desired folder and enter in the command line interface:
+```
+git clone https://github.com/AI-sandbox/gnomix
+cd gnomix
+```
+
 The dependencies are listed in *requirements.txt*. Assuming [pip](https://pip.pypa.io/en/stable/) is already installed, they can be installed via
 ```
 $ pip install -r requirements.txt
 ```
+
+The combined runtime for the cloning and the dependency installation should be around 2 minutes on a normal laptop.
+
+The software has been tested on:
+- Linux: Ubuntu 18.04.5
+- macOS: Monterey (12.0.1)
 
 ## Usage
 
