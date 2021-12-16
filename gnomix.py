@@ -311,7 +311,7 @@ if __name__ == "__main__":
 
     # Infer mode from number of arguments
     mode = None
-    if len(sys.argv) == 7:
+    if len(sys.argv) == 6:
         mode = "pre-trained" 
     if len(sys.argv) == 8 or len(sys.argv) == 9:
         mode = "train"
@@ -342,7 +342,7 @@ if __name__ == "__main__":
         if len(sys.argv) == 9:
             base_args["config_file"] = sys.argv[8]
     elif mode == "pre-trained":
-        base_args["path_to_model"] = sys.argv[6]
+        base_args["path_to_model"] = sys.argv[5]
 
     with open(base_args["config_file"],"r") as file:
         config = yaml.load(file, Loader=yaml.UnsafeLoader)
