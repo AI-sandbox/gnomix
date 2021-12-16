@@ -334,6 +334,10 @@ if __name__ == "__main__":
         'chm': sys.argv[3],
         'phase': True if sys.argv[4].lower() == "true" else False
     }
+
+    if not os.path.exists(base_args["output_basename"]):
+        os.makedirs(base_args["output_basename"])
+
     base_args["config_file"] = "./config.yaml"
     if mode == "train":
         base_args["genetic_map_file"] = sys.argv[5]
