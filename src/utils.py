@@ -87,13 +87,8 @@ def snp_intersection(pos1, pos2, verbose=False):
     """
 
     assert len(pos2) != 0, "No SNPs of specified chromosome found in query file."
-    
-    ind_dict_1 = dict((p,i) for i,p in enumerate(pos1)) # O(n1)
-    ind_dict_2 = dict((p,i) for i,p in enumerate(pos2)) # O(n2)
-    intersection = set(pos1) & set(pos2)                # O(min[n1, n2])
-    assert len(intersection) != 0, "No matching SNPs between model and query file."
-    idx12 = [ (ind_dict_1[p], ind_dict_2[p]) for p in intersection ] # O(min[n1, n2])
-    idx1, idx2 = np.array(idx12).T
+
+    intersection, idx1, idx2 = np.intersect1d(pos1, pos2, return_indices=True)
 
     if verbose:
         print("- Number of SNPs from model:", len(pos1))
