@@ -62,10 +62,10 @@ def run_inference(base_args, model, visualize, snp_level=False, bed_file_output=
             "variants/REF": model.snp_ref[fmt_idx],
             "variants/ALT": model.snp_alt[fmt_idx].reshape(len(fmt_idx),1)
         }
-        query_vcf_data = update_vcf(query_vcf_data, mask=vcf_idx, Updates=U)
+        query_vcf_data_phase = update_vcf(query_vcf_data, mask=vcf_idx, Updates=U)
         query_phased_prefix = output_path + "/" + "query_file_phased"
         inf_headers = read_headers(query_file)
-        npy_to_vcf(query_vcf_data, X_query_phased[:,fmt_idx], query_phased_prefix, headers=inf_headers)
+        npy_to_vcf(query_vcf_data_phase, X_query_phased[:,fmt_idx], query_phased_prefix, headers=inf_headers)
         # copy header to preserve it
         y_proba_query = model.predict_proba(X_query_phased)
 

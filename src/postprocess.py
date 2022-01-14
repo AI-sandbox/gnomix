@@ -51,9 +51,12 @@ def get_meta_data(chm, model_pos, query_pos, n_wind, wind_size, gen_map_df):
     egpos = np.round(f(epos),5)
 
     # number of query snps in interval
-    wind_index = [min(n_wind-1, np.where(q == sorted(np.concatenate([epos, [q]])))[0][0]) for q in query_pos]
-    window_count = Counter(wind_index)
-    n_snps = [window_count[w] for w in range(n_wind)]
+    n_snps = np.zeros_like(epos)
+    q = 0
+    for w in range(n_wind):
+        while q < len(query_pos) and query_pos[q] <= epos[w]:
+            n_snps[w] += 1
+            q += 1
 
     # Concat with prediction table
     meta_data = np.array([chm_array, spos, epos, sgpos, egpos, n_snps]).T
