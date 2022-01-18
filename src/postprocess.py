@@ -53,10 +53,12 @@ def get_meta_data(chm, model_pos, query_pos, n_wind, wind_size, gen_map_df):
     # number of query snps in interval
     n_snps = np.zeros_like(epos)
     q = 0
-    for w in range(n_wind):
+    for w in range(n_wind-1):
         while q < len(query_pos) and query_pos[q] <= epos[w]:
             n_snps[w] += 1
             q += 1
+    n_snps[n_wind-1] = len(query_pos) - q
+    assert np.sum(n_snps) == len(query_pos), "Something went wrong"
 
     # Concat with prediction table
     meta_data = np.array([chm_array, spos, epos, sgpos, egpos, n_snps]).T
