@@ -58,7 +58,7 @@ def get_meta_data(chm, model_pos, query_pos, n_wind, wind_size, gen_map_df):
     # Concat with prediction table
     meta_data = np.array([chm_array, spos, epos, sgpos, egpos, n_snps]).T
     meta_data_df = pd.DataFrame(meta_data)
-    meta_data_df.columns = ["chm", "spos", "epos", "sgpos", "egpos", "n snps"]
+    meta_data_df.columns = ["chm", "spos", "epos", "sgpos", "egpos", "n_snps"]
 
     return meta_data_df
 
