@@ -102,7 +102,7 @@ def write_fb(fb_prefix, meta_data, proba, ancestry, query_samples):
 
     fb_meta_data = pd.DataFrame()
     fb_meta_data["chromosome"] = meta_data["chm"]
-    fb_meta_data["physical position"] = pp
+    fb_meta_data["physical_position"] = pp
     fb_meta_data["genetic_position"]  = gp
     fb_meta_data["genetic_marker_index"] = np.repeat(".", n_rows)
 
