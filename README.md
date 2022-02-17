@@ -113,6 +113,34 @@ If no config is given, the program uses the default (*config.yaml*). The config 
   - calibrate (bool) - if True, applies calibration on output probabilities
   - n_cores (int, positive) - how many units of cpu to use
 
+#### More model combinations
+
+For more base + smoother combinations one can edit the *gnomix.py* file in the following way:
+
+import the base model of choice from src/base/model e.g., 
+
+```python
+from src.Base.models import LogisticRegressionBase
+```
+
+import the smoother of choice from src/smooth/model e.g., 
+
+```python
+from src.Smooth.models import XGB_Smoother
+```
+
+and then, in the train_model() function in initilize the Gnomix object with the imported models:
+ 
+```python
+model = Gnomix(
+	...,
+	base = LogisticRegressionBase,
+	smooth = XGB_Smoother,
+	...
+)
+```
+
+
 ## Output
 
 The results (including predictions, trained models and analysis) are stored in the *<output_folder>*.
