@@ -17,7 +17,7 @@ In both cases the models are used to infer local ancestry for provided query dat
 
 ## Installation and Dependencies
 
-To intsall the software, nagvigate to the desired folder and enter in the command line interface:
+To install the software, navigate to the desired folder and enter in the command line interface:
 ```
 git clone https://github.com/AI-sandbox/gnomix
 cd gnomix
@@ -82,7 +82,7 @@ After downloading our pre-trained models, one can demo the software in inference
 ```
 python3 gnomix.py demo/data/small_query_chr22.vcf.gz demo_output 22 True pretrained_gnomix_models/chr22/model_chm_22.pkl
 ```
-This small query file contains only 9 samples of European, East Asian and African ancestry. The executioin should take around a minute on a standard laptop. The inference can be analyzed, for example in the file demo_output/quer_results.msp, where we expect to see those three ancestries being inferred. For more details on those analysis, see the section on output below.
+This small query file contains only 9 samples of European, East Asian and African ancestry. The execution should take around a minute on a standard laptop. The inference can be analyzed, for example in the file demo_output/quer_results.msp, where we expect to see those three ancestries being inferred. For more details on those analysis, see the section on output below.
 
 For more demos with training and larger datasets, see the notebook *demo.ipynb*.
 
@@ -189,7 +189,7 @@ just like in the msp file.
 
 The second line specifies the column names, and every following line marks a genome position.
 
-The first column indicates the physicial position of the SNP and the the remaining columns give the predicted reference panel population for the given interval. A genotype has two haplotypes, so the number of predictions for a genotype is 2*(number of genotypes) and therefore the total number of columns in the file is 1 + 2*(number of genotypes).
+The first column indicates the physical position of the SNP and the remaining columns give the predicted reference panel population for the given interval. A genotype has two haplotypes, so the number of predictions for a genotype is 2*(number of genotypes) and therefore the total number of columns in the file is 1 + 2*(number of genotypes).
 
 #### query_file_phased.vcf
 
@@ -214,7 +214,7 @@ Accurate phasing of genomic data is crucial for human demographic modeling and i
 Sequenced haplotypes phased with a phasing software (left). LAI is used to label haplotypes with ancestry predictions and phasing errors become evident (center). Phasing error correction using LAI is applied to correct phasing errors (right).
 
 ## Calibration
-To ensure that G-Nomix outputs probability estimates that reflect it's true confidence and accuracy, we recommend using calibration. We use Isotonic Regression to map the predicted probabilities to calibrated probabilities where the latter is more likely to have predictions with confidence X% correct X% of the time.
+To ensure that G-Nomix outputs probability estimates that reflect it's true confidence and accuracy, we recommend using calibration. We use Isotonic Regression to map the predicted probabilities to calibrated probabilities where the latter are more likely to have predictions with a confidence of X% correct matching their actual X% frequency of being correct in practice.
 
 ## License
 
