@@ -193,7 +193,7 @@ The first column indicates the physical position of the SNP and the remaining co
 
 #### query_file_phased.vcf
 
-When using Gnofix for phasing error correctin (See Phasing below), the inference above will be performed on the query haplotype phased by Gnofix. These phased haplotypes will then also be exported to query_file_phased.vcf in the *<output_folder>*/ folder.
+When using Gnofix for phasing error correcting (See Phasing below), the inference above will be performed on the query haplotype phased by Gnofix. These phased haplotypes will then also be exported to query_file_phased.vcf in the *<output_folder>*/ folder.
 
 ### Model
 When training a model, the resulting model will be stored in *<output_folder>/models*. That way it can be re-used for analyzing another dataset.
