@@ -105,7 +105,7 @@ If no config is given, the program uses the default (*config.yaml*). The config 
   - generations indicates simulated individuals' generations since admixture. 
 - model:
   - name (string) - model's name: default is "model"
-  - inference (string) - 3 possible options - best / fast / default. "best" uses random string kernel base + xgboost smoother and is recommended for array data. "fast" uses logistic regression base + crf smoother. "default" uses logistic regression base + xgboost smoother and on whole genome has nearly the same accuracy as "best," but with much faster runtime.
+  - inference (string) - 3 possible options - best / fast / large / default. "best" uses random string kernel base + xgboost smoother and is recommended for array data. "fast" uses logistic regression base + crf smoother. "large" uses logistic regression + convolutional smoother and is good for large datasets for which memory requirements are an issue. "default" uses logistic regression base + xgboost smoother and on whole genome has nearly the same accuracy as "best," but with much faster runtime.
   - window_size_cM (float, positive) -  size of window in centiMorgans
   - smooth_size (int, positive) - number of windows to be taken as context for smoother
   - context_ratio (float between 0 and 1) - context of base model windows
