@@ -100,12 +100,12 @@ If no config is given, the program uses the default (*config.yaml*). The config 
   - run: (bool) - whether to run simulation or not
   - path: (path) - if run is False, use data from this location. Must have been created by gnomix in the past.
   - rm_data (bool) - whether to remove simulated data (if memory constrained). It is set to false if run is False
-  - r_admixed (float,positive) - number of simulated individuals generated = r_admixed x Size of sample map, default 1, set lower if memory is an issue.
+  - r_admixed (float,positive) - number of simulated individuals generated = r_admixed x Size of sample map, default 1, set lower if memory is an issue. (To overcome memory constraints a minor allele frequency filter can also be used to remove very rare variants.)
   - splits: must contain train1, train2 and optionally validation. If validation ratio is 0, validation is not performed
   - generations indicates simulated individuals' generations since admixture. 
 - model:
   - name (string) - model's name: default is "model"
-  - inference (string) - 3 possible options - best / fast / large / default. "best" uses random string kernel base + xgboost smoother and is recommended for array data. "fast" uses logistic regression base + crf smoother. "large" uses logistic regression + convolutional smoother and is good for large datasets for which memory requirements are an issue. "default" uses logistic regression base + xgboost smoother and on whole genome has nearly the same accuracy as "best," but with much faster runtime.
+  - inference (string) - 4 possible options - best / fast / large / default. "best" uses random string kernel base + xgboost smoother and is recommended for array data. "fast" uses logistic regression base + crf smoother. "large" uses logistic regression + convolutional smoother and is good for large datasets for which memory requirements are an issue. "default" uses logistic regression base + xgboost smoother and on whole genome has nearly the same accuracy as "best," but with much faster runtime.
   - window_size_cM (float, positive) -  size of window in centiMorgans
   - smooth_size (int, positive) - number of windows to be taken as context for smoother
   - context_ratio (float between 0 and 1) - context of base model windows
