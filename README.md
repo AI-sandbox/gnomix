@@ -196,7 +196,7 @@ The first column indicates the physical position of the SNP and the remaining co
 When using Gnofix for phasing error correcting (See Phasing below), the inference above will be performed on the query haplotype phased by Gnofix. These phased haplotypes will then also be exported to query_file_phased.vcf in the *<output_folder>*/ folder.
 
 ### Visualization
-To visualize the local ancestry output along the chromosome using [Tagore](https://pypi.org/project/tagore/#usage) for plotting, see plot_chm from src/visualization.py and the [demo](demo.ipynb) example.
+To visualize the local ancestry output along the chromosome using [tagore](https://pypi.org/project/tagore/#usage) for plotting, see plot_chm from src/visualization.py and reference our [demo](demo.ipynb) example.
 
 ### Model
 When training a model, the resulting model will be stored in *<output_folder>/models*. That way it can be re-used for analyzing another dataset.
