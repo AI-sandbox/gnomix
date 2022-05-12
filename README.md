@@ -6,7 +6,7 @@
 
 ![Visualization of the process](doc/fig/gnomix_diagram.png)
 
-This repository includes a python implementation of G-Nomix, a fast, scalable, and accurate local ancestry method.
+This repository includes a python implementation of G-Nomix, a fast, scalable, and accurate local ancestry method. See demo (demo.ipynb).
 
 G-Nomix can be used in two ways:
 
