@@ -6,7 +6,7 @@
 
 ![Visualization of the process](doc/fig/gnomix_diagram.png)
 
-This repository includes a python implementation of G-Nomix, a fast, scalable, and accurate local ancestry method. See demo (demo.ipynb).
+This repository includes a python implementation of G-Nomix, a fast, scalable, and accurate local ancestry method. See [demo](demo.ipynb).
 
 G-Nomix can be used in two ways:
 
@@ -100,7 +100,7 @@ If no config is given, the program uses the default (*config.yaml*). The config 
   - run: (bool) - whether to run simulation or not
   - path: (path) - if run is False, use data from this location. Must have been created by gnomix in the past.
   - rm_data (bool) - whether to remove simulated data (if memory constrained). It is set to false if run is False
-  - r_admixed (float,positive) - number of simulated individuals generated = r_admixed x Size of sample map
+  - r_admixed (float,positive) - number of simulated individuals generated = r_admixed x Size of sample map, default 1, set lower if memory is an issue.
   - splits: must contain train1, train2 and optionally validation. If validation ratio is 0, validation is not performed
   - generations indicates simulated individuals' generations since admixture. 
 - model:
