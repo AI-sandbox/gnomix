@@ -84,7 +84,7 @@ python3 gnomix.py demo/data/small_query_chr22.vcf.gz demo_output 22 True pretrai
 ```
 This small query file contains only 9 samples of European, East Asian and African ancestry. The execution should take around a minute on a standard laptop. The inference can be analyzed, for example in the file demo_output/quer_results.msp, where we expect to see those three ancestries being inferred. For more details on those analysis, see the section on output below.
 
-For more demos with training and larger datasets, see the notebook *demo.ipynb*.
+For more demos with training and larger datasets, see the [demo](demo.ipynb) notebook *demo.ipynb*.
 
 ### Advanced Options
 More advanced configuration settings can be found in *config.yaml*. 
@@ -195,6 +195,9 @@ The first column indicates the physical position of the SNP and the remaining co
 
 When using Gnofix for phasing error correcting (See Phasing below), the inference above will be performed on the query haplotype phased by Gnofix. These phased haplotypes will then also be exported to query_file_phased.vcf in the *<output_folder>*/ folder.
 
+### Visualization
+To visualize the local ancestry output along the chromosome using [Tagore](https://pypi.org/project/tagore/#usage) for plotting, see plot_chm from src/visualization.py and the [demo](demo.ipynb) example.
+
 ### Model
 When training a model, the resulting model will be stored in *<output_folder>/models*. That way it can be re-used for analyzing another dataset.
 The model's estimated accuracy is logged along with a confusion matrix which is stored in *<output_folder>/models/analysis*.
@@ -206,7 +209,7 @@ In those cases, not removing the data and then setting *run_simulation* to False
 
 ## Phasing
 
-![Visualization of the process](src/Gnofix/figures/XGFix.gif)
+![Depiction of the process](src/Gnofix/figures/XGFix.gif)
 
 Accurate phasing of genomic data is crucial for human demographic modeling and identity-by-descent analyses. It has been shown that leveraging information about an individual’s genomic ancestry improves performance of current phasing algorithms. Gnofix is a method that uses local ancestry inference to do exactly that. If you suspect your data might be badly phased (often the case when reference panel is small and/or diverse), we recommend using this option. See the **gnofix/** folder for more details. 
 
