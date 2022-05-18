@@ -48,7 +48,7 @@ where
 - <*query_file*> is a .vcf or .vcf.gz file containing the query haplotypes which are to be analyzed (see example in the **demo/data/** folder)
 - <*output_folder*> is where the results will be written (see details in **Output** below and an example in the **demo/data/** folder)
 - <*chr_nr*> is the chromosome number
-- <*phase*> is either True or False corresponding to the intent of using the predicted ancestry for phasing (see details in **Phasing** below and in the **gnofix/** folder)
+- <*phase*> is either True or False corresponding to the intent of using the predicted ancestry for phasing correction (see details in **Phasing** below and in the **gnofix/** folder)
 - <*path_to_model*> is a path to the model used for predictions (see **Pre-trained Models** below)
 
 ### Downloading pre-trained models
@@ -211,7 +211,7 @@ In those cases, not removing the data and then setting *run_simulation* to False
 
 ![Depiction of the process](src/Gnofix/figures/XGFix.gif)
 
-Accurate phasing of genomic data is crucial for human demographic modeling and identity-by-descent analyses. It has been shown that leveraging information about an individual’s genomic ancestry improves performance of current phasing algorithms. Gnofix is a method that uses local ancestry inference to do exactly that. If you suspect your data might be badly phased (often the case when reference panel is small and/or diverse), we recommend using this option. See the **gnofix/** folder for more details. 
+Accurate phasing of genomic data is crucial for human demographic modeling and identity-by-descent analyses. It has been shown that leveraging information about an individual’s genomic ancestry improves performance of current phasing algorithms. Gnofix is a method that uses local ancestry inference to do exactly that. If you suspect your data might have phasing errors (generally the case unless trio phasing was possible), we recommend using this option <*phase*> as True. See the **gnofix/** folder for more details. 
 
 ![Local Ancestry for Phasing Error Correction](src/Gnofix/figures/laipec_resized.png)
 Sequenced haplotypes phased with a phasing software (left). LAI is used to label haplotypes with ancestry predictions and phasing errors become evident (center). Phasing error correction using LAI is applied to correct phasing errors (right). Small numbers of phasing errors do not, however, impact the correct association of a variant with an ancestry, and so are typically only a visual nuisance.
