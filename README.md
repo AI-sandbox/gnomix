@@ -110,7 +110,7 @@ If no config is given, the program uses the default (*config.yaml*). The config 
   - smooth_size (int, positive) - number of windows to be taken as context for smoother (default 75)
   - context_ratio (float between 0 and 1) - context of base model windows (default .5)
   - retrain_base (bool) - retrain base models using both train1 and train2 once smoother is trained, validation data for a final base model (default True)
-  - calibrate (bool) - applies calibration on output probabilities (default True)
+  - calibrate (bool) - applies calibration on output probabilities (default False)
   - n_cores (int, positive) - how many units of cpu to use (default is maximum)
 
 #### More model combinations
