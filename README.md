@@ -106,7 +106,7 @@ If no config is given, the program uses the default (*config.yaml*). The config 
 - model:
   - name (string) - model's name: default is "model"
   - inference (string) - 4 possible options - best / fast / large / default. "best" uses random string kernel base + xgboost smoother and is recommended for array data. "fast" uses logistic regression base + crf smoother. "large" uses logistic regression + convolutional smoother and is good for large datasets for which memory requirements are an issue. "default" uses logistic regression base + xgboost smoother and on whole genome has nearly the same accuracy as "best," but with much faster runtime.
-  - window_size_cM (float, positive) -  size of window in centiMorgans, use larger windows if snp density is lower e.g. genotype data vs. sequence (default .2)
+  - window_size_cM (float, positive) -  size of window in centiMorgans, use larger windows if snp density is lower e.g. genotype data vs. sequence (default .5)
   - smooth_size (int, positive) - number of windows to be taken as context for smoother (default 75)
   - context_ratio (float between 0 and 1) - context of base model windows (default .5)
   - retrain_base (bool) - retrain base models using both train1 and train2 once smoother is trained, validation data for a final base model (default True)
