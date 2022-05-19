@@ -95,23 +95,23 @@ $ python3 gnomix.py <query_file> <output_folder> <chr_nr> <phase> <genetic_map_f
 ```
 
 If no config is given, the program uses the default (*config.yaml*). The config file has advanced training options. Some of the parameters are
-- verbose (bool) - verbosity
+- verbose (bool) - verbosity (default True)
 - simulation:
-  - run: (bool) - whether to run simulation or not
-  - path: (path) - if run is False, use data from this location. Must have been created by gnomix in the past.
-  - rm_data (bool) - whether to remove simulated data (if memory constrained). It is set to false if run is False
-  - r_admixed (float,positive) - number of simulated individuals generated = r_admixed x Size of sample map, default 1, set lower if memory is an issue. (To overcome memory constraints a minor allele frequency filter can also be used to remove very rare variants.)
-  - splits: must contain train1, train2 and optionally validation. If validation ratio is 0, validation is not performed
-  - generations indicates simulated individuals' generations since admixture. 
+  - run: (bool) - whether to run simulation or not, can be skipped if previously done (default True)
+  - path: (path) - # where to store the simulated data, if run is False this is where the simulation data will be sought, default is <output_folder>/generated_data/
+  - r_admixed (float,positive) - number of simulated admixed individuals generated when training the model = r_admixed x size of sample map (number of reference samples). The default is 1. Set it lower if memory is an issue. (To overcome memory constraints a minor allele frequency filter can also be used to remove very rare variants.)
+  - splits: must contain proportion for train1, train2 and optionally validation. If validation ratio is 0, validation is not performed.
+  - generations indicates the total specturem of generations since admixture to simulate, not critical
+  - rm_data (bool) - whether to remove simulated data after training (to conserve disk space). It is set to false if run is False. Default False.
 - model:
   - name (string) - model's name: default is "model"
   - inference (string) - 4 possible options - best / fast / large / default. "best" uses random string kernel base + xgboost smoother and is recommended for array data. "fast" uses logistic regression base + crf smoother. "large" uses logistic regression + convolutional smoother and is good for large datasets for which memory requirements are an issue. "default" uses logistic regression base + xgboost smoother and on whole genome has nearly the same accuracy as "best," but with much faster runtime.
-  - window_size_cM (float, positive) -  size of window in centiMorgans
-  - smooth_size (int, positive) - number of windows to be taken as context for smoother
-  - context_ratio (float between 0 and 1) - context of base model windows
-  - retrain_base (bool) - retrain base models with train2, validation data for a final base model
-  - calibrate (bool) - if True, applies calibration on output probabilities
-  - n_cores (int, positive) - how many units of cpu to use
+  - window_size_cM (float, positive) -  size of window in centiMorgans, use larger windows if snp density is lower e.g. genotype data vs. sequence (default .2)
+  - smooth_size (int, positive) - number of windows to be taken as context for smoother (default 75)
+  - context_ratio (float between 0 and 1) - context of base model windows (default .5)
+  - retrain_base (bool) - retrain base models using both train1 and train2 once smoother is trained, validation data for a final base model (default True)
+  - calibrate (bool) - applies calibration on output probabilities (default True)
+  - n_cores (int, positive) - how many units of cpu to use (default is maximum)
 
 #### More model combinations
 
