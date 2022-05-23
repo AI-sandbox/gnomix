@@ -112,7 +112,7 @@ If no config is given, the program uses the default (*config.yaml*). The config 
   - retrain_base (bool) - retrain base models using both train1 and train2 once smoother is trained, validation data for a final base model (default True)
   - calibrate (bool) - applies calibration on output probabilities (default False)
   - n_cores (int, positive) - how many units of cpu to use (default is maximum)
--inference:
+- inference:
   - bed_file_output: generate files for each individual that show the run length encoding of their ancestry segments (default False)
   - snp_level_inference: output ancestry inference for each marker of the query file (default False)
   - visualize_inference: create pictures showing the ancestry segments colored along each individual's chromosomes using Tagore (default False)
