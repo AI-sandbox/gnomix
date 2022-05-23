@@ -25,6 +25,6 @@ model:
   n_cores:            # number of CPUs to use, default is maximum
 
 inference:
-  bed_file_output: False
+  bed_file_output: False # generate files for each individual that show the run length encoding of their ancestry segments
   snp_level_inference: False # output ancestry inference for each marker of the query file
   visualize_inference: False # visualize chromosome paintings, beta version
