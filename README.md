@@ -6,18 +6,18 @@
 
 ![Visualization of the process](doc/fig/gnomix_diagram.png)
 
-This repository includes a python implementation of G-Nomix, a fast, scalable, and accurate local ancestry method.
+This repository includes a python implementation of G-Nomix, a fast, scalable, and accurate local ancestry method. See [demo](demo.ipynb).
 
 G-Nomix can be used in two ways:
 
 - training a model from scratch using reference training data or 
 - loading a pre-trained G-Nomix model (see **Pre-Trained Models** below)
 
-In both cases the models are used to infer local ancestry for provided query data.
+In both cases the models are used to infer local ancestry on provided query data that has already been phased (using a program like beagle, shapeit, or eagle) and pre-processed to have the same sites as the reference training samples on the same strand, or if a pre-trained model is used instead see **Pre-Trained Models** below for requirements. 
 
 ## Installation and Dependencies
 
-To intsall the software, nagvigate to the desired folder and enter in the command line interface:
+To install the software, navigate to the desired folder and enter in the command line interface:
 ```
 git clone https://github.com/AI-sandbox/gnomix
 cd gnomix
@@ -48,19 +48,19 @@ where
 - <*query_file*> is a .vcf or .vcf.gz file containing the query haplotypes which are to be analyzed (see example in the **demo/data/** folder)
 - <*output_folder*> is where the results will be written (see details in **Output** below and an example in the **demo/data/** folder)
 - <*chr_nr*> is the chromosome number
-- <*phase*> is either True or False corresponding to the intent of using the predicted ancestry for phasing (see details in **Phasing** below and in the **gnofix/** folder)
+- <*phase*> is either True or False corresponding to the intent of using the predicted ancestry for phasing correction (see details in **Phasing** below and in the **gnofix/** folder). Note that initial phasing (using a program like beagle, shapeit, or eagle) must still have been performed first.
 - <*path_to_model*> is a path to the model used for predictions (see **Pre-trained Models** below)
 
 ### Downloading pre-trained models
-In order to incorporate our pre-trained models into your pipeline, please use the following command to download pre-trained models for the whole human genome. The SNPs used for our pre-trained models are also published as a .bim file for every chromosome.
+In order to incorporate our pre-trained models into your pipeline, please use the following command to download pre-trained models for the whole human genome. The SNPs used for our pre-trained models are also included in the form of a plink .bim file for every chromosome.
 ```
 sh download_pretrained_models.sh
 ```
 This creates a folder called **pretrained_gnomix_models**. For each chromosome, we publish a *default_model.pkl* which can be used as a pre-trained model in the <*path_to_model*> field and a *.bim* file as explained above.
 
-When making predictions, the input to the model is an intersection of the pre-trained model SNP positions and the SNP positions from the <query_file>. That means that the set of positions that are only in the original training input used to create the model (and not in the query samples) are encoded as missing, while the set of positions only in the <query_file> are discarded. When the script is executed, it will log the intersection-ratio, as the performance will depend on how many of the original positions are missing. If the intersection is low, we recommend using a model trained with a high percentage of missing data, or imputing the query samples to have the full set of SNPs present in the pre-trained model.
+When making predictions, the input to the model is an intersection of the pre-trained model SNP positions and the SNP positions from the <query_file>. That means that the set of positions that are only in the original training input used to create the model (and not in the query samples) are encoded as missing, while the set of positions only in the <query_file> are discarded. We suggest that you attempt to have your query samples include as many model snps (listed in the *.bim* files) as possible for higher accuracy. When the script is executed, it will log the intersection-ratio between these model snps and the snps in your query samples, since the anceestry inference performance will depend on how many of the model's snp positions are missing in your query samples. If the intersection is low, we recommend training your own new model using references that contain all the snps in your query samples, or imputing your query samples to have the full set of snps present in the pre-trained model. N.B. Your query samples must have snps that are defined on the same strand as in the model. You can use the included model *.bim* files as a reference to find and then flip any snps in your query samples that are defined on the opposite strand. (If this step is not performed your query samples will appear to have snps containing variation unseen during the model's training and will thus be inferred with unexpected and unpredictable ancestries.)
 
-The models named **default_model.pkl** are trained on hg build 37 references from the following biogeographic regions: *Subsaharan African (AFR), East Asian (EAS), European (EUR), Native American (NAT), Oceanian (OCE), South Asian (SAS), and West Asian (WAS)* and labels and predicts them as 0, 1, .., 6 respectively. The populations used to train these ancestries are given in the supplementary section of the reference provided at the bottom of this readme.
+The models named **default_model.pkl** are trained on hg build 37 references from the following biogeographic regions: *Subsaharan African (AFR), East Asian (EAS), European (EUR), Native American (NAT), Oceanian (OCE), South Asian (SAS), and West Asian (WAS)* and the model labels and predicts them as 0, 1, .., 6 respectively. The populations used to train these ancestries are given in the supplementary section of the reference provided at the bottom of this readme.
 
 ### When Training a Model From Scratch
 
@@ -82,9 +82,9 @@ After downloading our pre-trained models, one can demo the software in inference
 ```
 python3 gnomix.py demo/data/small_query_chr22.vcf.gz demo_output 22 True pretrained_gnomix_models/chr22/model_chm_22.pkl
 ```
-This small query file contains only 9 samples of European, East Asian and African ancestry. The executioin should take around a minute on a standard laptop. The inference can be analyzed, for example in the file demo_output/quer_results.msp, where we expect to see those three ancestries being inferred. For more details on those analysis, see the section on output below.
+This small query file contains only 9 samples of European, East Asian and African ancestry. The execution should take around a minute on a standard laptop. The inference can be analyzed, for example in the file demo_output/quer_results.msp, where we expect to see those three ancestries being inferred. For more details on those analysis, see the section on output below.
 
-For more demos with training and larger datasets, see the notebook *demo.ipynb*.
+For more demos with training and larger datasets, see the [demo](demo.ipynb) notebook *demo.ipynb*.
 
 ### Advanced Options
 More advanced configuration settings can be found in *config.yaml*. 
@@ -95,23 +95,55 @@ $ python3 gnomix.py <query_file> <output_folder> <chr_nr> <phase> <genetic_map_f
 ```
 
 If no config is given, the program uses the default (*config.yaml*). The config file has advanced training options. Some of the parameters are
-- verbose (bool) - verbosity
+- verbose (bool) - verbosity (default True)
 - simulation:
-  - run: (bool) - whether to run simulation or not
-  - path: (path) - if run is False, use data from this location. Must have been created by gnomix in the past.
-  - rm_data (bool) - whether to remove simulated data (if memory constrained). It is set to false if run is False
-  - r_admixed (float,positive) - number of simulated individuals generated = r_admixed x Size of sample map
-  - splits: must contain train1, train2 and optionally validation. If validation ratio is 0, validation is not performed
-  - generations indicates simulated individuals' generations since admixture. 
+  - run: (bool) - whether to run simulation or not, can be skipped if previously done (default True)
+  - path: (path) - # where to store the simulated data, if run is False this is where the simulation data will be sought, default is <output_folder>/generated_data/
+  - r_admixed (float,positive) - number of simulated admixed individuals generated when training the model = r_admixed x size of sample map (number of reference samples). The default is 1. Set it lower if memory is an issue. (To overcome memory constraints a minor allele frequency filter can also be used to remove very rare variants.)
+  - splits: must contain proportion for train1, train2 and optionally validation. If validation ratio is 0, validation is not performed.
+  - generations indicates the total specturem of generations since admixture to simulate, not critical
+  - rm_data (bool) - whether to remove simulated data after training (to conserve disk space). It is set to false if run is False. Default False.
 - model:
   - name (string) - model's name: default is "model"
-  - inference (string) - 3 possible options - best / fast / default. "best" uses random string kernel base + xgboost smoother and is recommended for array data. "fast" uses logistic regression base + crf smoother. "default" uses logistic regression base + xgboost smoother and on whole genome has nearly the same accuracy as "best," but with much faster runtime.
-  - window_size_cM (float, positive) -  size of window in centiMorgans
-  - smooth_size (int, positive) - number of windows to be taken as context for smoother
-  - context_ratio (float between 0 and 1) - context of base model windows
-  - retrain_base (bool) - retrain base models with train2, validation data for a final base model
-  - calibrate (bool) - if True, applies calibration on output probabilities
-  - n_cores (int, positive) - how many units of cpu to use
+  - inference (string) - 4 possible options - best / fast / large / default. "best" uses random string kernel base + xgboost smoother and is recommended for array data. "fast" uses logistic regression base + crf smoother. "large" uses logistic regression + convolutional smoother and is good for large datasets for which memory requirements are an issue. "default" uses logistic regression base + xgboost smoother and on whole genome has nearly the same accuracy as "best," but with much faster runtime.
+  - window_size_cM (float, positive) -  size of window in centiMorgans, use larger windows if snp density is lower e.g. genotype data vs. sequence (default .5)
+  - smooth_size (int, positive) - number of windows to be taken as context for smoother (default 75)
+  - context_ratio (float between 0 and 1) - context of base model windows (default .5)
+  - retrain_base (bool) - retrain base models using both train1 and train2 once smoother is trained, validation data for a final base model (default True)
+  - calibrate (bool) - applies calibration on output probabilities (default False)
+  - n_cores (int, positive) - how many units of cpu to use (default is maximum)
+- inference:
+  - bed_file_output: generate files for each individual that show the run length encoding of their ancestry segments (default False)
+  - snp_level_inference: output ancestry inference for each marker of the query file (default False)
+  - visualize_inference: create pictures showing the ancestry segments colored along each individual's chromosomes using Tagore (default False)
+
+#### More model combinations
+
+For more base + smoother combinations one can edit the *gnomix.py* file in the following way:
+
+import the base model of choice from src/base/model e.g., 
+
+```python
+from src.Base.models import LogisticRegressionBase
+```
+
+import the smoother of choice from src/smooth/model e.g., 
+
+```python
+from src.Smooth.models import XGB_Smoother
+```
+
+and then, in the train_model() function in initilize the Gnomix object with the imported models:
+ 
+```python
+model = Gnomix(
+	...,
+	base = LogisticRegressionBase,
+	smooth = XGB_Smoother,
+	...
+)
+```
+
 
 ## Output
 
@@ -161,11 +193,14 @@ just like in the msp file.
 
 The second line specifies the column names, and every following line marks a genome position.
 
-The first column indicates the physicial position of the SNP and the the remaining columns give the predicted reference panel population for the given interval. A genotype has two haplotypes, so the number of predictions for a genotype is 2*(number of genotypes) and therefore the total number of columns in the file is 1 + 2*(number of genotypes).
+The first column indicates the physical position of the SNP and the remaining columns give the predicted reference panel population for the given interval. A genotype has two haplotypes, so the number of predictions for a genotype is 2*(number of genotypes) and therefore the total number of columns in the file is 1 + 2*(number of genotypes).
 
 #### query_file_phased.vcf
 
-When using Gnofix for phasing error correctin (See Phasing below), the inference above will be performed on the query haplotype phased by Gnofix. These phased haplotypes will then also be exported to query_file_phased.vcf in the *<output_folder>*/ folder.
+When using Gnofix for phasing error correcting (See Phasing below), the inference above will be performed on the query haplotype phased by Gnofix. These phased haplotypes will then also be exported to query_file_phased.vcf in the *<output_folder>*/ folder.
+
+### Visualization
+To visualize the local ancestry output along the chromosome using [tagore](https://pypi.org/project/tagore/#usage) for plotting, use the visualize_inference True option in the config file.
 
 ### Model
 When training a model, the resulting model will be stored in *<output_folder>/models*. That way it can be re-used for analyzing another dataset.
@@ -178,15 +213,15 @@ In those cases, not removing the data and then setting *run_simulation* to False
 
 ## Phasing
 
-![Visualization of the process](src/Gnofix/figures/XGFix.gif)
+![Depiction of the process](src/Gnofix/figures/XGFix.gif)
 
-Accurate phasing of genomic data is crucial for human demographic modeling and identity-by-descent analyses. It has been shown that leveraging information about an individual’s genomic ancestry improves performance of current phasing algorithms. Gnofix is a method that uses local ancestry inference to do exactly that. If you suspect your data might be badly phased (often the case when reference panel is small and/or diverse), we recommend using this option. See the **gnofix/** folder for more details. 
+Accurate phasing of genomic data is crucial for human demographic modeling and identity-by-descent analyses. It has been shown that leveraging information about an individual’s genomic ancestry improves performance of current phasing algorithms. Gnofix is a method that uses local ancestry inference to do exactly that. If you suspect your data might have phasing errors (generally the case unless trio phasing was possible), we recommend using this option <*phase*> as True. See the **gnofix/** folder if interested in more details on the algorithm. 
 
 ![Local Ancestry for Phasing Error Correction](src/Gnofix/figures/laipec_resized.png)
-Sequenced haplotypes phased with a phasing software (left). LAI is used to label haplotypes with ancestry predictions and phasing errors become evident (center). Phasing error correction using LAI is applied to correct phasing errors (right).
+Sequenced haplotypes phased with a phasing software (left). LAI is used to label haplotypes with ancestry predictions and phasing errors become evident (center). Phasing error correction using LAI is applied to correct phasing errors (right). Small numbers of phasing errors do not, however, impact the correct association of a variant with an ancestry, and so are typically only a visual nuisance.
 
 ## Calibration
-To ensure that G-Nomix outputs probability estimates that reflect it's true confidence and accuracy, we recommend using calibration. We use Isotonic Regression to map the predicted probabilities to calibrated probabilities where the latter is more likely to have predictions with confidence X% correct X% of the time.
+To ensure that G-Nomix outputs probability estimates that reflect it's true confidence and accuracy, we recommend using calibration. We use Isotonic Regression to map the predicted probabilities to calibrated probabilities where the latter are more likely to have predictions with a confidence of X% correct matching their actual X% frequency of being correct in practice.
 
 ## License
 
