@@ -58,7 +58,6 @@ def get_meta_data(chm, model_pos, query_pos, n_wind, wind_size, gen_map_df):
             n_snps[w] += 1
             q += 1
     n_snps[n_wind-1] = len(query_pos) - q
-    assert np.sum(n_snps) == len(query_pos), "Something went wrong"
 
     # Concat with prediction table
     meta_data = np.array([chm_array, spos, epos, sgpos, egpos, n_snps]).T
@@ -133,6 +132,17 @@ def msp_to_lai(msp_file, positions, lai_file=None):
     n_reps = msp_df.iloc[:, 5].to_numpy()
     assert np.sum(n_reps) == len(positions)
     data_snp = np.concatenate([np.repeat([row], repeats=n_reps[i], axis=0) for i, row in enumerate(data_window)])
+
+    pos_lower_bound = int(msp_df.iloc[0, 1])
+    pos_upper_bound = int(msp_df.iloc[-1, 2])
+
+    extrapolating_lo = np.sum(positions < pos_lower_bound)
+    extrapolating_hi = np.sum(positions > pos_upper_bound)
+    if extrapolating_lo > 0:
+        print( "WARNING: Extrapolating ancestry inference for {} SNPs (lower bound is position {})".format(extrapolating_lo, pos_lower_bound) )
+    
+    if extrapolating_hi > 0:
+        print( "WARNING: Extrapolating ancestry inference for {} SNPs (upper bound is position {})".format(extrapolating_hi, pos_upper_bound) )
 
     with open(msp_file) as f:
         first_line = f.readline()
