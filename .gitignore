@@ -3,6 +3,15 @@ __pycache__
 workspace.code-workspace
 .ipynb_checkpoints/
 expts
+
 *.vcf
 *.vcf.gz
 *.pkl
+*.pdf
+*.svg
+*.ipynb
+*.tsv
+*.txt
+*.gz
+
+pretrained_gnomix_models/
