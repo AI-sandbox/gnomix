@@ -1,9 +1,9 @@
-from src.Smooth.smooth import Smoother
+from src.model.smooth.smooth import Smoother
 
-from src.Smooth.utils import slide_window
+from src.model.smooth.utils import slide_window
 
 from xgboost import XGBClassifier
-from src.Smooth.crf import CRF
+from src.model.smooth.crf import CRF
 
 class XGB_Smoother(Smoother):
     
@@ -37,6 +37,6 @@ class CNN_Smoother(Smoother):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        from src.Smooth.cnn import CNN # This is to avoid requiring the installation of pytorch
+        from src.model.smooth.cnn import CNN # This is to avoid requiring the installation of pytorch
 
         self.model = CNN(num_classes=self.A, num_features=self.S, verbose=self.verbose)

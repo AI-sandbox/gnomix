@@ -5,9 +5,9 @@ import sys
 from time import time
 from copy import deepcopy
 
-from src.Base.models import LogisticRegressionBase, CovRSKBase
-from src.Smooth.models import XGB_Smoother
-from src.Gnofix.gnofix import gnofix
+from src.model.base.models import LogisticRegressionBase, CovRSKBase
+from src.model.smooth.models import XGB_Smoother
+from src.model.gnofix.gnofix import gnofix
 
 class Gnomix():
 
@@ -60,10 +60,10 @@ class Gnomix():
                 print("Base models:", base)
         if smooth is None:
             if mode == "fast":
-                from src.Smooth.models import CRF_Smoother # import here to avoid strict crf suite dependency
+                from src.model.smooth.models import CRF_Smoother # import here to avoid strict crf suite dependency
                 smooth = CRF_Smoother 
             elif mode == "large":
-                from src.Smooth.models import CNN_Smoother # import here to avoid strict torch dependency
+                from src.model.smooth.models import CNN_Smoother # import here to avoid strict torch dependency
                 smooth = CNN_Smoother 
             elif mode=="best":
                 smooth = XGB_Smoother

@@ -1,7 +1,7 @@
 import numpy as np
-from src.Smooth.utils import mode_filter
+from src.model.smooth.utils import mode_filter
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
-from src.Smooth.Calibration import Calibrator
+from src.model.smooth.Calibration import Calibrator
 from time import time
 
 class Smoother():

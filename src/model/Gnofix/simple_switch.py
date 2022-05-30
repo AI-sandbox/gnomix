@@ -1,7 +1,7 @@
 import numpy as np
 import time
 
-from src.Gnofix.phasing import *
+from src.model.gnofix.phasing import *
 
 # Value function calculation
 def seq_left_end(S, idx): 

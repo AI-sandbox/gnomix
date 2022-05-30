@@ -124,7 +124,7 @@ For more base + smoother combinations one can edit the *gnomix.py* file in the f
 import the base model of choice from src/base/model e.g., 
 
 ```python
-from src.Base.models import LogisticRegressionBase
+from src.model.base.models import LogisticRegressionBase
 ```
 
 import the smoother of choice from src/smooth/model e.g., 

@@ -11,7 +11,7 @@ from src.utils import read_genetic_map, save_dict, load_dict, read_headers
 from src.preprocess import load_np_data, data_process
 from src.postprocess import get_meta_data, write_msp, write_fb, msp_to_lai, msp_to_bed
 from src.visualization import plot_cm, plot_chm
-from src.laidataset import LAIDataset
+from src.data.laidataset import LAIDataset
 
 from src.model import Gnomix
 
@@ -136,7 +136,7 @@ def get_data(data_path, generations, window_size_cM):
         X_files = [p + "/mat_vcf_2d.npy" for p in paths]
         labels_files = [p + "/mat_map.npy" for p in paths]
         X_raw, labels_raw = [load_np_data(f) for f in [X_files, labels_files]]
-        X, y = data_process(X_raw, labels_raw, M)
+        X, y = data_process(X_raw, labels_raw, window_size=M)
         return X, y
 
     X_t1, y_t1 = read("train1")
