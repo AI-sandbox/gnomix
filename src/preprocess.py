@@ -1,5 +1,4 @@
 import allel
-import gzip
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -58,7 +57,7 @@ def window_reshape(data, win_size):
 
     return window_data
 
-def data_process(X, labels, window_size, missing=0.0):
+def data_process(X, labels, window_size):
     """ 
     Takes in 2 numpy arrays:
         - X is of shape (N, chm_len)
@@ -72,11 +71,7 @@ def data_process(X, labels, window_size, missing=0.0):
     # Reshape labels into windows 
     y = window_reshape(labels, window_size)
 
-    # simulates lacking of input
-    if missing != 0:
-        print("Simulating missing values...")
-        X = simulate_missing_values(X, missing)
-
+    # dtypes
     X = np.array(X, dtype="int8")
     y = np.array(y, dtype="int16")
 

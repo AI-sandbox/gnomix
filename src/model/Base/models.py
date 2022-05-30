@@ -4,10 +4,10 @@ from sklearn.linear_model import LogisticRegression
 from xgboost import XGBClassifier
 from sklearn import svm
 
-from src.Base.base import Base
-from src.Base.string_kernel import CovRSK_DP_triangular_numbers, CovRSK_DP_triangular_numbers_multithread
-from src.Base.string_kernel import string_kernel_DP_triangular_numbers, string_kernel_DP_triangular_numbers_multithread
-from src.Base.string_kernel import poly_kernel, poly_kernel_multithread
+from src.model.base.base import Base
+from src.model.base.string_kernel import CovRSK_DP_triangular_numbers, CovRSK_DP_triangular_numbers_multithread
+from src.model.base.string_kernel import string_kernel_DP_triangular_numbers, string_kernel_DP_triangular_numbers_multithread
+from src.model.base.string_kernel import poly_kernel, poly_kernel_multithread
 
 class LogisticRegressionBase(Base):
 
