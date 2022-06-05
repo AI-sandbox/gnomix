@@ -372,14 +372,15 @@ if __name__ == "__main__":
         if config["simulation"]["splits"]["ratios"].get("val") == 0:
             del config["simulation"]["splits"]["ratios"]["val"]
 
-        generations = config["simulation"]["gens"]
-        gens_with_zero = list(set(generations + [0]))
-        gens_without_zero = [generation for generation in generations if generation != 0]
-        config["simulation"]["splits"]["gens"] = {
+        if not config["simulation"]["splits"]["gens"]:
+            generations = config["simulation"]["gens"]
+            gens_with_zero = list(set(generations + [0]))
+            gens_without_zero = [generation for generation in generations if generation != 0]
+            config["simulation"]["splits"]["gens"] = {
             "train1": gens_with_zero,
             "train2": generations,
             "val": gens_without_zero
-        }
+            }
 
         # make sure data is ready...
         if config["simulation"]["run"]==False and config["simulation"]["path"] is not None:
