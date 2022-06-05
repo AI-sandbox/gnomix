@@ -372,7 +372,7 @@ if __name__ == "__main__":
         if config["simulation"]["splits"]["ratios"].get("val") == 0:
             del config["simulation"]["splits"]["ratios"]["val"]
 
-        if not config["simulation"]["splits"]["gens"]:
+        if not config["simulation"]["splits"].get("gens"):
             generations = config["simulation"]["gens"]
             gens_with_zero = list(set(generations + [0]))
             gens_without_zero = [generation for generation in generations if generation != 0]
