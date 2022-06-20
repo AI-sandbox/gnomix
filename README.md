@@ -1,10 +1,10 @@
-<img align="left" src="doc/fig/G-Nomix.png" width=18.7% height=18.7%> 
+<img align="left" src="https://github.com/AI-sandbox/gnomix/blob/main/doc/fig/G-Nomix.png" width=18.7% height=18.7%> 
 
 # High Resolution Ancestry Deconvolution for Next Generation Genomic Data 
 <br>
 
 
-![Visualization of the process](doc/fig/gnomix_diagram.png)
+![Visualization of the process](https://github.com/AI-sandbox/gnomix/blob/main/doc/fig/gnomix_diagram.png)](https://github.com/AI-sandbox/gnomix/blob/main/doc/fig/gnomix_diagram.png)
 
 This repository includes a python implementation of G-Nomix, a fast, scalable, and accurate local ancestry method. See [demo](demo.ipynb).
 
@@ -213,11 +213,11 @@ In those cases, not removing the data and then setting *run_simulation* to False
 
 ## Phasing
 
-![Depiction of the process](src/Gnofix/figures/XGFix.gif)
+![Depiction of the process](https://github.com/AI-sandbox/gnomix/blob/main/src/Gnofix/figures/XGFix.gif)
 
 Accurate phasing of genomic data is crucial for human demographic modeling and identity-by-descent analyses. It has been shown that leveraging information about an individual’s genomic ancestry improves performance of current phasing algorithms. Gnofix is a method that uses local ancestry inference to do exactly that. If you suspect your data might have phasing errors (generally the case unless trio phasing was possible), we recommend using this option <*phase*> as True. See the **gnofix/** folder if interested in more details on the algorithm. 
 
-![Local Ancestry for Phasing Error Correction](src/Gnofix/figures/laipec_resized.png)
+![Local Ancestry for Phasing Error Correction](https://github.com/AI-sandbox/gnomix/blob/main/src/Gnofix/figures/laipec_resized.png)
 Sequenced haplotypes phased with a phasing software (left). LAI is used to label haplotypes with ancestry predictions and phasing errors become evident (center). Phasing error correction using LAI is applied to correct phasing errors (right). Small numbers of phasing errors do not, however, impact the correct association of a variant with an ancestry, and so are typically only a visual nuisance.
 
 ## Calibration
