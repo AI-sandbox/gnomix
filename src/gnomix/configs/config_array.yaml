@@ -1,0 +1,30 @@
+verbose: True
+seed: 94305
+
+simulation:
+  run: True # whether or not to run simulation (can be skipped if previously done)
+  path: # where to store the simulated data, default is <output_folder>/generated_data/
+  splits:
+    ratios: # how to split the data
+      train1: 0.8
+      train2: 0.15
+      val: 0.05 # set to 0 in order to not perform any validation
+  gens: [0, 2, 4, 6, 8, 12, 16, 24, 32, 48]  # which generation to simulate, ... 
+  # ... not critical some accuracy can be squeezed if it better represents the query data
+  r_admixed: 1        # we simulate r_admixed*n_founders amound of admixed individuals
+  rm_data: False      # removes simulated data once it has been used
+
+model: 
+  name: model         # model name for storing model + analysis
+  inference: best     # If blank, we use default (best, fast, large are alternative options)
+  window_size_cM: 0.2 # size of each base window in centi Morgans
+  smooth_size: 75     # How many windows the smoothers see
+  context_ratio: 0.5  # context for each window will be context_ratio*window_size on each side
+  retrain_base: True  # retrain the base models once smoother data has been obtained
+  calibrate: False     # calibrate the output probabilities
+  n_cores:            # number of CPUs to use, default is maximum
+
+inference:
+  bed_file_output: False
+  snp_level_inference: False # output ancestry inference for each marker of the query file
+  visualize_inference: False # visualize chromosome paintings, beta version
