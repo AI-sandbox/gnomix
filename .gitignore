@@ -1,8 +1,12 @@
-notebook_tests
 __pycache__
-workspace.code-workspace
 .ipynb_checkpoints/
-expts
+
+build/
+dist/
+*.egg-info/
+
+*expts/
+*output/
 
 *.vcf
 *.vcf.gz
@@ -13,5 +17,7 @@ expts
 *.tsv
 *.txt
 *.gz
+
+workspace.code-workspace
 
 pretrained_gnomix_models/
