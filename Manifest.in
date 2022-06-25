@@ -1,1 +1,1 @@
-recursive-include src/gnomix/data *
+recursive-include src/gnomix/configs *
