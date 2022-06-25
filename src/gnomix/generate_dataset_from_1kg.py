@@ -6,6 +6,7 @@ import argparse
 from sklearn.model_selection import train_test_split
 
 from gnomix.paths import (
+    DATA_FOLDER,
     TEST_DATA_FOLDER,
     DEMO_DATA_FOLDER,
     SEQUENCE_DATA_FILE_1KG,
@@ -73,7 +74,7 @@ def get_small_test_split(sample_map):
 
 def generate_dataset(name):
 
-    assert os.path.exists(SEQUENCE_DATA_FILE_1KG), f"Sequencing data {SEQUENCE_DATA_FILE_1KG} not found."
+    assert os.path.exists(DATA_FOLDER), f"No data found at {DATA_FOLDER}."
 
     sample_map = pd.read_csv(SAMPLE_MAP_FILE_1KG, sep="\t")
     
