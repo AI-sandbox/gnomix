@@ -33,11 +33,6 @@ def map2npy(map_file, shape, pop_order):
         y[2*i:2*i+2] = a_numeric
     return y
 
-def chunks(lst, n):
-    """Yield successive n-sized chunks from lst."""
-    for i in range(0, len(lst), n):
-        yield lst[i:i + n]
-
 def window_labels(labels, window_size):
     """
     Takes in labels of shape (N, C), aggregates labels and 
@@ -50,10 +45,7 @@ def window_labels(labels, window_size):
     W = int(np.ceil(C / window_size))
     windowed_labels = np.zeros((N, W))
     for w in range(W):
-        temp = stats.mode(labels[:, w*window_size:(w+1)*window_size], axis=1)[0].squeeze()
-        print(temp.shape)
-        print(temp)
-        windowed_labels[:, w] = temp
+        windowed_labels[:, w] = stats.mode(labels[:, w*window_size:(w+1)*window_size], axis=1)[0].squeeze()
     return windowed_labels
 
 def dropout_row(data, missing_percent):
