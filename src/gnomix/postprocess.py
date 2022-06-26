@@ -39,8 +39,11 @@ def get_meta_data(chm, model_pos, query_pos, n_wind, wind_size, gen_map_df):
     chm_array = [chm]*n_wind
 
     # start and end pyshical positions
-    spos_idx = np.arange(0, model_chm_len, wind_size)[:-1]
-    epos_idx = np.concatenate([np.arange(0, model_chm_len, wind_size)[1:-1],np.array([model_chm_len])])-1
+    spos_idx = np.arange(0, model_chm_len, wind_size)
+    epos_idx = np.concatenate([
+        np.arange(0, model_chm_len, wind_size)[1:],
+        np.array([model_chm_len])
+    ]) - 1
     spos = model_pos[spos_idx]
     epos = model_pos[epos_idx]
 
