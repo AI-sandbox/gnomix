@@ -4,7 +4,7 @@ from sklearn.metrics import accuracy_score, balanced_accuracy_score
 from gnomix.model.smooth.Calibration import Calibrator
 from time import time
 
-class Smoother():
+class Smoother:
 
     def __init__(self, n_windows, num_ancestry, smooth_window_size=75, model=None,
                 calibrate=None, n_jobs=None, seed=None, mode_filter=0, verbose=False):
