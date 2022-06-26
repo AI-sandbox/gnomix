@@ -70,7 +70,15 @@ class Base:
         pad_right = np.flip(array[:, -pad_width:], axis=1)
         return np.concatenate([pad_left, array, pad_right], axis=1)
 
-    def pre_process_data(self, X: ArrayLike, y: ArrayLike = None) -> Tuple[ArrayLike, ArrayLike]:
+    @staticmethod
+    def _train_base_model_(b, X: ArrayLike, y: ArrayLike) -> Any:
+        return b.fit(X, y)
+
+    @staticmethod
+    def _predict_proba_base_model(b, X: ArrayLike) -> ArrayLike:
+        return b.predict_proba(X)
+
+    def preprocess(self, X: ArrayLike, y: ArrayLike = None) -> Tuple[ArrayLike, ArrayLike]:
         """
         inputs:
             - X: shape (N, C)
@@ -105,44 +113,13 @@ class Base:
 
         return X_processed, y_processed
 
-    # @staticmethod
-    # def get_sliding_window_from_2D_array(array: ArrayLike, window_size: int, stride: int) -> ArrayLike:
-    #     """
-    #     (N, W * M) -> (W, N, M)
-    #     """
-    #     if window_size==0 or stride==0:
-    #         raise ValueError("window_size or stride cannot be 0")
-
-    #     slide_window = np.lib.stride_tricks.sliding_window_view
-    #     array = np.swapaxes(array, 0, 1) # (W * M , N)
-    #     convolved = slide_window(array, window_size, axis=0) # (W * N, N, M)
-    #     sliding_window = convolved[::stride] # (W, N, M)
-    #     return sliding_window
-
-    # def pre_process_data_V2(self, X, y):
-
-    #     N = X.shape[0]
-    #     padding = np.zeros((N, self.rem))
-    #     X = np.concatenate([X, padding], axis=1)
-
-    #     M_effective = self.M + 2 * self.context
-    #     self.get_sliding_window_from_2D_array(X, window_size=M_effective, self.M)
-
-    @staticmethod
-    def _train_base_model_(b, X: ArrayLike, y: ArrayLike) -> Any:
-        return b.fit(X, y)
-
-    @staticmethod
-    def _predict_proba_base_model(b, X: ArrayLike) -> ArrayLike:
-        return b.predict_proba(X)
-
     def train(self, X, y):
         """
         inputs:
             - X: np.array of shape (N, C) where N is sample size and C chm length
             - y: np.array of shape (N, W) where N is sample size and C chm length
         """        
-        X, y = self.pre_process_data(X, y)
+        X, y = self.preprocess(X, y)
 
         train_args = tuple(zip(self.models, X, y))
 
@@ -161,14 +138,13 @@ class Base:
         returns 
             - B: base probabilities of shape (N,W,A)
         """
-        X, _ = self.pre_process_data(X)
+        X, _ = self.preprocess(X)
 
         base_args = tuple(zip(self.models, X))
 
         if self.log_inference:
             base_args = tqdm.tqdm(base_args, total=self.W, bar_format='{l_bar}{bar:40}{r_bar}{bar:-40b}', position=0, leave=True)
 
-        # predict proba
         if self.base_multithread:
             with get_context("spawn").Pool(self.n_jobs) as pool:
                 B = np.array(pool.starmap(self._predict_proba_base_model, base_args))
@@ -183,7 +159,7 @@ class Base:
         B = self.predict_proba(X)
         return np.argmax(B, axis=-1)
         
-    def evaluate(self, X: ArrayLike = None, y: ArrayLike = None, B: ArrayLike = None):
+    def evaluate(self, X: ArrayLike = None, y: ArrayLike = None, B: ArrayLike = None) -> Tuple[float, float]:
 
         round_accr = lambda accr : round(np.mean(accr)*100,2)
 
