@@ -156,7 +156,6 @@ class SVMBase(Base):
         super().__init__(*args, **kwargs)
 
         self.log_inference = True # display progress of predict proba
-        self.train_admix = False # save computation
         self.base_multithread = True
 
         self.init_base_models(
@@ -171,7 +170,6 @@ class StringKernelBase(Base):
         assert int(np.__version__.split(".")[1]) >= 20, "String kernel implementation requires numpy versions 1.20+"
 
         self.log_inference = True # display progress of predict proba
-        self.train_admix = False # save computation
         self.base_multithread = False # this multithreads along the base models instead of with in each window
         # self.kernel = string_kernel_singlethread if self.n_jobs==1 or self.base_multithread else string_kernel
         self.kernel = string_kernel_singlethread if self.n_jobs==1 or self.base_multithread else string_kernel_multithread
@@ -188,7 +186,6 @@ class PolynomialStringKernelBase(Base):
         assert int(np.__version__.split(".")[1]) >= 20, "String kernel implementation requires numpy versions 1.20+"
 
         self.log_inference = True # display progress of predict proba
-        self.train_admix = False # save computation
         self.base_multithread = False # this multithreads along the base models instead of with in each window
         # self.kernel = string_kernel_singlethread if self.n_jobs==1 or self.base_multithread else string_kernel
         self.kernel = polynomial_string_kernel if self.n_jobs==1 or self.base_multithread else polynomial_string_kernel_multithread
@@ -205,7 +202,6 @@ class CovRSKBase(Base):
         assert int(np.__version__.split(".")[1]) >= 20, "String kernel implementation requires numpy versions 1.20+"
         
         self.log_inference = True # display progress of predict proba
-        self.train_admix = False # save computation
 
         if self.M < 500:
             self.base_multithread = True
