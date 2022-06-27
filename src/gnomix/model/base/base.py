@@ -20,7 +20,7 @@ class Base:
         A: int,
         missing_encoding: int = 2,
         context: int = 0,
-        train_admix: bool = True,
+        train_admix: bool = False,
         n_jobs: int = None,
         seed: int = 94305,
         verbose: bool = False,
