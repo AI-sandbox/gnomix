@@ -4,23 +4,12 @@ import pandas as pd
 from scipy.interpolate import interp1d
 import os
 
+"""
+Post processing functions and writers
+- move all non-deprecated functions to LADataset which implements writers
+@arvind0422
 
-def get_effective_pred(prediction, chm_len, window_size, model_idx):
-    """
-    Maps SNP indices to window number to find predictions for those SNPs
-    """
-
-    # expanding prediction
-    ext = np.repeat(prediction, window_size, axis=1)
-
-    # handling remainder
-    rem_len = chm_len-ext.shape[1]
-    ext_rem = np.tile(prediction[:,-1], [rem_len,1]).T
-    ext = np.concatenate([ext, ext_rem], axis=1)
-
-    # return relevant positions
-    return ext[:, model_idx]
-
+"""
 
 def get_meta_data(chm, model_pos, query_pos, n_wind, wind_size, gen_map_df):
     """
@@ -65,21 +54,6 @@ def get_meta_data(chm, model_pos, query_pos, n_wind, wind_size, gen_map_df):
     meta_data_df.columns = ["chm", "spos", "epos", "sgpos", "egpos", "n snps"]
 
     return meta_data_df
-
-def get_samples_from_msp_df(msp_df):
-    """Function for getting sample IDs from a pandas DF containing the output data"""
-
-    # get all columns including sample names
-    query_samples_dub = msp_df.columns[6:]
-
-    # only keep 1 of maternal/paternal 
-    single_ind_idx = np.arange(0,len(query_samples_dub),2)
-    query_samples_sing = query_samples_dub[single_ind_idx]
-
-    # remove the suffix
-    query_samples = [qs[:-2] for qs in query_samples_sing]
-
-    return query_samples
     
 def write_msp(msp_prefix, meta_data, pred_labels, populations, query_samples):
     
@@ -208,3 +182,38 @@ def msp_to_bed(msp_file, root, pop_order=None):
         sample_bed_data = get_bed_data(msp_df, sample, pop_order=pop_order)
         sample_bed_df = pd.DataFrame(sample_bed_data)
         sample_bed_df.to_csv(sample_file_name, sep="\t", index=False)
+
+
+### Deprecated for Version 1.0
+
+def get_effective_pred(prediction, chm_len, window_size, model_idx):
+    """
+    Maps SNP indices to window number to find predictions for those SNPs
+    """
+
+    # expanding prediction
+    ext = np.repeat(prediction, window_size, axis=1)
+
+    # handling remainder
+    rem_len = chm_len-ext.shape[1]
+    ext_rem = np.tile(prediction[:,-1], [rem_len,1]).T
+    ext = np.concatenate([ext, ext_rem], axis=1)
+
+    # return relevant positions
+    return ext[:, model_idx]
+
+
+def get_samples_from_msp_df(msp_df):
+    """Function for getting sample IDs from a pandas DF containing the output data"""
+
+    # get all columns including sample names
+    query_samples_dub = msp_df.columns[6:]
+
+    # only keep 1 of maternal/paternal 
+    single_ind_idx = np.arange(0,len(query_samples_dub),2)
+    query_samples_sing = query_samples_dub[single_ind_idx]
+
+    # remove the suffix
+    query_samples = [qs[:-2] for qs in query_samples_sing]
+
+    return query_samples

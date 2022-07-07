@@ -11,6 +11,14 @@ from time import time
 import pickle
 import gzip
 
+"""
+TODO
+- some utils functions can be left here
+- many functions are used by the phaser (must be moved)
+- some functions are used by inference script (must be moved)
+
+"""
+
 def save_dict(D, path):
     with open(path, 'wb') as handle:
         pickle.dump(D, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -21,15 +29,6 @@ def load_dict(path):
     with open(path, 'rb') as handle:
         return pickle.load(handle)
 
-def get_num_outs(sample_map_paths, r_admixed=1.0):
-    # r_admixed: generated r_admixed * num-founders for each set
-    # TODO: cap train2 lengths to a pre-defined value.
-    num_outs = []
-    for path in sample_map_paths:
-        with open(path,"r") as f:
-            length = len(f.readlines()) # how many founders.
-            num_outs.append(int(length *r_admixed))
-    return num_outs
 
 def join_paths(p1,p2="",verb=True):
     path = os.path.join(p1,p2)
@@ -168,49 +167,6 @@ def read_genetic_map(genetic_map_path, chm=None, header=None):
 
     return gen_map_df
 
-def cM2nsnp(cM, chm_len_pos, genetic_map, chm=None):
-
-    if type(genetic_map) == str:
-        if chm is not None:
-            gen_map_df = read_genetic_map(genetic_map, chm)
-        else:
-            print("Need chromosome number to read genetic map")
-    else:
-        gen_map_df = genetic_map
-
-    chm_len_cM = np.array(gen_map_df["pos_cm"])[-1]
-    snp_len = int(round(cM*(chm_len_pos/chm_len_cM)))
-
-    return snp_len
-
-def fb2proba(path_to_fb, n_wind=None):
-    
-    with open(path_to_fb) as f:
-        header = f.readline().split("\n")[0]
-        ancestry = np.array(header.split("\t")[1:])
-    A = len(ancestry)
-    
-    fb_df = pd.read_csv(path_to_fb, sep="\t", skiprows=[0])
-
-    samples = [s.split(":::")[0] for s in fb_df.columns[4::A*2]]
-    
-    # Probabilities in snp space
-    fb = np.array(fb_df)[:,4:]
-    C, AN = fb.shape
-    N = AN//A
-    fb_reshaped = fb.reshape(C, N, A)      # (C, N, A)
-    proba = np.swapaxes(fb_reshaped, 0, 1) # (N, C, A)
-    
-    # Probabilities in window space
-    if n_wind is not None:
-        gen_pos = np.array(fb_df['genetic_position'])
-        w_cM = np.arange(gen_pos[0], gen_pos[-1], step = gen_pos[-1]/n_wind)
-        f = interp1d(gen_pos, np.arange(C), fill_value=(0, C), bounds_error=False) 
-        w_idx = f(w_cM).astype(int)
-        proba = proba[:,w_idx,:]
-    
-    return proba
-
 def update_vcf(vcf_data, mask=None, Updates=None):
 
     out = vcf_data.copy()
@@ -315,7 +271,6 @@ def npy_to_vcf(reference, npy, results_file, verbose=False, headers=""):
     
     return
 
-
 def read_headers(vcf_file):
 
     header = ""
@@ -334,19 +289,58 @@ def read_headers(vcf_file):
 
     return header
 
-def get_window_level_local_ancestry_inference_from_msp_file(path_to_msp_file):
-    msp_df = pd.read_csv(path_to_msp_file, sep="\t", skiprows=[0])
-    inferred_indices = (np.array(msp_df)[:,6:].T).astype(int)
-    with open(path_to_msp_file, "r") as f:
-        index_to_population_map = np.array([p.split("=")[0] for p in f.readline().split()[2:]])
-    inferred_ancestry_labels = index_to_population_map[inferred_indices]
-    return inferred_ancestry_labels
 
-def get_labels_from_sample_map_file(sample_map_file, dtype=None):
-    true_global_ancestry_labels_single_haplotype_df = pd.read_csv(sample_map_file, sep="\t")
-    true_global_ancestry_labels_single_haplotype = true_global_ancestry_labels_single_haplotype_df["Population"].to_numpy()
-    if dtype is not None:
-        true_global_ancestry_labels_single_haplotype = true_global_ancestry_labels_single_haplotype.astype(dtype)
-    true_gloabl_ancestry_labels_single_dimension = np.repeat(true_global_ancestry_labels_single_haplotype, 2)
-    true_gloabl_ancestry_labels = true_gloabl_ancestry_labels_single_dimension.reshape(-1, 1)
-    return true_gloabl_ancestry_labels
+### Deprecated for Version 1.0
+
+def get_num_outs(sample_map_paths, r_admixed=1.0):
+    # r_admixed: generated r_admixed * num-founders for each set
+    # TODO: cap train2 lengths to a pre-defined value.
+    num_outs = []
+    for path in sample_map_paths:
+        with open(path,"r") as f:
+            length = len(f.readlines()) # how many founders.
+            num_outs.append(int(length *r_admixed))
+    return num_outs
+
+def cM2nsnp(cM, chm_len_pos, genetic_map, chm=None):
+
+    if type(genetic_map) == str:
+        if chm is not None:
+            gen_map_df = read_genetic_map(genetic_map, chm)
+        else:
+            print("Need chromosome number to read genetic map")
+    else:
+        gen_map_df = genetic_map
+
+    chm_len_cM = np.array(gen_map_df["pos_cm"])[-1]
+    snp_len = int(round(cM*(chm_len_pos/chm_len_cM)))
+
+    return snp_len
+
+def fb2proba(path_to_fb, n_wind=None):
+    
+    with open(path_to_fb) as f:
+        header = f.readline().split("\n")[0]
+        ancestry = np.array(header.split("\t")[1:])
+    A = len(ancestry)
+    
+    fb_df = pd.read_csv(path_to_fb, sep="\t", skiprows=[0])
+
+    samples = [s.split(":::")[0] for s in fb_df.columns[4::A*2]]
+    
+    # Probabilities in snp space
+    fb = np.array(fb_df)[:,4:]
+    C, AN = fb.shape
+    N = AN//A
+    fb_reshaped = fb.reshape(C, N, A)      # (C, N, A)
+    proba = np.swapaxes(fb_reshaped, 0, 1) # (N, C, A)
+    
+    # Probabilities in window space
+    if n_wind is not None:
+        gen_pos = np.array(fb_df['genetic_position'])
+        w_cM = np.arange(gen_pos[0], gen_pos[-1], step = gen_pos[-1]/n_wind)
+        f = interp1d(gen_pos, np.arange(C), fill_value=(0, C), bounds_error=False) 
+        w_idx = f(w_cM).astype(int)
+        proba = proba[:,w_idx,:]
+    
+    return proba

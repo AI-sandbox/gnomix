@@ -1,13 +1,13 @@
 from pathlib import Path
 import os
-from gnomix.paths import TEST_CONFIG_PATH
+from tests.functional.paths import TEST_CONFIG_PATH
 import numpy as np
 
-from gnomix.utils import (
+from tests.functional.test_utils import (
     get_window_level_local_ancestry_inference_from_msp_file,
     get_labels_from_sample_map_file
 )
-from gnomix.generate_dataset_from_1kg import generate_dataset
+from tests.functional.generate_dataset_from_1kg import generate_dataset
 
 def test_train_and_inference_single_ancestry_small(
     genetic_map_path: Path,

@@ -11,6 +11,26 @@ class VCF:
     def __init__(self,vcf_file):
         pass
 
+    def checks(self):
+        # Make sure phased
+
+        # Warning for missing values
+
+        # Make sure filter passed for all
+
+        # Keep the INFO fields
+
+        # Check if only bi-allelic
+
+        pass
+
+    def save_metadata(self):
+        """
+        Save everything other than genotype data into a file
+        """
+        pass
+
+
 
 BaseProbabilities = np.ndarray
 

@@ -6,6 +6,12 @@ import scipy.interpolate
 
 from gnomix.utils import read_vcf, read_genetic_map
 
+"""
+All these must be moved to new LADataset TODO: arvind0422
+
+"""
+
+
 def get_chm_info(genetic_map,variants_pos,chm):
 
     """

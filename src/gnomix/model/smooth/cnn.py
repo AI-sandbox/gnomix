@@ -1,38 +1,32 @@
+from dataclasses import dataclass
 import numpy as np
 import torch
 from torch import nn
 
-class LAIDataset(torch.utils.data.Dataset):
+from gnomix.model.smooth.smoothmodel import SmootherModel
+
+@dataclass
+class CNNSmootherConfig:
+
+    num_classes: int
+    num_features: int
+    verbose:bool=False
+    lr: float=0.001
+
+class CNN(nn.Module,SmootherModel):
     
-    def __init__(self, data, labels):
-        self.labels = labels
-        self.data = data
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, index):
-
-        # select sample
-        X = self.data[index]
-        y = self.labels[index]
-
-        return X, y
-
-class CNN(nn.Module):
-    
-    def __init__(self, num_classes, num_features, lr=0.001, verbose=False):
+    def __init__(self, config:CNNSmootherConfig):
         super().__init__()
-        self.num_features = num_features
-        self.num_classes = num_classes
+        self.num_features = config.num_features
+        self.num_classes = config.num_classes
         
         self.smoothNet = self._get_conv_smoother()
         self.drop = nn.Dropout(0.5)
         self.drop_cols = nn.Dropout(0.5)
 
-        self.optimizer = torch.optim.Adam(self.parameters(), lr = lr)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr = config.lr)
 
-        self.verbose = verbose
+        self.verbose = config.verbose
         
     def _get_conv_smoother(self):
         layers = [ nn.Conv1d(self.num_classes,self.num_classes,self.num_features,padding=(self.num_features-1)//2,padding_mode="reflection") ]
@@ -139,11 +133,11 @@ class CNN(nn.Module):
                 
                 print("Sample Training accuracy after {} iterations: {}".format(ep,new_accr))
             
-    def predict(self, X):
-        X_torch = as_torch_tensor(X)
-        y_pred_torch = self.predict_torch(X_torch)
-        y_pred = np.array(y_pred_torch, dtype=int)
-        return y_pred
+    # def predict(self, X):
+    #     X_torch = as_torch_tensor(X)
+    #     y_pred_torch = self.predict_torch(X_torch)
+    #     y_pred = np.array(y_pred_torch, dtype=int)
+    #     return y_pred
 
     def predict_proba(self, X):
         X_torch = as_torch_tensor(X)
@@ -164,6 +158,23 @@ def as_torch_tensor(base_proba, labels=None):
         return B_torch, y_torch
 
     return B_torch
+
+class LAIDataset(torch.utils.data.Dataset):
+    
+    def __init__(self, data, labels):
+        self.labels = labels
+        self.data = data
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+
+        # select sample
+        X = self.data[index]
+        y = self.labels[index]
+
+        return X, y
 
 def get_data_generator(B_torch, y_torch, shuffle=True):
 
