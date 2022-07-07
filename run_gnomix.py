@@ -382,7 +382,7 @@ if __name__ == "__main__":
             gens_with_zero = list(set(generations + [0]))
             gens_without_zero = [generation for generation in generations if generation != 0]
             config["simulation"]["splits"]["gens"] = {
-            "train1": gens_with_zero,
+            "train1": [0],
             "train2": generations,
             "val": gens_without_zero
             }
