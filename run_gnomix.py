@@ -197,7 +197,13 @@ def train_model(config, data_path, verbose):
     # train it
     if verbose:
         print("Building model...")
-    model.train(data=data, retrain_base=retrain_base, evaluate=True, verbose=verbose)
+    model.train(data=data, retrain_base=False, evaluate=True, verbose=verbose)
+    if retrain_base:
+        generations_0 = {"train1":[0],"train2":[0]}
+        if validate:
+            generations_0["val"] = [0]
+        all_founders, _ = get_data(data_path, generations_0, window_size_cM)
+        model.retrain_base(data=all_founders,verbose=verbose)
     # write gentic map df
     model.write_gen_map_df(load_dict(os.path.join(data_path,"gen_map_df.pkl")))
 
@@ -296,11 +302,19 @@ def simulate_splits(base_args,config,data_path):
         if not os.path.exists(split_path):
             os.makedirs(split_path)
         for gen in split_generations[split]:
+            if gen == 0:
+                continue
             laidataset.simulate(num_outs[split],
                                 split=split,
                                 gen=gen,
                                 outdir=os.path.join(split_path,"gen_"+str(gen)),
                                 return_out=False)
+        # Simulate gen_0 for every split
+        laidataset.simulate(num_outs[split], # this param makes no diff
+                            split=split,
+                            gen=0,
+                            outdir=os.path.join(split_path,"gen_0"),
+                            return_out=False)
 
     return
 
