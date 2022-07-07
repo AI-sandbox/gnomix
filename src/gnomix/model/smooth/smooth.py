@@ -81,6 +81,7 @@ class Smoother():
         assert type(model) == SmootherModel
         sm.model = model
         print("Smoother.model assigned using from_model constructor")
+        return sm
 
     def train(self,B,y):
 
@@ -99,3 +100,16 @@ class Smoother():
         y_pred = np.argmax(proba, axis=-1)
         return y_pred
 
+    # def evaluate(self,B=None,y=None,y_pred=None):
+
+    #     round_accr = lambda accr : round(np.mean(accr)*100,2)
+
+    #     if B is not None:
+    #         y_pred = self.predict(B)
+    #     elif y_pred is None:
+    #         print("Error: Need either Base probabilities or y predictions.")
+
+    #     accr = round_accr( accuracy_score(y.reshape(-1), y_pred.reshape(-1)) )
+    #     accr_bal = round_accr( balanced_accuracy_score(y.reshape(-1), y_pred.reshape(-1)) )
+
+    #     return accr, accr_bal
