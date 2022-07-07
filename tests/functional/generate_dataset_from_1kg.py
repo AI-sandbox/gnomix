@@ -5,7 +5,7 @@ import argparse
 
 from sklearn.model_selection import train_test_split
 
-from gnomix.paths import (
+from tests.functional.paths import (
     DATA_FOLDER,
     TEST_DATA_FOLDER,
     DEMO_DATA_FOLDER,

@@ -4,7 +4,7 @@ import os
 from collections import namedtuple
 import scipy.interpolate
 
-from gnomix.utils import read_vcf, read_genetic_map
+from gnomix.core.utils import read_vcf, read_genetic_map
 
 """
 All these must be moved to new LADataset TODO: arvind0422

@@ -3,7 +3,7 @@ Define the core datatypes
 
 """
 from dataclasses import dataclass
-from ladataset import SimulationConfig
+from gnomix.dataset.ladataset import SimulationConfig
 import numpy as np
 
 class VCF:

@@ -1,7 +1,7 @@
 import pytest
 import os
 
-from gnomix import paths
+from tests.functional import paths
 
 @pytest.fixture
 def genetic_map_path(build: int = 37):

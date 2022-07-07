@@ -6,13 +6,13 @@ import pickle
 import sys
 import yaml
 
-from gnomix.paths import DEFAULT_CONFIG_PATH
-from gnomix.utils import join_paths, read_vcf, vcf_to_npy, npy_to_vcf, update_vcf 
-from gnomix.utils import read_genetic_map, save_dict, load_dict, read_headers
-from gnomix.preprocess import load_np_data, data_process
-from gnomix.postprocess import get_meta_data, write_msp, write_fb, msp_to_lai, msp_to_bed
-from gnomix.visualization import plot_cm, plot_chm
-from gnomix.laidataset import LAIDataset
+from tests.functional.paths import DEFAULT_CONFIG_PATH
+from gnomix.core.utils import join_paths, read_vcf, vcf_to_npy, npy_to_vcf, update_vcf 
+from gnomix.core.utils import read_genetic_map, save_dict, load_dict, read_headers
+from gnomix.dataset.preprocess import load_np_data, data_process
+from gnomix.core.postprocess import get_meta_data, write_msp, write_fb, msp_to_lai, msp_to_bed
+from gnomix.core.visualization import plot_cm, plot_chm
+from gnomix.dataset.laidataset import LAIDataset
 from gnomix.model.model import Gnomix
 
 CLAIMER = """When using this software, please cite:

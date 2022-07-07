@@ -1,10 +1,10 @@
-from datatypes import VCF, AncestryPredictions
+from gnomix.core.datatypes import VCF, AncestryPredictions
 import allel
 import gzip
 import pandas as pd
 import os
 
-from src.gnomix.utils import read_vcf, read_genetic_map
+from gnomix.core.utils import read_vcf, read_genetic_map
 
 class LADataset:
 
