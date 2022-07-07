@@ -1,3 +1,4 @@
+from unittest import TextTestRunner
 import numpy as np
 import pandas as pd
 import os
@@ -270,12 +271,10 @@ class LAIDataset:
     def metadata(self):
         metadict = {
             "chm":self.chm,
-            "morgans":self.morgans,
-            "num_snps":self.num_snps,
             "pos_snps":self.pos_snps,
+            "snp_cm":self.pos_cm,
             "ref_snps":self.ref_snps,
             "alt_snps":self.alt_snps,
-            "pop_to_num":self.pop_to_num,
             "num_to_pop":self.num_to_pop
         }
         return metadict
@@ -353,82 +352,57 @@ class LAIDataset:
         self.include_all(from_split="train1",in_split="train2")
 
         # write a sample map to outdir/split.map
-        if outdir is not None:
-            for split in splits:
-                split_file = os.path.join(outdir,split+".map")
-                self.return_split(split)[["sample","population"]].to_csv(split_file,sep="\t",header=False,index=False)
-        
-    def return_split(self,split):
-        if split in self.splits:
-            return self.sample_map_data[self.sample_map_data["split"]==split]
-        else:
-            raise Exception("split does not exist!!!")
+        # if outdir is not None:
+        #     for split in splits:
+        #         split_file = os.path.join(outdir,split+".map")
+        #         self.return_split(split)[["sample","population"]].to_csv(split_file,sep="\t",header=False,index=False)
         
         
-    def simulate(self,num_samples,split="None",gen=None,outdir=None,return_out=True, verbose=False):
+    def simulate(self,num_samples,gen,verbose=True):
         
-        # general purpose simulator: can simulate any generations, either n of gen g or 
-        # just random n samples from gen 2 to 100.
-        
-        assert(type(split)==str)
-        if verbose:
-            print("Simulating using split: ",split) 
-        
-        # get generations for each sample to be simulated
-        if gen == None:
-            gens = np.random.randint(2,100,num_samples)
-            if verbose:
-                print("Simulating random generations...")
             
-        else:
-            gens = gen * np.ones((num_samples),dtype=int)
-            if verbose:
-                print("Simulating generation: ",gen)
+        gens = gen * np.ones((num_samples),dtype=int)
+        if verbose:
+            print("Simulating generation: ",gen)
         
         # corner case
         if gen == 0:
-            simulated_samples =  self.sample_map_data[self.sample_map_data["split"]==split]["founders"].tolist()
-            if outdir is not None:
-                if verbose:
-                    print("Writing simulation output to: ",outdir)
-                write_output(outdir,simulated_samples)
+            simulated_samples =  self.sample_map_data["founders"].tolist()
         
-            # return the samples
-            if return_out:
-                return simulated_samples
-            else:
-                return
-        
-        # get the exact founder data based on split
-        founders = self.sample_map_data[self.sample_map_data["split"]==split]["founders"].tolist()
-        founders_weight = self.sample_map_data[self.sample_map_data["split"]==split]["sample_weight"].to_numpy()
-        founders_weight = list(founders_weight/founders_weight.sum()) # renormalize to 1
-        if len(founders) == 0:
-            raise Exception("Split does not exist!!!")
-        
-        # run simulation
-        if verbose:
-            print("Generating {} admixed samples".format(num_samples))
-        simulated_samples = []
-        for i in range(num_samples):
-            
-            # create an admixed Person
-            maternal = admix(founders,founders_weight,gens[i],self.breakpoint_prob,self.num_snps,self.morgans)
-            paternal = admix(founders,founders_weight,gens[i],self.breakpoint_prob,self.num_snps,self.morgans)
-            name = "admixed"+str(int(np.random.rand()*1e6))
-            
-            adm = Person(maternal,paternal,name)
-            simulated_samples.append(adm)
-            
-        # write outputs
-        if outdir is not None:
-            if verbose:
-                print("Writing simulation output to: ",outdir)
-            write_output(outdir,simulated_samples)
-            # TODO: optionally, we can even convert these to vcf and result (ancestry) files
-        
-        # return the samples
-        if return_out:
-            return simulated_samples
         else:
-            return
+            # get the exact founder data based on split
+            founders = self.sample_map_data["founders"].tolist()
+            founders_weight = self.sample_map_data["sample_weight"].to_numpy()
+            founders_weight = list(founders_weight/founders_weight.sum()) # renormalize to 1
+            if len(founders) == 0:
+                raise Exception("Split does not exist!!!")
+            
+            # run simulation
+            if verbose:
+                print("Generating {} admixed samples".format(num_samples))
+            simulated_samples = []
+            for i in range(num_samples):
+                
+                # create an admixed Person
+                maternal = admix(founders,founders_weight,gens[i],self.breakpoint_prob,self.num_snps,self.morgans)
+                paternal = admix(founders,founders_weight,gens[i],self.breakpoint_prob,self.num_snps,self.morgans)
+                name = "admixed"+str(int(np.random.rand()*1e6))
+                
+                adm = Person(maternal,paternal,name)
+                simulated_samples.append(adm)
+            
+        snps = []
+        anc = []
+        for person in simulated_samples:
+            snps.append(person.maternal["snps"])
+            snps.append(person.paternal["snps"])
+            anc.append(person.maternal["anc"])
+            anc.append(person.paternal["anc"])
+
+        # create npy files.
+        snps = np.stack(snps)
+
+        # create map files.
+        anc = np.stack(anc)
+
+        return snps, anc

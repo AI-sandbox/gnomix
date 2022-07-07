@@ -16,13 +16,18 @@ simulation:
 
 model: 
   name: model         # model name for storing model + analysis
-  inference:          # If blank, we use default (best, fast, large are alternative options)
+  mode:          # If blank, we use default (best, fast, large are alternative options)
   window_size_cM: 0.2 # size of each base window in centi Morgans, use larger windows if snp density is lower (for example for genotype data)
   smooth_size: 75     # How many windows the smoothers see
   context_ratio: 0.5  # context for each window will be context_ratio*window_size on each side
   retrain_base: True  # retrain the base models once smoother data has been obtained
   calibrate: False    # calibrate the output probabilities
   n_cores:            # number of CPUs to use, default is maximum
+
+training:
+  retrain_base: True
+  calibrate: False
+  eval_split: 0.05
 
 inference:
   bed_file_output: False # generate files for each individual that show the run length encoding of their ancestry segments

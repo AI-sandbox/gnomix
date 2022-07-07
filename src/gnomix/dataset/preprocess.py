@@ -60,31 +60,3 @@ def data_process(X, labels, window_size):
     y = np.array(y, dtype="int16")
 
     return X, y
-
-### Deprecated for Version 1.0
-
-def vcf2npy(vcf_file):
-    vcf_data = allel.read_vcf(vcf_file)
-    chm_len, nout, _ = vcf_data["calldata/GT"].shape
-    mat_vcf_2d = vcf_data["calldata/GT"].reshape(chm_len,nout*2).T
-    return mat_vcf_2d.astype('int16')
-
-def map2npy(map_file, shape, pop_order):
-    sample_map = pd.read_csv(map_file, sep="\t", header=None)
-    sample_map.columns = ["sample", "ancestry"]
-    y = np.zeros(shape, dtype='int16')
-    for i, a in enumerate(sample_map["ancestry"]):
-        a_numeric = np.where(a==pop_order)[0][0]
-        y[2*i:2*i+2] = a_numeric
-    return y
-
-def dropout_row(data, missing_percent):
-    num_drops = int(len(data)*missing_percent)
-    drop_indices = np.random.choice(np.arange(len(data)),size=num_drops,replace=False)
-    data[drop_indices] = 2
-    return data
-
-def simulate_missing_values(data, missing_percent=0.0):
-    if missing_percent == 0:
-        return data
-    return np.apply_along_axis(dropout_row, axis=1, arr=data, missing_percent=missing_percent)

@@ -14,8 +14,8 @@ class Base():
                  chm_len: int, 
                  window_size: int,
                  num_ancestry: int,
+                 context: float,
                  model_type: str,
-                 context: float=0.5,
                  n_jobs: int=32,
                  seed:int=94305,
                  verbose:bool=False):
@@ -74,9 +74,10 @@ class Base():
     def from_model(chm_len: int, 
                    window_size: int,
                    num_ancestry: int,
+                   context: float,
                    single_base: SingleBase):
         
-        bm = Base(chm_len, window_size, num_ancestry, model_type="")
+        bm = Base(chm_len, window_size, num_ancestry, context, model_type="")
         bm.models = [single_base.model_factory() for _ in range(bm.W)]
         bm.base_multithread = single_base.is_multithreaded()
         print("Base initialized using from_model")

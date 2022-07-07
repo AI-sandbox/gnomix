@@ -289,58 +289,13 @@ def read_headers(vcf_file):
 
     return header
 
-
-### Deprecated for Version 1.0
-
-def get_num_outs(sample_map_paths, r_admixed=1.0):
-    # r_admixed: generated r_admixed * num-founders for each set
-    # TODO: cap train2 lengths to a pre-defined value.
-    num_outs = []
-    for path in sample_map_paths:
-        with open(path,"r") as f:
-            length = len(f.readlines()) # how many founders.
-            num_outs.append(int(length *r_admixed))
-    return num_outs
-
-def cM2nsnp(cM, chm_len_pos, genetic_map, chm=None):
-
-    if type(genetic_map) == str:
-        if chm is not None:
-            gen_map_df = read_genetic_map(genetic_map, chm)
-        else:
-            print("Need chromosome number to read genetic map")
+def load_model(path_to_model, verbose=True):
+    if verbose:
+        print("Loading model...")
+    if path_to_model[-3:]==".gz":
+        with gzip.open(path_to_model, 'rb') as unzipped:
+            model = pickle.load(unzipped)
     else:
-        gen_map_df = genetic_map
+        model = pickle.load(open(path_to_model,"rb"))
 
-    chm_len_cM = np.array(gen_map_df["pos_cm"])[-1]
-    snp_len = int(round(cM*(chm_len_pos/chm_len_cM)))
-
-    return snp_len
-
-def fb2proba(path_to_fb, n_wind=None):
-    
-    with open(path_to_fb) as f:
-        header = f.readline().split("\n")[0]
-        ancestry = np.array(header.split("\t")[1:])
-    A = len(ancestry)
-    
-    fb_df = pd.read_csv(path_to_fb, sep="\t", skiprows=[0])
-
-    samples = [s.split(":::")[0] for s in fb_df.columns[4::A*2]]
-    
-    # Probabilities in snp space
-    fb = np.array(fb_df)[:,4:]
-    C, AN = fb.shape
-    N = AN//A
-    fb_reshaped = fb.reshape(C, N, A)      # (C, N, A)
-    proba = np.swapaxes(fb_reshaped, 0, 1) # (N, C, A)
-    
-    # Probabilities in window space
-    if n_wind is not None:
-        gen_pos = np.array(fb_df['genetic_position'])
-        w_cM = np.arange(gen_pos[0], gen_pos[-1], step = gen_pos[-1]/n_wind)
-        f = interp1d(gen_pos, np.arange(C), fill_value=(0, C), bounds_error=False) 
-        w_idx = f(w_cM).astype(int)
-        proba = proba[:,w_idx,:]
-    
-    return proba
+    return model

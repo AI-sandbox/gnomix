@@ -19,7 +19,7 @@ class Smoother():
                  n_windows: int,
                  num_ancestry: int, 
                  smooth_window_size: int, 
-                 model_type: str,
+                 model_type: str, # All inputs before this must be Smoother's config, ones after this are specific to the SmootherModel
                  n_jobs:int=32,
                  seed: int=94305,
                  verbose:bool=False):
@@ -55,20 +55,6 @@ class Smoother():
 
         self.model = model
 
-        ## Removed parameters (moved to caller function)
-        # self.gnofix = False
-        # self.n_jobs = n_jobs
-        # self.seed = seed
-        # self.verbose = verbose
-
-        ## Deprecated parameters v1.0
-        # self.mode_filter = mode_filter
-        # self.calibrate = calibrate
-        # self.calibrator = None
-
-
-    # def process_base_proba(self,B,y=None):
-    #     return B, y # smoother doesn't pre-process by default
 
     # This is for researching new smoother models
     @staticmethod

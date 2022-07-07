@@ -21,25 +21,20 @@ Daniel Mas Montserrat, Alexander G Ioannidis:
 High Resolution Ancestry Deconvolution for Next Generation Genomic Data
 https://www.biorxiv.org/content/10.1101/2021.09.19.460980v1"""
 
-def load_model(path_to_model, verbose=True):
-    if verbose:
-        print("Loading model...")
-    if path_to_model[-3:]==".gz":
-        with gzip.open(path_to_model, 'rb') as unzipped:
-            model = pickle.load(unzipped)
-    else:
-        model = pickle.load(open(path_to_model,"rb"))
-
-    return model
-
-def run_inference(base_args, model, visualize, snp_level=False, bed_file_output=False, verbose=False):
+def run_inference(query_file, output_path, model_path, verbose, inference_config):
 
     if verbose:
         print("Loading and processing query file...")
 
-    query_file = base_args["query_file"]
-    chm = base_args["chm"]
-    output_path = base_args["output_basename"]
+    model = Gnomix.load(model_path)
+
+    snp_level = inference_config.get("snp_level_inference",False)
+    bed_file_output = inference_config.get("bed_file_output",False)
+    visualize = inference_config.get("visualize_inference",False)
+    phase = inference_config.get("phase",False)
+
+    # TODO: Make sure model and query file have same chromosome
+    chm = model.chm
     gen_map_df = model.gen_map_df
 
     # Load and process user query vcf file
@@ -51,7 +46,7 @@ def run_inference(base_args, model, visualize, snp_level=False, bed_file_output=
         print("Inferring ancestry on query data...")
 
     B_query = model.base.predict_proba(X_query)
-    if not base_args["phase"]:
+    if not phase:
         y_proba_query = model.smooth.predict_proba(B_query)
         y_pred_query = np.argmax(y_proba_query, axis=-1)
     else:
@@ -97,68 +92,16 @@ def run_inference(base_args, model, visualize, snp_level=False, bed_file_output=
 
     return
 
-def get_data(data_path, generations, window_size_cM):
-
-    # ------------------ Meta ------------------
-    assert(type(generations)==dict), "Generations must be a dict with list of generations to read in for each split"
-
-    laidataset_meta_path = os.path.join(data_path,"metadata.pkl")
-    laidataset_meta = load_dict(laidataset_meta_path)
-
-    snp_pos = laidataset_meta["pos_snps"]
-    snp_ref = laidataset_meta["ref_snps"]
-    snp_alt = laidataset_meta["alt_snps"]
-    pop_order = laidataset_meta["num_to_pop"]
-    pop_list = []
-    for i in range(len(pop_order.keys())):
-        pop_list.append(pop_order[i])
-    pop_order = np.array(pop_list)
-
-    A = len(pop_order)
-    C = len(snp_pos)
-    M = int(round(window_size_cM*(C/(100*laidataset_meta["morgans"]))))
-
-    meta = {
-        "A": A, # number of ancestry
-        "C": C, # chm length
-        "M": M, # window size in SNPs
-        "snp_pos": snp_pos,
-        "snp_ref": snp_ref,
-        "snp_alt":snp_alt,
-        "pop_order": pop_order
-    }
-
-    # ------------------ Process data ------------------
-
-    def read(split):
-
-        paths = [os.path.join(data_path,split,"gen_"+str(gen)) for gen in generations[split]]
-        X_files = [p + "/mat_vcf_2d.npy" for p in paths]
-        labels_files = [p + "/mat_map.npy" for p in paths]
-        X_raw, labels_raw = [load_np_data(f) for f in [X_files, labels_files]]
-        X, y = data_process(X_raw, labels_raw, window_size=M)
-        return X, y
-
-    X_t1, y_t1 = read("train1")
-    X_t2, y_t2 = read("train2")
-    X_v, y_v = (None, None)
-    if generations.get("val") is not None:
-        X_v, y_v = read("val")
-
-    data = ((X_t1, y_t1), (X_t2, y_t2), (X_v, y_v))
-
-    return data, meta
 
 def train_model(config, data_path, verbose):
 
     # data_path contains - train1/, train2/, val/, metadata, sample_maps/
 
-    rm_simulated_data=config["simulation"]["rm_data"]
-    model_name=config["model"].get("name", "model")
-    inference=config["model"].get("inference", "default")
+    mode=config["model"].get("mode", "default")
     window_size_cM=config["model"].get("window_size_cM")
     smooth_window_size=config["model"].get("smooth_size")
     n_cores=config["model"].get("n_cores", None)
+    evaluate=config["model"].get("evaluate")
     retrain_base=config["model"].get("retrain_base")
     calibrate=config["model"].get("calibrate")
     context_ratio=config["model"].get("context_ratio")
@@ -192,47 +135,40 @@ def train_model(config, data_path, verbose):
     # train it
     if verbose:
         print("Building model...")
-    model.train(data=data, retrain_base=retrain_base, evaluate=True, verbose=verbose)
-    # write gentic map df
-    model.write_gen_map_df(load_dict(os.path.join(data_path,"gen_map_df.pkl")))
+    # Add laidataset metadata
+    model.add_ladataset_metadata(meta)
+    model.train_base(X_t1,y_t1)
+    model.train_smooth(X_t2,y_t2)
+
+    # brief analysis
+    if evaluate:
+        model.evaluate(X_v,y_v)
+        if verbose:
+            print("Analyzing model performance...")
+        analysis_path = join_paths(model_repo, "analysis", verb=False)
+        cm_path = analysis_path+"/confusion_matrix_{}.txt"
+        cm_plot_path = analysis_path+"/confusion_matrix_{}_normalized.png"
+        analysis_sets = ["train", "val"] if validate else ["train"]
+        for d in analysis_sets:
+            cm, idx = model.Confusion_Matrices[d]
+            n_digits = int(np.ceil(np.log10(np.max(cm))))
+            np.savetxt(cm_path.format(d), cm, fmt='%-'+str(n_digits)+'.0f')
+            plot_cm(cm, labels=model.population_order[idx], path=cm_plot_path.format(d))
+            if verbose:
+                print("Estimated "+d+" accuracy: {}%".format(model.accuracies["smooth_"+d+"_acc"]))
+
+        if verbose:
+            print("Model, info and analysis saved at {}".format(model_repo))
+            print("-"*80)
+
+    if retrain_base:
+        model.train_base(X_t,y_t)
 
     # store it
     model_repo = join_paths(output_path, "models", verb=False)
     model_repo = join_paths(model_repo, model_name + "_chm_" + str(chm), verb=False)
     model_path = model_repo + "/" + model_name + "_chm_" + str(chm) + ".pkl"
-    pickle.dump(model, open(model_path,"wb"))
-
-    # brief analysis
-    if verbose:
-        print("Analyzing model performance...")
-    analysis_path = join_paths(model_repo, "analysis", verb=False)
-    cm_path = analysis_path+"/confusion_matrix_{}.txt"
-    cm_plot_path = analysis_path+"/confusion_matrix_{}_normalized.png"
-    analysis_sets = ["train", "val"] if validate else ["train"]
-    for d in analysis_sets:
-        cm, idx = model.Confusion_Matrices[d]
-        n_digits = int(np.ceil(np.log10(np.max(cm))))
-        np.savetxt(cm_path.format(d), cm, fmt='%-'+str(n_digits)+'.0f')
-        plot_cm(cm, labels=model.population_order[idx], path=cm_plot_path.format(d))
-        if verbose:
-            print("Estimated "+d+" accuracy: {}%".format(model.accuracies["smooth_"+d+"_acc"]))
-
-    # write the model parameters of type int, float, str into a file config TODO: test
-    model_config_path = os.path.join(model_repo, "config.txt")
-    model.write_config(model_config_path)
-
-    if verbose:
-        print("Model, info and analysis saved at {}".format(model_repo))
-        print("-"*80)
-
-    if rm_simulated_data:
-        if verbose:
-            print("Removing simulated data...")
-        splits_to_rem = ["train1","train2","val"] if validate else ["train1","train2"]
-        for split in splits_to_rem: # train1, train2, val (if val is there)
-            chm_path = join_paths(data_path, split, verb=False)
-            remove_data_cmd = "rm -r " + chm_path
-            os.system(remove_data_cmd)
+    model.save(model_path)
 
     return model
     
@@ -243,59 +179,26 @@ def simulate_splits(base_args,config,data_path):
     reference = base_args["reference_file"]
     genetic_map = base_args["genetic_map_file"]
     sample_map = base_args["sample_map_file"]
-    outdir = base_args["output_basename"]
 
-    laidataset = LAIDataset(chm, reference, genetic_map, seed=config["seed"])
-    laidataset.buildDataset(sample_map)
-
-    # create output directories
-    if not os.path.exists(outdir):
-        os.makedirs(outdir)
-    
-    if not os.path.exists(data_path):
-        os.makedirs(data_path)
-
-    sample_map_path = os.path.join(data_path,"sample_maps")
-    if not os.path.exists(sample_map_path):
-        os.makedirs(sample_map_path)
-
-    # split sample map and write it.
-    splits = config["simulation"]["splits"]["ratios"]
-    if len(laidataset) <= 25:
-        if splits.get("val"):
-            print("WARNING: Too few samples to run validation.")
-            del config["simulation"]["splits"]["ratios"]["val"]
-    laidataset.create_splits(splits,sample_map_path)
-
-    # TODO
-    # write metadata into data_path/metadata.yaml
-    # check lines 94 to 96 where this is read...
-    save_dict(laidataset.metadata(), os.path.join(data_path,"metadata.pkl"))
-    # Save genetic map df and store it inside model later after training
-    gen_map_df = read_genetic_map(genetic_map, chm)
-    save_dict(gen_map_df, os.path.join(data_path,"gen_map_df.pkl"))
+    vcf = read_vcf(reference)
+    laidataset = LAIDataset(chm, vcf, genetic_map, seed=config["seed"])
+    splits = ["train1","train2","val"]
 
     # get num_outs
-    split_generations = config["simulation"]["splits"]["gens"]
+    split_generations = config["simulation"]["generations"]
     r_admixed = config["simulation"]["r_admixed"]
     num_outs = {}
     min_splits = {"train1":800,"train2":150,"val":50}
-    for split in splits:
+    for split in ["train2","val"]:
         total_sim = max(len(laidataset.return_split(split))*r_admixed, min_splits[split])
         num_outs[split] = int(total_sim/len(split_generations[split]))
 
     if verbose:
         print("Running Simulation...")
     for split in splits:
-        split_path = os.path.join(data_path, split)
-        if not os.path.exists(split_path):
-            os.makedirs(split_path)
         for gen in split_generations[split]:
-            laidataset.simulate(num_outs[split],
-                                split=split,
-                                gen=gen,
-                                outdir=os.path.join(split_path,"gen_"+str(gen)),
-                                return_out=False)
+            snps, anc = laidataset.simulate(num_outs[split],
+                                gen=gen)
 
     return
 

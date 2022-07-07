@@ -72,6 +72,3 @@ def validate_simulation_dir(path):
 def validate_model_dir(path):
     return True
 
-def validate_lai_file(path):
-    return True
-
