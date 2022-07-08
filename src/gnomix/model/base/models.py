@@ -5,9 +5,14 @@ from xgboost import XGBClassifier
 from sklearn import svm
 
 from gnomix.model.base.base import Base
-from gnomix.model.base.string_kernel import CovRSK_DP_triangular_numbers, CovRSK_DP_triangular_numbers_multithread
-from gnomix.model.base.string_kernel import string_kernel_DP_triangular_numbers, string_kernel_DP_triangular_numbers_multithread
-from gnomix.model.base.string_kernel import poly_kernel, poly_kernel_multithread
+from stringkernels.kernels import (
+    polynomial_string_kernel, 
+    polynomial_string_kernel_multithread,
+    string_kernel_singlethread,
+    string_kernel_multithread,
+    CovRSK_singlethread,
+    CovRSK_multithread
+)
 
 class LogisticRegressionBase(Base):
 
@@ -151,7 +156,6 @@ class SVMBase(Base):
         super().__init__(*args, **kwargs)
 
         self.log_inference = True # display progress of predict proba
-        self.train_admix = False # save computation
         self.base_multithread = True
 
         self.init_base_models(
@@ -166,10 +170,9 @@ class StringKernelBase(Base):
         assert int(np.__version__.split(".")[1]) >= 20, "String kernel implementation requires numpy versions 1.20+"
 
         self.log_inference = True # display progress of predict proba
-        self.train_admix = False # save computation
         self.base_multithread = False # this multithreads along the base models instead of with in each window
         # self.kernel = string_kernel_singlethread if self.n_jobs==1 or self.base_multithread else string_kernel
-        self.kernel = string_kernel_DP_triangular_numbers if self.n_jobs==1 or self.base_multithread else string_kernel_DP_triangular_numbers_multithread
+        self.kernel = string_kernel_singlethread if self.n_jobs==1 or self.base_multithread else string_kernel_multithread
 
         self.init_base_models(
             model_factory=lambda: svm.SVC(kernel=self.kernel, probability=True)
@@ -183,10 +186,9 @@ class PolynomialStringKernelBase(Base):
         assert int(np.__version__.split(".")[1]) >= 20, "String kernel implementation requires numpy versions 1.20+"
 
         self.log_inference = True # display progress of predict proba
-        self.train_admix = False # save computation
         self.base_multithread = False # this multithreads along the base models instead of with in each window
         # self.kernel = string_kernel_singlethread if self.n_jobs==1 or self.base_multithread else string_kernel
-        self.kernel = poly_kernel if self.n_jobs==1 or self.base_multithread else poly_kernel_multithread
+        self.kernel = polynomial_string_kernel if self.n_jobs==1 or self.base_multithread else polynomial_string_kernel_multithread
 
         self.init_base_models(
             model_factory=lambda: svm.SVC(kernel=self.kernel, probability=True)
@@ -200,15 +202,14 @@ class CovRSKBase(Base):
         assert int(np.__version__.split(".")[1]) >= 20, "String kernel implementation requires numpy versions 1.20+"
         
         self.log_inference = True # display progress of predict proba
-        self.train_admix = False # save computation
 
         if self.M < 500:
             self.base_multithread = True
-            self.kernel = CovRSK_DP_triangular_numbers
+            self.kernel = CovRSK_singlethread
         else:
             # More robust to memory
             self.base_multithread = False
-            self.kernel = CovRSK_DP_triangular_numbers_multithread
+            self.kernel = CovRSK_multithread
 
         self.init_base_models(
             model_factory=lambda: svm.SVC(kernel=self.kernel, probability=True)

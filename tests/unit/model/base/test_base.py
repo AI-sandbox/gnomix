@@ -1,6 +1,6 @@
 import pytest 
 import numpy as np
-from typing import Tuple
+from typing import Tuple, Callable, Any, Dict
 from numpy.typing import ArrayLike
 
 from gnomix.model.base.base import Base
@@ -8,47 +8,73 @@ from gnomix.model.base.base import Base
 from gnomix.model.base.models import (
     LogisticRegressionBase,
     XGBBase,
-    StringKernelBase
+    StringKernelBase,
 )
 
-BASE_MODELS = (LogisticRegressionBase, XGBBase, StringKernelBase)
+BASE_MODELS = [LogisticRegressionBase, XGBBase, StringKernelBase]
 
-def get_binary_toy_data(chm_len: int, num_windows: int) -> Tuple[ArrayLike, ArrayLike]:
+def get_binary_toy_data(C: int, W: int) -> Tuple[Tuple[ArrayLike, ArrayLike], Dict[str, Any]]:
 
     N_0 = 10
-    X_0 = np.zeros((N_0, chm_len))
-    y_0 = np.zeros((N_0, num_windows), dtype=int)
+    X_0 = np.zeros((N_0, C))
+    y_0 = np.zeros((N_0, W), dtype=int)
 
     N_1 = 10
-    X_1 = np.ones((N_1, chm_len))
-    y_1 = np.ones((N_1, num_windows), dtype=int)
+    X_1 = np.ones((N_1, C))
+    y_1 = np.ones((N_1, W), dtype=int)
 
     X = np.concatenate([X_0, X_1])
     y = np.concatenate([y_0, y_1])
 
-    return X, y
+    meta_data = {"num_ancestry": 2}
+
+    return (X, y), meta_data
+
+def get_multilabel_toy_data(C: int, W: int) -> Tuple[Tuple[ArrayLike, ArrayLike], Dict[str, Any]]:
+
+    N_0 = 10
+    X_0 = np.zeros((N_0, C))
+    y_0 = np.zeros((N_0, W), dtype=int)
+
+    N_1 = 10
+    X_1 = np.ones((N_1, C))
+    y_1 = np.ones((N_1, W), dtype=int)
+
+    N_2 = 10
+    X_2 = np.ones((N_2, C))
+    y_2 = np.ones((N_2, W), dtype=int)
+
+    X = np.concatenate([X_0, X_1, X_2])
+    y = np.concatenate([y_0, y_1, y_2])
+
+    meta_data = {"num_ancestry": 3}
+    
+    return (X, y), meta_data
 
 @pytest.mark.parametrize("base_model_class", BASE_MODELS)
+@pytest.mark.parametrize("get_toy_data", [get_binary_toy_data, get_multilabel_toy_data])
 @pytest.mark.parametrize("vectorize", [False, True])
 @pytest.mark.parametrize("base_multithread", [False, True])
 @pytest.mark.parametrize("context", [0, 50])
-@pytest.mark.parametrize("chm_len", [299, 300, 301])
+@pytest.mark.parametrize("C", [299, 300, 301])
 def test_binary_base_train_inference(
     base_model_class: Base,
+    get_toy_data: Callable,
     vectorize: bool,
     base_multithread: bool,
     context: int,
-    chm_len: int
+    C: int
 ):
-    window_size = 100
-    num_windows = int(np.ceil(chm_len / window_size))
-    X, y = get_binary_toy_data(chm_len, num_windows)
+
+    M = 100
+    W = int(np.ceil(C / M))
+    (X, y), meta_data = get_toy_data(C, W)
 
     base = base_model_class(
-        chm_len=chm_len,
-        window_size=window_size,
-        num_windows=num_windows,
-        num_ancestry=2,
+        C=C,
+        M=M,
+        W=W,
+        A=meta_data["num_ancestry"],
         vectorize=vectorize,
         base_multithread=base_multithread,
         context=context
