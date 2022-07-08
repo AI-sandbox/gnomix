@@ -28,26 +28,24 @@ class LADataset:
         assert os.path.exists(genetic_map_file)
         assert os.path.exists(sample_map_file)
 
-        # chromosome number
+        ## VCF data (vcf)
         chm = str(chm)
-
-        ## Sequencing metadata
-        num_snps = vcf["calldata/GT"].shape[0]
         snp_positions = vcf["variants/POS"].copy()
         ref_snps = vcf["variants/REF"].copy().astype(str)
         alt_snps = vcf["variants/ALT"][:,0].copy().astype(str)
-
-        # Genotypes and ancestry for each snp
         sample_names = []
         num_samples = len(sample_names)
         genotypes = None # Np array of size num_samples x num_snps x 2
+
+        # Ancestry data (sample map)
         ancestries = None # Np array of size num_samples x num_snps x 2
         num_to_ancestry_map = {}
 
+        # Genetic map data (genetic map)
         # provide a 1:1 map between positions : centimorgan
-        # These positions may not be same as snp_positions
-        # We need to find the centimorgans for snp_positions by inter/extra-polating
-        genetic_map_data = read_genetic_map(genetic_map_file)
+        # provide breakpoint proba for helping simulation
+        snp_cms = None
+        snp_bp = None
 
         return LADataset()
 
