@@ -12,4 +12,4 @@ uncertainty-calibration==0.0.7
 xgboost==1.1.1
 torch==1.11.0
 pytest==7.1.2
-string-kernels==1.1.1
+string-kernels==1.1.2
