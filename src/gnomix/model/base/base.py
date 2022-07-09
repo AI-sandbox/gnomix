@@ -1,32 +1,51 @@
 import numpy as np
-import sys
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
-from time import time
 from multiprocessing import get_context
 import tqdm
 
-class Base():
+from typing import Any, Tuple, Callable
+from numpy.typing import ArrayLike
 
-    def __init__(self, chm_len, window_size, num_ancestry, missing_encoding=2,
-                    context=0.5, train_admix=True, n_jobs=None, seed=94305, verbose=False):
+class Base:
 
-        self.C = chm_len
-        self.M = window_size
-        self.W = self.C//self.M # Number of windows
-        self.A = num_ancestry
+    X_dtype = np.int8
+    y_dtype = np.int16
+    proba_dtype = np.float32
+
+    def __init__(
+        self,
+        C: int,
+        M: int,
+        W: int,
+        A: int,
+        missing_encoding: int = 2,
+        context: int = 0,
+        train_admix: bool = False,
+        n_jobs: int = None,
+        seed: int = 94305,
+        verbose: bool = False,
+        vectorize: bool = True,
+        base_multithread: bool = False,
+        log_inference: bool = False,
+    ) -> None:
+
+        self.C = C
+        self.M = M
+        self.W = W
+        self.A = A
+        self.rem = self.W * self.M - self.C
+        assert self.rem >= 0
         self.missing_encoding=missing_encoding
-        self.context = context
+        self.context = context 
         self.train_admix = train_admix
         self.n_jobs = n_jobs
         self.seed = seed
         self.verbose = verbose
-        self.base_multithread = False
-        self.log_inference = False
-        self.vectorize = True
+        self.vectorize = vectorize
+        self.base_multithread = base_multithread
+        self.log_inference = log_inference
 
-        self.time = {}
-
-    def init_base_models(self, model_factory):
+    def init_base_models(self, model_factory: Callable) -> None:
         """
         inputs:
             - model_factory: function that returns a model object that has the functions
@@ -38,180 +57,109 @@ class Base():
         """
         self.models = [model_factory() for _ in range(self.W)]
 
-    def pad(self,X):
-        pad_left = np.flip(X[:,0:self.context],axis=1)
-        pad_right = np.flip(X[:,-self.context:],axis=1)
-        return np.concatenate([pad_left,X,pad_right],axis=1)
-        
-    def train(self, X, y, verbose=True):
+    @staticmethod
+    def pad_with_reflection_along_first_axis(
+        array: ArrayLike,
+        pad_width: int
+    ) -> ArrayLike:
+
+        if pad_width == 0:
+            return array
+
+        pad_left = np.flip(array[:, 0:pad_width], axis=1)
+        pad_right = np.flip(array[:, -pad_width:], axis=1)
+        return np.concatenate([pad_left, array, pad_right], axis=1)
+
+    @staticmethod
+    def _train_base_model_(b, X: ArrayLike, y: ArrayLike) -> Any:
+        return b.fit(X, y)
+
+    @staticmethod
+    def _predict_proba_base_model(b, X: ArrayLike) -> ArrayLike:
+        return b.predict_proba(X)
+
+    def preprocess(self, X: ArrayLike, y: ArrayLike = None) -> Tuple[ArrayLike, ArrayLike]:
+        """
+        inputs:
+            - X: shape (N, C)
+            - y: shape (N, W)
+        outputs:
+            - X: shape (W, N, M)
+            - y: shape (W, N)
+        """
+
+        N_x, C = X.shape
+        assert C == self.C, f"Mismatch in number of SNPs for model ({self.C}) and data ({C})"
+
+        if y is not None:
+            N_y, W = y.shape
+            assert W == self.W, f"Mismatch in number of windows for model ({self.W}) and data ({W})"
+            assert N_x == N_y, f"Mismatch in number of samples for sequences ({N_x}) and labels ({N_y})"
+
+        N = N_x
+        padding = np.zeros((N, self.rem))
+        X = np.concatenate([X, padding], axis=1)
+
+        if self.context != 0:
+            X = self.pad_with_reflection_along_first_axis(X, pad_width=self.context)
+
+        X_processed = np.zeros((self.W, N, self.M + 2 * self.context), dtype=self.X_dtype)
+        start = self.context
+        for w in range(self.W):
+            X_processed[w] = X[:,start-self.context:start+self.context+self.M] # (N, M)
+            start += self.M
+
+        y_processed = np.swapaxes(y, 0, 1).astype(self.y_dtype) if y is not None else None
+
+        return X_processed, y_processed
+
+    def train(self, X, y):
         """
         inputs:
             - X: np.array of shape (N, C) where N is sample size and C chm length
-            - y: np.array of shape (N, C) where N is sample size and C chm length
-        """
-        if self.vectorize:
-            try:
-                np.lib.stride_tricks.sliding_window_view
-                return self.train_vectorized(X, y)
-            except AttributeError:
-                print("Vectorized implementation requires numpy versions 1.20+.. Using loopy version..")
-                self.vectorize = False
-        if not self.vectorize:
-            return self.train_loopy(X, y, verbose=verbose)
+            - y: np.array of shape (N, W) where N is sample size and C chm length
+        """        
+        X, y = self.preprocess(X, y)
 
-    def train_loopy(self, X, y, verbose=True):
-        """Depricated"""
+        train_args = tuple(zip(self.models, X, y))
 
-        t = time()
-
-        if self.context != 0.0:
-            X = self.pad(X)
-
-        start = self.context
-
-        for i in range(self.W):
-
-            X_w = X[:,start-self.context:start+self.context+self.M]
-            y_w = y[:,i]
-
-            if i == self.W-1:
-                X_w = X[:,start-self.context:]
-
-            # train model
-            self.models[i].fit(X_w,y_w)
-
-            start += self.M
-
-            if verbose:
-                sys.stdout.write("\rWindows done: %i/%i" % (i+1, self.W))
-        
-        if verbose:
-            print("")
-
-        self.time["train"] = time() - t
-
-    def train_base_model(self, b, X, y):
-        return b.fit(X, y)
-
-    def predict_proba_base_model(self, b, X):
-        return b.predict_proba(X)
-
-    def train_vectorized(self, X, y):
-
-        slide_window = np.lib.stride_tricks.sliding_window_view
-
-        t = time()
-
-        # pad
-        if self.context != 0.0:
-            X = self.pad(X)
-            
-        # convolve
-        M_ = self.M + 2*self.context        
-        idx = np.arange(0,self.C,self.M)[:-2]
-        X_b = slide_window(X, M_, axis=1)[:,idx,:]
-
-        # stack
-        train_args = tuple(zip( self.models[:-1], np.swapaxes(X_b,0,1), np.swapaxes(y,0,1)[:-1] ))
-        rem = self.C - self.M*self.W
-        train_args += ((self.models[-1], X[:,X.shape[1]-(M_+rem):], y[:,-1]),)
-
-        # train
         log_iter = tqdm.tqdm(train_args, total=self.W, bar_format='{l_bar}{bar:40}{r_bar}{bar:-40b}', position=0, leave=True)
         if self.base_multithread:
             with get_context("spawn").Pool(self.n_jobs) as pool:
-                self.models = pool.starmap(self.train_base_model, log_iter) 
+                self.models = pool.starmap(self._train_base_model_, log_iter) 
         else:
-            self.models = [self.train_base_model(*b) for b in log_iter]
+            for base_model, X, y in log_iter:
+                self._train_base_model_(base_model, X, y) 
 
-        self.time["train"] = time() - t
-
-    def predict_proba(self, X):
+    def predict_proba(self, X: ArrayLike) -> ArrayLike:
         """
         inputs:
             - X: np.array of shape (N, C) where N is sample size and C chm length
         returns 
             - B: base probabilities of shape (N,W,A)
         """
-        if self.vectorize:
-            try:
-                np.lib.stride_tricks.sliding_window_view
-                return self.predict_proba_vectorized(X)
-            except AttributeError:
-                print("Vectorized implementation requires numpy versions 1.20+.. Using loopy version..")
-                self.vectorize = False
-        if not self.vectorize:
-            return self.predict_proba_loopy(X)
+        X, _ = self.preprocess(X)
 
-    def predict_proba_vectorized(self, X):
-
-        slide_window = np.lib.stride_tricks.sliding_window_view
-
-        t = time()
-
-        # pad
-        if self.context != 0.0:
-            X = self.pad(X)
-            
-        # convolve
-        M_ = self.M + 2*self.context        
-        idx = np.arange(0,self.C,self.M)[:-2]
-        X_b = slide_window(X, M_, axis=1)[:,idx,:]
-
-        # stack
-        base_args = tuple(zip( self.models[:-1], np.swapaxes(X_b,0,1) ))
-        rem = self.C - self.M*self.W
-        base_args += ((self.models[-1], X[:,X.shape[1]-(M_+rem):]), )
+        base_args = tuple(zip(self.models, X))
 
         if self.log_inference:
             base_args = tqdm.tqdm(base_args, total=self.W, bar_format='{l_bar}{bar:40}{r_bar}{bar:-40b}', position=0, leave=True)
 
-        # predict proba
         if self.base_multithread:
             with get_context("spawn").Pool(self.n_jobs) as pool:
-                B = np.array(pool.starmap(self.predict_proba_base_model, base_args))
+                B = np.array(pool.starmap(self._predict_proba_base_model, base_args))
         else:
-            B = np.array([self.predict_proba_base_model(*b) for b in base_args])
+            B = np.array([self._predict_proba_base_model(b,X) for b, X in base_args])
 
         B = np.swapaxes(B, 0, 1)
 
-        self.time["inference"] = time() - t
-
         return B
 
-
-    def predict_proba_loopy(self, X):
-        """Depricated"""
-
-        t = time()
-
-        N = len(X)
-        B = np.zeros( (N, self.W, self.A), dtype="float32" )
-        
-        start = self.context
-        
-        if self.context != 0.0:
-            X = self.pad(X)
-        
-        for i in range(self.W):
-            X_w = X[:,start-self.context:start+self.context+self.M]
-
-            if i == self.W-1:
-                X_w = X[:,start-self.context:]
-
-            B[:,i,self.models[i].classes_] = self.models[i].predict_proba(X_w)
-
-            start += self.M
-
-        self.time["inference"] = time() - t
-            
-        return B
-    
-    def predict(self, X):
+    def predict(self, X: ArrayLike) -> ArrayLike:
         B = self.predict_proba(X)
         return np.argmax(B, axis=-1)
         
-    def evaluate(self,X=None,y=None,B=None):
+    def evaluate(self, X: ArrayLike = None, y: ArrayLike = None, B: ArrayLike = None) -> Tuple[float, float]:
 
         round_accr = lambda accr : round(np.mean(accr)*100,2)
 

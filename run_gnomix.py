@@ -9,11 +9,14 @@ import yaml
 from gnomix.paths import DEFAULT_CONFIG_PATH
 from gnomix.utils import join_paths, read_vcf, vcf_to_npy, npy_to_vcf, update_vcf 
 from gnomix.utils import read_genetic_map, save_dict, load_dict, read_headers
-from gnomix.preprocess import load_np_data, data_process
+from gnomix.preprocess import load_np_data, window_labels
 from gnomix.postprocess import get_meta_data, write_msp, write_fb, msp_to_lai, msp_to_bed
 from gnomix.visualization import plot_cm, plot_chm
 from gnomix.laidataset import LAIDataset
 from gnomix.model.model import Gnomix
+
+X_DTYPE = "int8"
+Y_DTYPE = "int16"
 
 CLAIMER = """When using this software, please cite:
 Helgi Hilmarsson, Arvind S Kumar, Richa Rastogi, Carlos D Bustamante,
@@ -136,7 +139,9 @@ def get_data(data_path, generations, window_size_cM):
         X_files = [p + "/mat_vcf_2d.npy" for p in paths]
         labels_files = [p + "/mat_map.npy" for p in paths]
         X_raw, labels_raw = [load_np_data(f) for f in [X_files, labels_files]]
-        X, y = data_process(X_raw, labels_raw, window_size=M)
+        X = np.array(X_raw, dtype=X_DTYPE)
+        windowed_labels = window_labels(labels_raw, window_size=M)
+        y = np.array(windowed_labels, dtype=Y_DTYPE)
         return X, y
 
     X_t1, y_t1 = read("train1")

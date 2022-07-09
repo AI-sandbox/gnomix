@@ -9,7 +9,7 @@ from gnomix.model.base.models import LogisticRegressionBase, CovRSKBase
 from gnomix.model.smooth.models import XGB_Smoother
 from gnomix.model.gnofix.gnofix import gnofix
 
-class Gnomix():
+class Gnomix:
 
     def __init__(self, C, M, A, S,
                 base=None, smooth=None, mode="default", # base and smooth models
@@ -27,9 +27,9 @@ class Gnomix():
 
         self.C = C
         self.M = M
+        self.W = int(np.ceil(self.C / self.M)) # number of windows
         self.A = A
         self.S = S
-        self.W = self.C//self.M # number of windows
 
         # configs
         self.path = path
@@ -72,7 +72,7 @@ class Gnomix():
             if verbose:
                 print("Smoother:", smooth)
 
-        self.base = base(chm_len=self.C, window_size=self.M, num_ancestry=self.A,
+        self.base = base(C=self.C, M=self.M, W=self.W, A=self.A,
                             missing_encoding=missing_encoding, context=self.context,
                             n_jobs=self.n_jobs, seed=self.seed, verbose=self.verbose)
 

@@ -5,9 +5,14 @@ from xgboost import XGBClassifier
 from sklearn import svm
 
 from gnomix.model.base.base import Base
-from gnomix.model.base.string_kernel import CovRSK_DP_triangular_numbers, CovRSK_DP_triangular_numbers_multithread
-from gnomix.model.base.string_kernel import string_kernel_DP_triangular_numbers, string_kernel_DP_triangular_numbers_multithread
-from gnomix.model.base.string_kernel import poly_kernel, poly_kernel_multithread
+from stringkernels.kernels import (
+    polynomial_string_kernel, 
+    polynomial_string_kernel_multithread,
+    string_kernel_singlethread,
+    string_kernel_multithread,
+    CovRSK_singlethread,
+    CovRSK_multithread
+)
 
 class LogisticRegressionBase(Base):
 
@@ -17,7 +22,7 @@ class LogisticRegressionBase(Base):
         self.base_multithread = True
 
         self.init_base_models(
-            lambda : LogisticRegression(penalty="l2", C = 3., solver="liblinear", max_iter=1000)
+            model_factory=lambda: LogisticRegression(penalty="l2", C = 3., solver="liblinear", max_iter=1000)
         )
 
 
@@ -30,9 +35,9 @@ class XGBBase(Base):
         n_jobs = self.n_jobs if not self.base_multithread else 1
 
         self.init_base_models(
-            lambda : XGBClassifier(
+            model_factory=lambda: XGBClassifier(
                 n_estimators=20, max_depth=4, learning_rate=0.1, reg_lambda=1, reg_alpha=0,
-                thread=n_jobs, missing=self.missing_encoding, random_state=self.seed)
+                nthread=n_jobs, missing=self.missing_encoding, random_state=self.seed)
         )
 
 class LGBMBase(Base):
@@ -46,7 +51,7 @@ class LGBMBase(Base):
         n_jobs = self.n_jobs if not self.base_multithread else 1
 
         self.init_base_models(
-            lambda : LGBMClassifier(
+            model_factory=lambda: LGBMClassifier(
                 n_estimators=20, max_depth=4, learning_rate=0.1, reg_lambda=1, reg_alpha=0,
                 n_jobs=n_jobs, random_state=self.seed) # use np.nan for missing encoding
         )
@@ -62,7 +67,7 @@ class RFBase(Base):
         n_jobs = self.n_jobs if not self.base_multithread else 1
 
         self.init_base_models(
-            lambda : RandomForestClassifier(n_estimators=20,max_depth=4,n_jobs=n_jobs) 
+            model_factory=lambda: RandomForestClassifier(n_estimators=20,max_depth=4,n_jobs=n_jobs) 
         )
 
 class CBBase(Base):
@@ -76,7 +81,7 @@ class CBBase(Base):
         n_jobs = self.n_jobs if not self.base_multithread else 1
 
         self.init_base_models(
-            lambda : catboost.CatBoostClassifier(n_estimators=20, max_depth=4, reg_lambda=1,
+            model_factory=lambda: catboost.CatBoostClassifier(n_estimators=20, max_depth=4, reg_lambda=1,
                 thread_count=n_jobs, verbose=0)
         )
 
@@ -90,7 +95,7 @@ class LDABase(Base):
         self.base_multithread = True
 
         self.init_base_models(
-            lambda : LinearDiscriminantAnalysis()
+            model_factory=lambda: LinearDiscriminantAnalysis()
         )
 
 class NBGaussianBase(Base):
@@ -103,7 +108,7 @@ class NBGaussianBase(Base):
         self.base_multithread = True
 
         self.init_base_models(
-            lambda : GaussianNB()
+            model_factory=lambda: GaussianNB()
         )
 
 class NBBernoulliBase(Base):
@@ -116,7 +121,7 @@ class NBBernoulliBase(Base):
         self.base_multithread = True
 
         self.init_base_models(
-            lambda : BernoulliNB(alpha=0)
+            model_factory=lambda: BernoulliNB(alpha=0)
         )
 
 class NBMultinomialBase(Base):
@@ -129,7 +134,7 @@ class NBMultinomialBase(Base):
         self.base_multithread = True
 
         self.init_base_models(
-            lambda : MultinomialNB(alpha=0)
+            model_factory=lambda: MultinomialNB(alpha=0)
         )
 
 class KNNBase(Base):
@@ -142,7 +147,7 @@ class KNNBase(Base):
         self.base_multithread = True
 
         self.init_base_models(
-            lambda : KNeighborsClassifier(n_neighbors=1)
+            model_factory=lambda: KNeighborsClassifier(n_neighbors=1)
         )
 
 class SVMBase(Base):
@@ -151,11 +156,10 @@ class SVMBase(Base):
         super().__init__(*args, **kwargs)
 
         self.log_inference = True # display progress of predict proba
-        self.train_admix = False # save computation
         self.base_multithread = True
 
         self.init_base_models(
-            lambda : svm.SVC(C=100., gamma=0.001, probability=True)
+            model_factory=lambda: svm.SVC(C=100., gamma=0.001, probability=True)
         )
 
 class StringKernelBase(Base):
@@ -166,13 +170,12 @@ class StringKernelBase(Base):
         assert int(np.__version__.split(".")[1]) >= 20, "String kernel implementation requires numpy versions 1.20+"
 
         self.log_inference = True # display progress of predict proba
-        self.train_admix = False # save computation
         self.base_multithread = False # this multithreads along the base models instead of with in each window
         # self.kernel = string_kernel_singlethread if self.n_jobs==1 or self.base_multithread else string_kernel
-        self.kernel = string_kernel_DP_triangular_numbers if self.n_jobs==1 or self.base_multithread else string_kernel_DP_triangular_numbers_multithread
+        self.kernel = string_kernel_singlethread if self.n_jobs==1 or self.base_multithread else string_kernel_multithread
 
         self.init_base_models(
-            lambda : svm.SVC(kernel=self.kernel, probability=True)
+            model_factory=lambda: svm.SVC(kernel=self.kernel, probability=True)
         )
 
 class PolynomialStringKernelBase(Base):
@@ -183,13 +186,12 @@ class PolynomialStringKernelBase(Base):
         assert int(np.__version__.split(".")[1]) >= 20, "String kernel implementation requires numpy versions 1.20+"
 
         self.log_inference = True # display progress of predict proba
-        self.train_admix = False # save computation
         self.base_multithread = False # this multithreads along the base models instead of with in each window
         # self.kernel = string_kernel_singlethread if self.n_jobs==1 or self.base_multithread else string_kernel
-        self.kernel = poly_kernel if self.n_jobs==1 or self.base_multithread else poly_kernel_multithread
+        self.kernel = polynomial_string_kernel if self.n_jobs==1 or self.base_multithread else polynomial_string_kernel_multithread
 
         self.init_base_models(
-            lambda : svm.SVC(kernel=self.kernel, probability=True)
+            model_factory=lambda: svm.SVC(kernel=self.kernel, probability=True)
         )
 
 class CovRSKBase(Base):
@@ -200,16 +202,15 @@ class CovRSKBase(Base):
         assert int(np.__version__.split(".")[1]) >= 20, "String kernel implementation requires numpy versions 1.20+"
         
         self.log_inference = True # display progress of predict proba
-        self.train_admix = False # save computation
 
         if self.M < 500:
             self.base_multithread = True
-            self.kernel = CovRSK_DP_triangular_numbers
+            self.kernel = CovRSK_singlethread
         else:
             # More robust to memory
             self.base_multithread = False
-            self.kernel = CovRSK_DP_triangular_numbers_multithread
+            self.kernel = CovRSK_multithread
 
         self.init_base_models(
-            lambda : svm.SVC(kernel=self.kernel, probability=True)
+            model_factory=lambda: svm.SVC(kernel=self.kernel, probability=True)
         )
