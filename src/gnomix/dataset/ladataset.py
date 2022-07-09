@@ -7,7 +7,7 @@ import pandas as pd
 import os
 
 from gnomix.core.utils import read_vcf, read_genetic_map
-from typing import List, TypedDict
+from typing import List
 from pathlib import Path
 from collections import namedtuple
 from gnomix.dataset.laidataset import LAIDataset
@@ -128,7 +128,7 @@ class LADataset:
         self.anc_configured = False
 
     def configure_genetic_map_info(self,
-                        genetic_map_file: Path):
+                                   genetic_map_file: Path):
     
         if self.genetic_info_configured:
             print("Cannot configure it! already done")
@@ -263,6 +263,16 @@ class LADataset:
         ## assert self and other have same metadata fields
         assert self.metadata() == other.metadata(), "Cannot be merged"
         self.samples += other.samples
+
+
+### Helper function to init the LAD using vcf, sample map and genetic map
+
+def get_ladataset(vcf, sample_map_file, genetic_map):
+
+
+    
+
+    return
 
 
 # Helper function to conver laidataset to numpy
