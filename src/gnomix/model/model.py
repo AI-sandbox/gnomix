@@ -166,6 +166,20 @@ class Gnomix:
 
         self.time["training"] = round(time() - train_time_begin,2)
 
+    def retrain_base(self,data,verbose):
+        (X_t1,y_t1), (X_t2,y_t2), (X_v,y_v) = data
+        if X_v is not None:
+            X_t, y_t = np.concatenate([X_t1, X_t2, X_v]), np.concatenate([y_t1, y_t2, y_v])
+        else:
+            X_t, y_t = np.concatenate([X_t1, X_t2]), np.concatenate([y_t1, y_t2])
+        
+        # Re-using all the data to re-train the base models
+        if verbose:
+            print("Re-training base models...")
+        self.base.train(X_t, y_t)
+
+        self.save()
+
     def predict(self,X):
 
         B = self.base.predict_proba(X)
