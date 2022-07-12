@@ -9,7 +9,7 @@ seaborn==0.11.2
 sklearn-crfsuite==0.3.6
 tqdm==4.62.3
 uncertainty-calibration==0.0.7
-xgboost==1.1.1
+xgboost==1.6.1
 torch==1.11.0
 pytest==7.1.2
 string-kernels==1.1.2
