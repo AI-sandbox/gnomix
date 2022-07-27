@@ -1,67 +1,63 @@
-from copy import deepcopy
 import numpy as np
+from numpy.typing import ArrayLike
 import sklearn_crfsuite
+from typing import Dict, Any, Optional
 
-class CRF:
+from gnomix.model.smooth.smoother import Smoother
 
-    def __init__(self, solver="lbfgs", max_it=10000, verbose=False):
+class CRFSmoother(Smoother):
 
-        self.CRF = sklearn_crfsuite.CRF(
-            algorithm=solver,
-            max_iterations=max_it,
-            all_possible_transitions=True,
-            all_possible_states=True,
-            verbose=verbose
-        )
+    def __init__(
+        self,
+        crf_config: Optional[Dict[str, Any]] = {
+            "algorithm": "lbfgs",
+            "max_iterations": 10000,
+            "all_possible_transitions": True,
+            "all_possible_states": True
+        },
+        input_dtype: Optional[str] = "float32",
+        proba_dtype: Optional[str] = "float32",
+        *args,
+        **kwargs
+    ):
 
-    def npy2crf(self, X, Y=None):
-        """format data for linear-chain CRF"""
-        N, B, A = X.shape
-        X_out, Y_out = [], []
-        for i in range(N):
-            x, y = [], []
-            for b in range(B):
-                datapoint={}
-                for a in range(A):
-                    datapoint[str(a)]=X[i,b,a]
-                x.append(datapoint)
-                if Y is not None:
-                    y.append(str(Y[i,b]))
-
-            X_out.append(x)
-            Y_out.append(y)
-            
-        return X_out, Y_out
-
-    def crf2npy(self, proba):
-        """format data from CRF probabilities to np probabilities"""
-        N = len(proba)
-        B = len(proba[0])
-        A = len(proba[0][0])
-        
-        # level 2 dict to list
-        if A > 1:
-            proba = deepcopy(proba)
-            for i in range(N):
-                for b in range(B):
-                    proba[i][b] = [proba[i][b][str(a)] for a in range(A)]
-
-        return np.array(proba)
+        self.CRF = sklearn_crfsuite.CRF(**crf_config)
+        self.input_dtype = input_dtype
+        self.proba_dtype = proba_dtype
 
     def fit(self, X, y):
         X_CRF, y_CRF = self.npy2crf(X, y)
         self.CRF.fit(X_CRF, y_CRF)
-        self.classes_ = self.CRF.classes_
 
-    def predict(self, X):
-        X_CRF, _ = self.npy2crf(X)
-        y_pred_CRF = self.CRF.predict(X_CRF)
-        y_pred = np.array(y_pred_CRF, dtype=int)
-        return y_pred
-
-    def predict_proba(self, X):
-        # extract probabilites
+    def predict_proba(self, X: ArrayLike) -> ArrayLike:
         X_CRF, _ = self.npy2crf(X)
         proba_CRF = self.CRF.predict_marginals(X_CRF)
         proba = self.crf2npy(proba_CRF)
         return proba
+
+    def predict(self, X: ArrayLike) -> ArrayLike:
+        y_proba = self.predict_proba(X)
+        y_pred = np.argmax(y_proba, axis=-1)
+        return y_pred
+
+    def crf2npy(self, crf_proba):
+        """format data from CRF probabilities to np probabilities"""
+        N = len(crf_proba)
+        W = len(crf_proba[0])
+        A = len(crf_proba[0][0])
+        
+        proba = np.zeros((N, W, A), dtype=self.proba_dtype)
+        for i in range(N):
+            for w in range(W):
+                for a, a_crf in enumerate(self.CRF.classes_):
+                    proba[i, w, a] = crf_proba[i][w][a_crf]
+
+        return proba
+
+    @staticmethod
+    def npy2crf(X, Y=None):
+        """format data for linear-chain CRF"""
+        N, W, A = X.shape
+        X_out = [[{str(a): X[i, w, a] for a in range(A)} for w in range (W)] for i in range(N)]
+        Y_out = [[str(Y[i, w]) for w in range(W)] for i in range(N)] if Y is not None else []
+        return X_out, Y_out

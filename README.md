@@ -130,7 +130,7 @@ from src.Base.models import LogisticRegressionBase
 import the smoother of choice from src/smooth/model e.g., 
 
 ```python
-from src.Smooth.models import XGB_Smoother
+from src.Smooth.models import XGBSmoother
 ```
 
 and then, in the train_model() function in initilize the Gnomix object with the imported models:
@@ -139,7 +139,7 @@ and then, in the train_model() function in initilize the Gnomix object with the 
 model = Gnomix(
 	...,
 	base = LogisticRegressionBase,
-	smooth = XGB_Smoother,
+	smooth = XGBSmoother,
 	...
 )
 ```

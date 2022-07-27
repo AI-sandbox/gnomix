@@ -4,9 +4,18 @@ from sklearn.metrics import confusion_matrix
 import sys
 from time import time
 from copy import deepcopy
+from sklearn.metrics import accuracy_score, balanced_accuracy_score
+from typing import Tuple, Callable, Any, Dict
+from numpy.typing import ArrayLike
 
+from gnomix.model.base.base import Base
 from gnomix.model.base.models import LogisticRegressionBase, CovRSKBase
-from gnomix.model.smooth.models import XGB_Smoother
+
+from gnomix.model.smooth.smoother import Smoother
+from gnomix.model.smooth.xgb import XGBSmoother
+from gnomix.model.smooth.crf import CRFSmoother
+from gnomix.model.smooth.cnn import CNNSmoother
+
 from gnomix.model.gnofix.gnofix import gnofix
 
 class Gnomix:
@@ -15,7 +24,7 @@ class Gnomix:
                 base=None, smooth=None, mode="default", # base and smooth models
                 snp_pos=None, snp_ref=None, snp_alt=None, population_order=None, missing_encoding=2, # dataset specific, TODO: store in one object
                 n_jobs=None, path=None, # configs
-                calibrate=False, context_ratio=0.5, mode_filter=False, # hyperparams
+                calibrate=False, context_ratio=0.5,
                 seed=94305, verbose=False
     ):
         """
@@ -60,26 +69,22 @@ class Gnomix:
                 print("Base models:", base)
         if smooth is None:
             if mode == "fast":
-                from gnomix.model.smooth.models import CRF_Smoother # import here to avoid strict crf suite dependency
-                smooth = CRF_Smoother 
+                smooth = CRFSmoother 
             elif mode == "large":
-                from gnomix.model.smooth.models import CNN_Smoother # import here to avoid strict torch dependency
-                smooth = CNN_Smoother 
+                smooth = CNNSmoother 
             elif mode=="best":
-                smooth = XGB_Smoother
+                smooth = XGBSmoother
             else:
-                smooth = XGB_Smoother
+                smooth = XGBSmoother
             if verbose:
                 print("Smoother:", smooth)
 
-        self.base = base(C=self.C, M=self.M, W=self.W, A=self.A,
+        self.base: Base = base(C=self.C, M=self.M, W=self.W, A=self.A,
                             missing_encoding=missing_encoding, context=self.context,
                             n_jobs=self.n_jobs, seed=self.seed, verbose=self.verbose)
 
-        self.smooth = smooth(n_windows=self.W, num_ancestry=self.A, smooth_window_size=self.S,
-                            n_jobs=self.n_jobs, calibrate=self.calibrate, mode_filter=mode_filter, 
-                            seed=self.seed, verbose=self.verbose)
-        
+        self.smooth: Smoother = smooth(num_ancestries=self.A, num_features=self.S)
+
         # model stats
         self.time = {}
         self.accuracies = {}
@@ -114,14 +119,14 @@ class Gnomix:
         if verbose:
             print("Training smoother...")
         B_t2 = self.base.predict_proba(X_t2)
-        self.smooth.train(B_t2,y_t2)
+        self.smooth.fit(B_t2,y_t2)
 
         if self.calibrate:
             # calibrates the predictions to be balanced w.r.t. the train1 class distribution
             if verbose:
                 print("Fitting calibrator...")
             B_t1 = self.base.predict_proba(X_t1)
-            self.smooth.train_calibrator(B_t1, y_t1)
+            self.smooth.fit_calibrator(B_t1, y_t1)
 
         # Evaluate model
         if evaluate:
@@ -135,16 +140,17 @@ class Gnomix:
             B_t1 = self.base.predict_proba(X_t1)
             y_t1_pred = self.smooth.predict(B_t1)
             y_t2_pred = self.smooth.predict(B_t2)
-            Acc["base_train_acc"],   Acc["base_train_acc_bal"]   = self.base.evaluate(X=None,   y=y_t1, B=B_t1)
-            Acc["smooth_train_acc"], Acc["smooth_train_acc_bal"] = self.smooth.evaluate(B=None, y=y_t2, y_pred=y_t2_pred)
+
+            Acc["base_train_acc"],   Acc["base_train_acc_bal"]   = self.evaluate(B=B_t1, y=y_t1)
+            Acc["smooth_train_acc"], Acc["smooth_train_acc_bal"] = self.evaluate(y_pred=y_t2_pred, y=y_t2)
             CM["train"] = self.conf_matrix(y=y_t1, y_pred=y_t1_pred)
             
             # val accuracy
             if X_v is not None:
                 B_v = self.base.predict_proba(X_v)
                 y_v_pred  = self.smooth.predict(B_v)
-                Acc["base_val_acc"],     Acc["base_val_acc_bal"]     = self.base.evaluate(X=None,   y=y_v,  B=B_v )
-                Acc["smooth_val_acc"],   Acc["smooth_val_acc_bal"]   = self.smooth.evaluate(B=None, y=y_v,  y_pred=y_v_pred )
+                Acc["base_val_acc"],     Acc["base_val_acc_bal"]    = self.evaluate(B=B_v, y=y_v)
+                Acc["smooth_val_acc"],   Acc["smooth_val_acc_bal"]  = self.evaluate(y_pred=y_v_pred, y=y_v)
                 CM["val"] = self.conf_matrix(y=y_v, y_pred=y_v_pred)
 
             self.accuracies = Acc
@@ -165,6 +171,28 @@ class Gnomix:
         self.save()
 
         self.time["training"] = round(time() - train_time_begin,2)
+
+    def evaluate(
+        self, 
+        X: ArrayLike = None,
+        B: ArrayLike = None,
+        y_pred: ArrayLike = None,
+        y: ArrayLike = None
+    ) -> Tuple[float, float]:
+
+        round_accr = lambda accr : round(np.mean(accr)*100,2)
+
+        assert sum([X is not None, B is not None, y_pred is not None]) == 1
+
+        if X is not None:
+            y_pred = self.predict(X)
+        elif B is not None:
+            y_pred = np.argmax(B, axis=-1)
+
+        accr = round_accr( accuracy_score(y.reshape(-1), y_pred.reshape(-1)) )
+        accr_bal = round_accr( balanced_accuracy_score(y.reshape(-1), y_pred.reshape(-1)) )
+
+        return accr, accr_bal
 
     def retrain_base(self,data,verbose):
         (X_t1,y_t1), (X_t2,y_t2), (X_v,y_v) = data
