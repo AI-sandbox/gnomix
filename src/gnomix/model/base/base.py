@@ -1,5 +1,4 @@
 import numpy as np
-from sklearn.metrics import accuracy_score, balanced_accuracy_score
 from multiprocessing import get_context
 import tqdm
 
@@ -159,18 +158,3 @@ class Base:
         B = self.predict_proba(X)
         return np.argmax(B, axis=-1)
         
-    def evaluate(self, X: ArrayLike = None, y: ArrayLike = None, B: ArrayLike = None) -> Tuple[float, float]:
-
-        round_accr = lambda accr : round(np.mean(accr)*100,2)
-
-        if X is not None:
-            y_pred = self.predict(X)
-        elif B is not None:
-            y_pred = np.argmax(B, axis=-1)
-        else:
-            print("Error: Need either SNP input or estimated probabilities to evaluate.")
-
-        accr = round_accr( accuracy_score(y.reshape(-1), y_pred.reshape(-1)) )
-        accr_bal = round_accr( balanced_accuracy_score(y.reshape(-1), y_pred.reshape(-1)) )
-
-        return accr, accr_bal

@@ -1,8 +1,12 @@
 import numpy as np
 import torch
 from torch import nn
+from typing import Optional
 
-class LAIDataset(torch.utils.data.Dataset):
+from gnomix.model.smooth.smoother import Smoother
+
+
+class TorchDataset(torch.utils.data.Dataset):
     
     def __init__(self, data, labels):
         self.labels = labels
@@ -13,32 +17,40 @@ class LAIDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
 
-        # select sample
         X = self.data[index]
         y = self.labels[index]
 
         return X, y
 
-class CNN(nn.Module):
+
+class CNNSmoother(Smoother, nn.Module):
     
-    def __init__(self, num_classes, num_features, lr=0.001, verbose=False):
+    def __init__(
+        self,
+        num_ancestries,
+        num_features,
+        lr=0.001,
+        input_dtype: Optional[str] = torch.float,
+        proba_dtype: Optional[str] = "float32"
+    ):
         super().__init__()
-        self.num_features = num_features
-        self.num_classes = num_classes
-        
-        self.smoothNet = self._get_conv_smoother()
-        self.drop = nn.Dropout(0.5)
-        self.drop_cols = nn.Dropout(0.5)
 
+        self.num_ancestries = num_ancestries
+        self.num_features = num_features if num_features % 2 else num_features + 1 # require odd
+        
+        layer = nn.Conv1d(
+            self.num_ancestries,
+            self.num_ancestries,
+            self.num_features, 
+            padding=(self.num_features - 1) // 2,
+            padding_mode="reflect"
+        )
+        self.layers = nn.Sequential(*[layer])
         self.optimizer = torch.optim.Adam(self.parameters(), lr = lr)
+        self.input_dtype = input_dtype
+        self.proba_dtype = proba_dtype
 
-        self.verbose = verbose
-        
-    def _get_conv_smoother(self):
-        layers = [ nn.Conv1d(self.num_classes,self.num_classes,self.num_features,padding=(self.num_features-1)//2,padding_mode="reflection") ]
-        return nn.Sequential(*layers)
-        
-    def forward_tensors(self,base_out):
+    def forward_tensors(self, base_out):
         """
         Inputs:
         snps: batch of actual snps - encodings could be either 0/1 or -1/1. Shape: (N,chromosome_length)
@@ -49,11 +61,10 @@ class CNN(nn.Module):
 
         """
         # computes probabilities.
-        smooth_out = self.smoothNet(base_out)
+        smooth_out = self.layers(base_out)
         smooth_out = nn.Softmax(dim=1)(smooth_out)
             
         return smooth_out
-    
     
     def forward(self,base_out,labels):
         """
@@ -77,11 +88,6 @@ class CNN(nn.Module):
     def predict_proba_torch(self, base_out):
         proba_torch = self.forward_tensors(base_out)
         return proba_torch
-
-    def predict_torch(self, base_out):
-        smooth_out = self.forward_tensors(base_out)
-        preds = torch.argmax(smooth_out,dim=1)
-        return preds
     
     def validate(self,base_out,labels):
         """
@@ -96,14 +102,14 @@ class CNN(nn.Module):
         Note: Assumes coordinates are given and are not None. 
         """       
         preds = self.predict_torch(base_out)
-        accuracy = float(torch.mean((preds==labels),dtype=torch.float))
+        accuracy = float(torch.mean((preds==labels), dtype=torch.float))
         
         return accuracy
     
-    def fit(self, X, y, max_ep=250, val_every=50):
+    def fit(self, X, y, max_ep=250, val_every=50, verbose: bool = False):
 
-        X_torch, y_torch = as_torch_tensor(X, y)
-        generator = get_data_generator(X_torch, y_torch)
+        X_torch, y_torch = self.as_torch_tensor(X, y)
+        generator = self._get_data_generator(X_torch, y_torch)
 
         for ep in range(1,max_ep+1):
             
@@ -116,10 +122,10 @@ class CNN(nn.Module):
                 loss.backward()
                 self.optimizer.step()
             
-            if self.verbose:
+            if verbose:
                 print("Loss at iteration {}: {}".format(ep,running_loss.data.cpu().numpy()/len(generator)))
             
-            if self.verbose and ep % val_every == 0:
+            if verbose and ep % val_every == 0:
                 
                 self.eval()
                 
@@ -140,34 +146,35 @@ class CNN(nn.Module):
                 print("Sample Training accuracy after {} iterations: {}".format(ep,new_accr))
             
     def predict(self, X):
-        X_torch = as_torch_tensor(X)
-        y_pred_torch = self.predict_torch(X_torch)
-        y_pred = np.array(y_pred_torch, dtype=int)
+        y_proba = self.predict_proba(X)
+        y_pred = np.argmax(y_proba, axis=-1)
         return y_pred
 
     def predict_proba(self, X):
-        X_torch = as_torch_tensor(X)
+        X_torch = self.as_torch_tensor(X)
         proba_torch = self.predict_proba_torch(X_torch)
         proba_np = proba_torch.detach().numpy()
-        proba = np.swapaxes(proba_np,1,2)
+        proba = np.swapaxes(proba_np, 1, 2)
+        proba = proba.astype(self.proba_dtype)
         return proba
 
-def as_torch_tensor(base_proba, labels=None):
+    def as_torch_tensor(self, base_proba, labels=None):
 
-    base_proba = np.copy(base_proba)
-    B = np.transpose(base_proba,[0,2,1])
-    B_torch = torch.tensor(B,dtype=torch.float)
+        base_proba = np.copy(base_proba)
+        B = np.transpose(base_proba,[0,2,1])
+        B_torch = torch.tensor(B, dtype=self.input_dtype)
 
-    if labels is not None:
-        y = np.copy(labels)
-        y_torch  = torch.tensor(y,dtype=torch.long)
-        return B_torch, y_torch
+        if labels is not None:
+            y = np.copy(labels)
+            y_torch  = torch.tensor(y, dtype=torch.long)
+            return B_torch, y_torch
 
-    return B_torch
+        return B_torch
 
-def get_data_generator(B_torch, y_torch, shuffle=True):
+    @staticmethod
+    def _get_data_generator(B_torch, y_torch, shuffle=True):
 
-    dataset = LAIDataset(B_torch, y_torch)
-    generator = torch.utils.data.DataLoader(dataset, batch_size = 128, shuffle = shuffle, num_workers = 0)
+        dataset = TorchDataset(B_torch, y_torch)
+        generator = torch.utils.data.DataLoader(dataset, batch_size = 128, shuffle = shuffle)
 
-    return generator
+        return generator

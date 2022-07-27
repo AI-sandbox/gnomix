@@ -1,8 +1,7 @@
-from copy import deepcopy
 import numpy as np
 from numpy.typing import ArrayLike
 import sklearn_crfsuite
-from typing import Dict, Tuple, Any, Optional
+from typing import Dict, Any, Optional
 
 from gnomix.model.smooth.smoother import Smoother
 
@@ -10,7 +9,6 @@ class CRFSmoother(Smoother):
 
     def __init__(
         self,
-        num_ancestry: int,
         crf_config: Optional[Dict[str, Any]] = {
             "algorithm": "lbfgs",
             "max_iterations": 10000,
@@ -18,22 +16,29 @@ class CRFSmoother(Smoother):
             "all_possible_states": True
         },
         input_dtype: Optional[str] = "float32",
-        proba_dtype: Optional[str] = "float32"
+        proba_dtype: Optional[str] = "float32",
+        *args,
+        **kwargs
     ):
 
         self.CRF = sklearn_crfsuite.CRF(**crf_config)
         self.input_dtype = input_dtype
         self.proba_dtype = proba_dtype
 
-    def train(self, X, y):
+    def fit(self, X, y):
         X_CRF, y_CRF = self.npy2crf(X, y)
         self.CRF.fit(X_CRF, y_CRF)
 
-    def predict_proba(self, X):
+    def predict_proba(self, X: ArrayLike) -> ArrayLike:
         X_CRF, _ = self.npy2crf(X)
         proba_CRF = self.CRF.predict_marginals(X_CRF)
         proba = self.crf2npy(proba_CRF)
         return proba
+
+    def predict(self, X: ArrayLike) -> ArrayLike:
+        y_proba = self.predict_proba(X)
+        y_pred = np.argmax(y_proba, axis=-1)
+        return y_pred
 
     def crf2npy(self, crf_proba):
         """format data from CRF probabilities to np probabilities"""

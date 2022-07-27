@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 class Smoother(ABC):
 
     @abstractmethod
-    def train(self, B: ArrayLike, y: ArrayLike) -> None:
+    def fit(self, B: ArrayLike, y: ArrayLike) -> None:
         """
         Takes in base probabilities and labels for each window and performs training.
         Inputs:
@@ -21,5 +21,16 @@ class Smoother(ABC):
             - B: float of shape [N, W, A]
         Outputs:
             - y_proba: float of shape [N, W, A]
+        """
+        pass
+
+    @abstractmethod
+    def predict(self, B: ArrayLike) -> ArrayLike:
+        """
+        Takes in base probabilities and returns most likely ancestry
+        Inputs:
+            - B: float of shape [N, W, A]
+        Outputs:
+            - y_proba: int of shape [N, W]
         """
         pass
