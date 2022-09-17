@@ -4,7 +4,7 @@
 <br>
 
 
-![Visualization of the process](https://github.com/AI-sandbox/gnomix/blob/main/doc/fig/gnomix_diagram.png)](https://github.com/AI-sandbox/gnomix/blob/main/doc/fig/gnomix_diagram.png)
+![Visualization of the process](https://github.com/AI-sandbox/gnomix/blob/main/doc/fig/gnomix_diagram.png)
 
 This repository includes a python implementation of G-Nomix, a fast, scalable, and accurate local ancestry method. See [demo](demo.ipynb).
 
