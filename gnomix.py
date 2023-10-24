@@ -15,6 +15,8 @@ from src.laidataset import LAIDataset
 
 from src.model import Gnomix
 
+import math
+
 CLAIMER = 'When using this software, please cite: \n' + \
           'Helgi Hilmarsson, Arvind S Kumar, Richa Rastogi, Carlos D Bustamante, \n' + \
           'Daniel Mas Montserrat, Alexander G Ioannidis: \n' + \
@@ -117,7 +119,12 @@ def get_data(data_path, generations, window_size_cM):
     A = len(pop_order)
     C = len(snp_pos)
     M = int(round(window_size_cM*(C/(100*laidataset_meta["morgans"]))))
+    
+    # Correction to avoid bug
+    if C % M == 0:
+        M -= 1
 
+    print('DEBUG', C, M)
     meta = {
         "A": A, # number of ancestry
         "C": C, # chm length
