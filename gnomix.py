@@ -124,7 +124,6 @@ def get_data(data_path, generations, window_size_cM):
     if C % M == 0:
         M -= 1
 
-    print('DEBUG', C, M)
     meta = {
         "A": A, # number of ancestry
         "C": C, # chm length
