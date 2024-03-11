@@ -122,7 +122,7 @@ def get_data(data_path, generations, window_size_cM):
     
     # Correction to avoid bug
     if C % M == 0:
-        M -= 1
+        M += 1
 
     meta = {
         "A": A, # number of ancestry
