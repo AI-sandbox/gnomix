@@ -225,7 +225,7 @@ To ensure that G-Nomix outputs probability estimates that reflect it's true conf
 
 ## License
 
-**NOTICE**: This software is available for use free of charge for academic research use only. Commercial users, for profit companies or consultants, and non-profit institutions not qualifying as "academic research" must contact the [Stanford Office of Technology Licensing](https://otl.stanford.edu/) for a separate license. This applies to this repository directly and any other repository that includes source, executables, or git commands that pull/clone this repository as part of its function. Such repositories, whether ours or others, must include this notice. Academic users may fork this repository and modify and improve to suit their research needs, but also inherit these terms and must include a licensing notice to this effect.
+**NOTICE**: This software is available free of charge for academic research use only. Commercial users and for profit companies or consultants can use the features present in this software by contacting [Galatea Bio](https://www.galatea.bio/), to which [Stanford Office of Technology Licensing](https://otl.stanford.edu/) has exclusively licensed technology used in this package. Academic users may fork this repository and modify and improve to suit their research needs, but also inherit these terms and must include a licensing notice to this effect.
 
 ## Cite
 
