@@ -1,4 +1,4 @@
-<img align="left" src="https://github.com/AI-sandbox/gnomix/blob/main/doc/fig/Gnomix.png" width=18.7% height=18.7%> 
+
 
 # High Resolution Ancestry Deconvolution for Next Generation Genomic Data 
 <br>
