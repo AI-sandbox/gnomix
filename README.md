@@ -1,4 +1,4 @@
-<img align="left" src="https://github.com/AI-sandbox/gnomix/blob/main/doc/fig/G-Nomix.png" width=18.7% height=18.7%> 
+<img align="left" src="https://github.com/AI-sandbox/gnomix/blob/main/doc/fig/Gnomix.png" width=18.7% height=18.7%> 
 
 # High Resolution Ancestry Deconvolution for Next Generation Genomic Data 
 <br>
@@ -6,12 +6,12 @@
 
 ![Visualization of the process](https://github.com/AI-sandbox/gnomix/blob/main/doc/fig/gnomix_diagram.png)
 
-This repository includes a python implementation of G-Nomix, a fast, scalable, and accurate local ancestry method. See [demo](demo.ipynb).
+This repository includes a python implementation of Gnomix, a fast, scalable, and accurate local ancestry method. See [demo](demo.ipynb).
 
-G-Nomix can be used in two ways:
+Gnomix can be used in two ways:
 
 - training a model from scratch using reference training data or 
-- loading a pre-trained G-Nomix model (see **Pre-Trained Models** below)
+- loading a pre-trained Gnomix model (see **Pre-Trained Models** below)
 
 In both cases the models are used to infer local ancestry on provided query data that has already been phased (using a program like beagle, shapeit, or eagle) and pre-processed to have the same sites as the reference training samples on the same strand, or if a pre-trained model is used instead see **Pre-Trained Models** below for requirements. 
 
@@ -37,7 +37,7 @@ The software has been tested in Python 3.7.4 on the following operating systems:
 ## Usage
 
 ### When Using Pre-Trained Models
-gnomix.py loads and uses a pre-trained G-Nomix model to predict the ancestry for a given *<query_file>* and a chromosome.
+gnomix.py loads and uses a pre-trained Gnomix model to predict the ancestry for a given *<query_file>* and a chromosome.
 
 To execute the program with a pre-trained model run:
 ```
@@ -221,7 +221,7 @@ Accurate phasing of genomic data is crucial for human demographic modeling and i
 Sequenced haplotypes phased with a phasing software (left). LAI is used to label haplotypes with ancestry predictions and phasing errors become evident (center). Phasing error correction using LAI is applied to correct phasing errors (right). Small numbers of phasing errors do not, however, impact the correct association of a variant with an ancestry, and so are typically only a visual nuisance.
 
 ## Calibration
-To ensure that G-Nomix outputs probability estimates that reflect it's true confidence and accuracy, we recommend using calibration. We use Isotonic Regression to map the predicted probabilities to calibrated probabilities where the latter are more likely to have predictions with a confidence of X% correct matching their actual X% frequency of being correct in practice.
+To ensure that Gnomix outputs probability estimates that reflect it's true confidence and accuracy, we recommend using calibration. We use Isotonic Regression to map the predicted probabilities to calibrated probabilities where the latter are more likely to have predictions with a confidence of X% correct matching their actual X% frequency of being correct in practice.
 
 ## License
 
@@ -242,7 +242,7 @@ https://www.biorxiv.org/content/10.1101/2021.09.19.460980v1
 	year = {2021},
 	doi = {10.1101/2021.09.19.460980},
 	publisher = {Cold Spring Harbor Laboratory},
-	abstract = {As genome-wide association studies and genetic risk prediction models are extended to globally diverse and admixed cohorts, ancestry deconvolution has become an increasingly important tool. Also known as local ancestry inference (LAI), this technique identifies the ancestry of each region of an individual{\textquoteright}s genome, thus permitting downstream analyses to account for genetic effects that vary between ancestries. Since existing LAI methods were developed before the rise of massive, whole genome biobanks, they are computationally burdened by these large next generation datasets. Current LAI algorithms also fail to harness the potential of whole genome sequences, falling well short of the accuracy that such high variant densities can enable. Here we introduce G-Nomix, a set of algorithms that address each of these points, achieving higher accuracy and swifter computational performance than any existing LAI method, while also enabling portable models that are particularly useful when training data are not shareable due to privacy or other restrictions. We demonstrate G-Nomix (and its swift phase correction counterpart Gnofix) on worldwide whole-genome data from both humans and canids and utilize its high resolution accuracy to identify the location of ancient New World haplotypes in the Xoloitzcuintle, dating back over 100 generations. Code is available at https://github.com/AI-sandbox/gnomixCompeting Interest StatementCDB is the founder and CEO of Galatea Bio Inc and on the boards of Genomics PLC and Etalon.},
+	abstract = {As genome-wide association studies and genetic risk prediction models are extended to globally diverse and admixed cohorts, ancestry deconvolution has become an increasingly important tool. Also known as local ancestry inference (LAI), this technique identifies the ancestry of each region of an individual{\textquoteright}s genome, thus permitting downstream analyses to account for genetic effects that vary between ancestries. Since existing LAI methods were developed before the rise of massive, whole genome biobanks, they are computationally burdened by these large next generation datasets. Current LAI algorithms also fail to harness the potential of whole genome sequences, falling well short of the accuracy that such high variant densities can enable. Here we introduce Gnomix, a set of algorithms that address each of these points, achieving higher accuracy and swifter computational performance than any existing LAI method, while also enabling portable models that are particularly useful when training data are not shareable due to privacy or other restrictions. We demonstrate Gnomix (and its swift phase correction counterpart Gnofix) on worldwide whole-genome data from both humans and canids and utilize its high resolution accuracy to identify the location of ancient New World haplotypes in the Xoloitzcuintle, dating back over 100 generations. Code is available at https://github.com/AI-sandbox/gnomixCompeting Interest StatementCDB is the founder and CEO of Galatea Bio Inc and on the boards of Genomics PLC and Etalon.},
 	URL = {https://www.biorxiv.org/content/early/2021/09/21/2021.09.19.460980},
 	eprint = {https://www.biorxiv.org/content/early/2021/09/21/2021.09.19.460980.full.pdf},
 	journal = {bioRxiv}
