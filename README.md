@@ -38,7 +38,9 @@ The software has been tested in Python 3.7.4 on the following operating systems:
 
 ### Best Practices
 
-For recommended workflows and common tuning options, see **[Best Practices](./gnomix-best-practices.md)**. It covers input preparation tips (build consistency, liftover, and imputation) and guidance for adjusting key hyperparameters via the config file. We recommend using **MAF of .01, no LD pruning, phased, and only biallelic snps**. We recommend looking at different configuration files, see **[Config Files](./configs/README.md)**. In particular, we recommend different configurations depending on whether working with whole genome or array data, human genomes or plant genomes, and Tracts analyses or snp focused (GWAS, PRS, PCA, F-statistics) analyses on the downstream side.
+For recommended workflows and common tuning options, see **[Best Practices](./gnomix-best-practices.md)**. It covers input preparation tips (build consistency, liftover, and imputation) and guidance for adjusting key hyperparameters via the config file. We recommend using **MAF of .01, no LD pruning, phased, and only biallelic snps**. Before training Gnomix, we also recommend filtering the reference panel VCF for common variants, such as variants with minimum allele count ≥ 20. The same filtering criteria should then be applied to the query dataset. After filtering both files, take the intersection of retained variants; this intersection is the final set of variants to use for Gnomix training.
+
+We recommend looking at different configuration files, see **[Config Files](./configs/README.md)**. In particular, we recommend different configurations depending on whether working with whole genome or array data, human genomes or plant genomes, and Tracts analyses or snp focused (GWAS, PRS, PCA, F-statistics) analyses on the downstream side.
 
 
 
