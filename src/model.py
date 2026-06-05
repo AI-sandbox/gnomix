@@ -182,7 +182,7 @@ class Gnomix():
         with open(fname,"w") as f:
             for attr in dir(self):
                 val = getattr(self,attr)
-                if type(val) in [int,float,str,bool,np.float64,np.float32,np.int]:
+                if isinstance(val, (int, float, str, bool, np.integer, np.floating)):
                     f.write("{}\t{}\n".format(attr,val))
 
     def phase(self,X,B=None,verbose=False):

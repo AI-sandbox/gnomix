@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 from xgboost import XGBClassifier
 from sklearn import svm
+from packaging.version import Version
 
 from src.Base.base import Base
 from src.Base.string_kernel import CovRSK_DP_triangular_numbers, CovRSK_DP_triangular_numbers_multithread
@@ -163,7 +164,8 @@ class StringKernelBase(Base):
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        assert int(np.__version__.split(".")[1]) >= 20, "String kernel implementation requires numpy versions 1.20+"
+        assert Version(np.__version__) >= Version("1.20"), \
+            "String kernel implementation requires numpy versions 1.20+"
 
         self.log_inference = True # display progress of predict proba
         self.train_admix = False # save computation
@@ -180,7 +182,8 @@ class PolynomialStringKernelBase(Base):
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        assert int(np.__version__.split(".")[1]) >= 20, "String kernel implementation requires numpy versions 1.20+"
+        assert Version(np.__version__) >= Version("1.20"), \
+            "String kernel implementation requires numpy versions 1.20+"
 
         self.log_inference = True # display progress of predict proba
         self.train_admix = False # save computation
@@ -197,7 +200,8 @@ class CovRSKBase(Base):
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        assert int(np.__version__.split(".")[1]) >= 20, "String kernel implementation requires numpy versions 1.20+"
+        assert Version(np.__version__) >= Version("1.20"), \
+            "String kernel implementation requires numpy versions 1.20+"
         
         self.log_inference = True # display progress of predict proba
         self.train_admix = False # save computation
