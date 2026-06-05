@@ -1,12 +1,15 @@
 
 
 # High Resolution Ancestry Deconvolution for Next Generation Genomic Data 
+
+![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-brightgreen)
+
 <br>
 
 
 ![Visualization of the process](https://github.com/AI-sandbox/gnomix/blob/main/doc/fig/gnomix_diagram.png)
 
-This repository includes a python implementation of Gnomix, a fast, scalable, and accurate local ancestry method. See [demo](demo.ipynb).
+This repository includes a Python implementation of Gnomix, a fast, scalable, and accurate local ancestry method. See [demo](demo.ipynb).
 
 Gnomix can be used in two ways:
 
@@ -17,22 +20,22 @@ In both cases the models are used to infer local ancestry on provided query data
 
 ## Installation and Dependencies
 
-To install the software, navigate to the desired folder and enter in the command line interface:
-```
+To install the software, clone the repository and create a Python environment:
+
+```bash
 git clone https://github.com/AI-sandbox/gnomix
 cd gnomix
+conda create -n gnomix python=3.14
+conda activate gnomix
 ```
 
-The dependencies are listed in *requirements.txt*. Assuming [pip](https://pip.pypa.io/en/stable/) is already installed, they can be installed via
-```
-$ pip install -r requirements.txt
-```
+You may replace `3.14` with any supported Python version between `3.9` and `3.14`. However, we strongly recommend using Python `3.13` or `3.14`, as they provide substantially faster runtimes than earlier Python releases.
 
-The combined runtime for the cloning and the dependency installation should be around 2 minutes on a normal laptop.
+The dependencies are listed in *requirements.txt*. Assuming [pip](https://pip.pypa.io/en/stable/) is already installed, they can be installed via:
 
-The software has been tested in Python 3.7.4 on the following operating systems:
-- Linux: Ubuntu 18.04.5
-- macOS: Monterey (12.0.1)
+```bash
+pip install -r requirements.txt
+```
 
 ## Usage
 
