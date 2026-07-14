@@ -108,7 +108,7 @@ class Base():
             
         # convolve
         M_ = self.M + 2*self.context        
-        idx = np.arange(0,self.C,self.M)[:-2]
+        idx = np.arange(0, self.M*(self.W-1), self.M)
         X_b = slide_window(X, M_, axis=1)[:,idx,:]
 
         # stack
@@ -155,7 +155,7 @@ class Base():
             
         # convolve
         M_ = self.M + 2*self.context        
-        idx = np.arange(0,self.C,self.M)[:-2]
+        idx = np.arange(0, self.M*(self.W-1), self.M)
         X_b = slide_window(X, M_, axis=1)[:,idx,:]
 
         # stack
