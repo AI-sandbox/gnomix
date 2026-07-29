@@ -8,7 +8,7 @@ import yaml
 
 from src.utils import run_shell_cmd, join_paths, read_vcf, vcf_to_npy, npy_to_vcf, update_vcf 
 from src.utils import read_genetic_map, save_dict, load_dict, read_headers
-from src.preprocess import load_np_data, data_process
+from src.preprocess import WindowedNpyData, load_np_data, data_process
 from src.postprocess import get_meta_data, write_msp, write_fb, msp_to_lai, msp_to_bed
 from src.visualization import plot_cm, plot_chm
 from src.laidataset import LAIDataset
@@ -141,7 +141,11 @@ def get_data(data_path, generations, window_size_cM):
         X, y = data_process(X_raw, labels_raw, M)
         return X, y
 
-    X_t1, y_t1 = read("train1")
+    train1_paths = [os.path.join(data_path, "train1", "gen_" + str(gen)) for gen in generations["train1"]]
+    train1_X_files = [path + "/mat_vcf_2d.npy" for path in train1_paths]
+    train1_labels_files = [path + "/mat_map.npy" for path in train1_paths]
+    X_t1 = WindowedNpyData(train1_X_files, train1_labels_files, C, M)
+    y_t1 = None
     X_t2, y_t2 = read("train2")
     X_v, y_v = (None, None)
     if generations.get("val") is not None:
