@@ -198,7 +198,7 @@ def msp_to_bed(msp_file, root, pop_order=None):
         _ = f.readline()
         second_line = f.readline()
 
-    header = second_line.split("\t")
+    header = second_line.rstrip("\r\n").split("\t")
     msp_df = pd.read_csv(msp_file, sep="\t", comment="#", names=header)
     
     samples = header[6:]
