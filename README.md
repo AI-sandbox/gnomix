@@ -1,6 +1,6 @@
 
 
-# High Resolution Ancestry Deconvolution for Next Generation Genomic Data 
+# Scalable high resolution ancestry deconvolution for genomic data
 
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-brightgreen)
 
@@ -209,7 +209,7 @@ To ensure that Gnomix outputs probability estimates that reflect it's true confi
 ## Cite
 
 #### When using this software, please cite: 
-### Helgi Hilmarsson, Arvind S Kumar, Richa Rastogi, Carlos D Bustamante, Daniel Mas Montserrat, Alexander G Ioannidis: "Scalable high resolution ancestry deconvolution for genomic data"
+### Helgi Hilmarsson, Arvind S Kumar, Miriam Barrabes, Richa Rastogi, Carlos D Bustamante, Daniel Mas Montserrat, Alexander G Ioannidis: "Scalable high resolution ancestry deconvolution for genomic data"
 
 https://www.nature.com/articles/s41467-026-75391-0
 
