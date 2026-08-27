@@ -209,7 +209,7 @@ To ensure that Gnomix outputs probability estimates that reflect it's true confi
 ## Cite
 
 #### When using this software, please cite: 
-### Helgi Hilmarsson, Arvind S Kumar, Richa Rastogi, Carlos D Bustamante, Daniel Mas Montserrat, Alexander G Ioannidis: "High Resolution Ancestry Deconvolution for Next Generation Genomic Data"
+### Helgi Hilmarsson, Arvind S Kumar, Richa Rastogi, Carlos D Bustamante, Daniel Mas Montserrat, Alexander G Ioannidis: "Scalable high resolution ancestry deconvolution for genomic data"
 
 https://www.nature.com/articles/s41467-026-75391-0
 
