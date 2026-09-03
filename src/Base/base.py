@@ -59,6 +59,57 @@ class Base():
         if not self.vectorize:
             return self.train_loopy(X, y, verbose=verbose)
 
+    def _feature_window(self, X, window_index):
+        """Extract one base-model feature window from an in-memory chromosome."""
+        start = window_index * self.M
+        end = (window_index + 1) * self.M if window_index < self.W - 1 else self.C
+        left = max(0, start - self.context)
+        right = min(self.C, end + self.context)
+        pieces = []
+
+        if start < self.context:
+            pieces.append(np.flip(X[:, :self.context - start], axis=1))
+        pieces.append(X[:, left:right])
+        if end + self.context > self.C:
+            pieces.append(np.flip(X[:, self.C - (end + self.context - self.C):], axis=1))
+
+        return pieces[0] if len(pieces) == 1 else np.concatenate(pieces, axis=1)
+
+    def train_windowed(self, data, extra_data=(), verbose=True):
+        """Train base models from a disk-backed source without loading all SNPs."""
+        t = time()
+        for i in range(self.W):
+            X_w = data.load_feature_window(i, self.context)
+            y_w = data.load_label_window(i)
+            if extra_data:
+                X_w = np.concatenate(
+                    [X_w] + [self._feature_window(X, i) for X, _ in extra_data], axis=0
+                )
+                y_w = np.concatenate([y_w] + [y[:, i] for _, y in extra_data])
+            self.models[i].fit(X_w, y_w)
+
+            if verbose:
+                sys.stdout.write("\rWindows done: %i/%i" % (i + 1, self.W))
+
+        if verbose:
+            print("")
+        self.time["train"] = time() - t
+
+    def predict_proba_windowed(self, data, include_labels=False):
+        """Generate compact per-window probabilities from disk-backed SNP arrays."""
+        t = time()
+        B = np.zeros((data.n_samples, self.W, self.A), dtype=np.float64)
+        y = np.empty((data.n_samples, self.W), dtype=np.int16) if include_labels else None
+
+        for i in range(self.W):
+            X_w = data.load_feature_window(i, self.context)
+            B[:, i, self.models[i].classes_] = self.models[i].predict_proba(X_w)
+            if include_labels:
+                y[:, i] = data.load_label_window(i)
+
+        self.time["inference"] = time() - t
+        return B, y
+
     def train_loopy(self, X, y, verbose=True):
         """Depricated"""
 
@@ -108,7 +159,7 @@ class Base():
             
         # convolve
         M_ = self.M + 2*self.context        
-        idx = np.arange(0,self.C,self.M)[:-2]
+        idx = np.arange(0, self.M*(self.W-1), self.M)
         X_b = slide_window(X, M_, axis=1)[:,idx,:]
 
         # stack
@@ -155,7 +206,7 @@ class Base():
             
         # convolve
         M_ = self.M + 2*self.context        
-        idx = np.arange(0,self.C,self.M)[:-2]
+        idx = np.arange(0, self.M*(self.W-1), self.M)
         X_b = slide_window(X, M_, axis=1)[:,idx,:]
 
         # stack

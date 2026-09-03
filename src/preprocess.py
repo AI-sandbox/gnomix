@@ -19,6 +19,78 @@ def load_np_data(files, verb=False):
     data = np.concatenate(data,axis=0)
     return data
 
+class WindowedNpyData:
+    """Read SNP features and labels for one chromosome window at a time."""
+
+    def __init__(self, X_files, labels_files, chromosome_length, window_size):
+        self.X_files = X_files
+        self.labels_files = labels_files
+        self.C = chromosome_length
+        self.M = window_size
+        self.W = self.C // self.M
+
+        if len(X_files) != len(labels_files):
+            raise ValueError("Feature and label files must have matching generations")
+
+        self.n_samples = 0
+        for X_path, labels_path in zip(X_files, labels_files):
+            X = np.load(X_path, mmap_mode="r")
+            labels = np.load(labels_path, mmap_mode="r")
+            try:
+                if X.shape != labels.shape:
+                    raise ValueError("Feature and label arrays must have matching shapes")
+                if X.shape[1] != self.C:
+                    raise ValueError("Input array chromosome length does not match metadata")
+                self.n_samples += X.shape[0]
+            finally:
+                X._mmap.close()
+                labels._mmap.close()
+
+    def _bounds(self, window_index):
+        if not 0 <= window_index < self.W:
+            raise IndexError(f"Window index {window_index} is outside [0, {self.W})")
+        start = window_index * self.M
+        end = (window_index + 1) * self.M if window_index < self.W - 1 else self.C
+        return start, end
+
+    def load_feature_window(self, window_index, context):
+        """Return the base-model feature slice, including reflected edge context."""
+        start, end = self._bounds(window_index)
+        left = max(0, start - context)
+        right = min(self.C, end + context)
+        left_pad = max(0, context - start)
+        right_pad = max(0, end + context - self.C)
+        windows = []
+
+        for X_path in self.X_files:
+            X = np.load(X_path, mmap_mode="r")
+            pieces = []
+            try:
+                if left_pad:
+                    pieces.append(np.flip(X[:, :left_pad], axis=1))
+                pieces.append(X[:, left:right])
+                if right_pad:
+                    pieces.append(np.flip(X[:, self.C - right_pad:self.C], axis=1))
+                window = pieces[0] if len(pieces) == 1 else np.concatenate(pieces, axis=1)
+                windows.append(np.array(window, dtype=np.int8, copy=True))
+            finally:
+                X._mmap.close()
+
+        return np.concatenate(windows, axis=0)
+
+    def load_label_window(self, window_index):
+        """Aggregate SNP-level labels into the label for one base-model window."""
+        start, end = self._bounds(window_index)
+        labels = []
+        for labels_path in self.labels_files:
+            label_array = np.load(labels_path, mmap_mode="r")
+            try:
+                values, _ = stats.mode(label_array[:, start:end], axis=1)
+                labels.append(np.asarray(values).reshape(-1).astype(np.int16, copy=False))
+            finally:
+                label_array._mmap.close()
+        return np.concatenate(labels, axis=0)
+
 def vcf2npy(vcf_file):
     vcf_data = allel.read_vcf(vcf_file)
     chm_len, nout, _ = vcf_data["calldata/GT"].shape

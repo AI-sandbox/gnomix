@@ -8,6 +8,7 @@ from copy import deepcopy
 from src.Base.models import LogisticRegressionBase, CovRSKBase
 from src.Smooth.models import XGB_Smoother
 from src.Gnofix.gnofix import gnofix
+from src.preprocess import WindowedNpyData
 
 class Gnomix():
 
@@ -106,10 +107,17 @@ class Gnomix():
         train_time_begin = time()
 
         (X_t1,y_t1), (X_t2,y_t2), (X_v,y_v) = data
+        train1_is_windowed = isinstance(X_t1, WindowedNpyData)
         
         if verbose:
             print("Training base models...")
-        self.base.train(X_t1, y_t1)
+        if train1_is_windowed:
+            self.base.train_windowed(X_t1, verbose=verbose)
+        else:
+            self.base.train(X_t1, y_t1)
+
+        if train1_is_windowed:
+            B_t1, y_t1 = self.base.predict_proba_windowed(X_t1, include_labels=True)
 
         if verbose:
             print("Training smoother...")
@@ -120,7 +128,8 @@ class Gnomix():
             # calibrates the predictions to be balanced w.r.t. the train1 class distribution
             if verbose:
                 print("Fitting calibrator...")
-            B_t1 = self.base.predict_proba(X_t1)
+            if not train1_is_windowed:
+                B_t1 = self.base.predict_proba(X_t1)
             self.smooth.train_calibrator(B_t1, y_t1)
 
         # Evaluate model
@@ -132,7 +141,8 @@ class Gnomix():
             CM  = {}
 
             # training accuracy
-            B_t1 = self.base.predict_proba(X_t1)
+            if not train1_is_windowed:
+                B_t1 = self.base.predict_proba(X_t1)
             y_t1_pred = self.smooth.predict(B_t1)
             y_t2_pred = self.smooth.predict(B_t2)
             Acc["base_train_acc"],   Acc["base_train_acc_bal"]   = self.base.evaluate(X=None,   y=y_t1, B=B_t1)
@@ -152,15 +162,23 @@ class Gnomix():
 
         if retrain_base:
             # Store both training data in one np.array for memory efficency
-            if X_v is not None:
-                X_t, y_t = np.concatenate([X_t1, X_t2, X_v]), np.concatenate([y_t1, y_t2, y_v])
+            if train1_is_windowed:
+                extra_data = [(X_t2, y_t2)]
+                if X_v is not None:
+                    extra_data.append((X_v, y_v))
+                if verbose:
+                    print("Re-training base models...")
+                self.base.train_windowed(X_t1, extra_data=extra_data, verbose=verbose)
             else:
-                X_t, y_t = np.concatenate([X_t1, X_t2]), np.concatenate([y_t1, y_t2])
+                if X_v is not None:
+                    X_t, y_t = np.concatenate([X_t1, X_t2, X_v]), np.concatenate([y_t1, y_t2, y_v])
+                else:
+                    X_t, y_t = np.concatenate([X_t1, X_t2]), np.concatenate([y_t1, y_t2])
 
-            # Re-using all the data to re-train the base models
-            if verbose:
-                print("Re-training base models...")
-            self.base.train(X_t, y_t)
+                # Re-using all the data to re-train the base models
+                if verbose:
+                    print("Re-training base models...")
+                self.base.train(X_t, y_t)
 
         self.save()
 
@@ -212,4 +230,3 @@ class Gnomix():
         print()
         
         return X_phased.reshape(N, C), Y_phased.reshape(N, self.W)
-

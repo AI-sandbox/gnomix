@@ -18,7 +18,7 @@ class LogisticRegressionBase(Base):
         self.base_multithread = True
 
         self.init_base_models(
-            lambda : LogisticRegression(penalty="l2", C = 3., solver="liblinear", max_iter=1000)
+            lambda : LogisticRegression(penalty="l2", C = 3., solver="lbfgs", max_iter=1000)
         )
 
 

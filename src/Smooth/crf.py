@@ -1,4 +1,3 @@
-from copy import deepcopy
 import numpy as np
 import sklearn_crfsuite
 
@@ -37,16 +36,16 @@ class CRF:
         """format data from CRF probabilities to np probabilities"""
         N = len(proba)
         B = len(proba[0])
-        A = len(proba[0][0])
+        A = len(self.classes_)
         
-        # level 2 dict to list
-        if A > 1:
-            proba = deepcopy(proba)
-            for i in range(N):
-                for b in range(B):
-                    proba[i][b] = [proba[i][b][str(a)] for a in range(A)]
+        proba_out = np.zeros((N, B, A), dtype=float)
+        
+        for i in range(N):
+            for b in range(B):
+                for a, cls in enumerate(self.classes_):
+                    proba_out[i, b, a] = proba[i][b][cls]
 
-        return np.array(proba)
+        return proba_out
 
     def fit(self, X, y):
         X_CRF, y_CRF = self.npy2crf(X, y)
