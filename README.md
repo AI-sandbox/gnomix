@@ -85,6 +85,7 @@ If no config is given, the program uses the default (*config.yaml*). The config 
   - window_size_cM (float, positive) -  size of window in centiMorgans, use larger windows if snp density is lower e.g. genotype data vs. sequence (default .5)
   - smooth_size (int, positive) - number of windows to be taken as context for smoother (default 75)
   - context_ratio (float between 0 and 1) - context of base model windows (default .5)
+  - windowed_loading (bool) - set to True to read train1 one window at a time, or False to load it fully into memory (default False)
   - retrain_base (bool) - retrain base models using both train1 and train2 once smoother is trained, validation data for a final base model (default True)
   - calibrate (bool) - applies calibration on output probabilities (default False)
   - n_cores (int, positive) - how many units of cpu to use (default is maximum), reduce if you are on a shared cluster and using only a subset of nodes
@@ -226,4 +227,3 @@ https://www.biorxiv.org/content/10.1101/2021.09.19.460980v1
 	eprint = {https://www.biorxiv.org/content/early/2021/09/21/2021.09.19.460980.full.pdf},
 	journal = {bioRxiv}
 }
-

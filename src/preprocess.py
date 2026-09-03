@@ -19,7 +19,6 @@ def load_np_data(files, verb=False):
     data = np.concatenate(data,axis=0)
     return data
 
-
 class WindowedNpyData:
     """Read SNP features and labels for one chromosome window at a time."""
 

@@ -99,7 +99,7 @@ def run_inference(base_args, model, visualize, snp_level=False, bed_file_output=
 
     return
 
-def get_data(data_path, generations, window_size_cM):
+def get_data(data_path, generations, window_size_cM, windowed_loading=False):
 
     # ------------------ Meta ------------------
     assert(type(generations)==dict), "Generations must be a dict with list of generations to read in for each split"
@@ -144,8 +144,11 @@ def get_data(data_path, generations, window_size_cM):
     train1_paths = [os.path.join(data_path, "train1", "gen_" + str(gen)) for gen in generations["train1"]]
     train1_X_files = [path + "/mat_vcf_2d.npy" for path in train1_paths]
     train1_labels_files = [path + "/mat_map.npy" for path in train1_paths]
-    X_t1 = WindowedNpyData(train1_X_files, train1_labels_files, C, M)
-    y_t1 = None
+    if windowed_loading:
+        X_t1 = WindowedNpyData(train1_X_files, train1_labels_files, C, M)
+        y_t1 = None
+    else:
+        X_t1, y_t1 = read("train1")
     X_t2, y_t2 = read("train2")
     X_v, y_v = (None, None)
     if generations.get("val") is not None:
@@ -168,6 +171,7 @@ def train_model(config, data_path, verbose):
     retrain_base=config["model"].get("retrain_base")
     calibrate=config["model"].get("calibrate")
     context_ratio=config["model"].get("context_ratio")
+    windowed_loading=config["model"].get("windowed_loading", False)
     chm = base_args["chm"]
 
     # option to bypass validation
@@ -186,7 +190,7 @@ def train_model(config, data_path, verbose):
     # Processing data
     if verbose:
         print("Reading data...")
-    data, meta = get_data(data_path, generations, window_size_cM)
+    data, meta = get_data(data_path, generations, window_size_cM, windowed_loading=windowed_loading)
 
     # init model
     model = Gnomix(C=meta["C"], M=meta["M"], A=meta["A"], S=smooth_window_size,

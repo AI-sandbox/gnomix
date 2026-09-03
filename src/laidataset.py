@@ -99,12 +99,12 @@ def build_founders(sample_map_data,gt_data,chm_length_snps):
         paternal = {}
 
         # let us use the first for maternal in the vcf file...
-        maternal["snps"] = gt_data[:,index,0].astype(np.uint8)
-        paternal["snps"] = gt_data[:,index,1].astype(np.uint8)
+        maternal["snps"] = gt_data[:,index,0].astype(np.uint8, copy=False)
+        paternal["snps"] = gt_data[:,index,1].astype(np.uint8, copy=False)
 
         # single ancestry assumption.
-        maternal["anc"] = np.array([i[1]["population_code"]]*chm_length_snps).astype(np.uint8)
-        paternal["anc"] = np.array([i[1]["population_code"]]*chm_length_snps).astype(np.uint8)
+        maternal["anc"] = np.full(chm_length_snps, i[1]["population_code"], dtype=np.uint8)
+        paternal["anc"] = np.full(chm_length_snps, i[1]["population_code"], dtype=np.uint8)
 
         # any more info like coordinates, prs can be added here.
 
@@ -200,6 +200,11 @@ def write_output(root,dataset):
     anc = np.stack(anc)
     np.save(root+"/mat_map.npy",anc)
 
+
+def write_output_arrays(root, snps, anc):
+    if not os.path.isdir(root): os.makedirs(root)
+    np.save(root+"/mat_vcf_2d.npy", snps)
+    np.save(root+"/mat_map.npy", anc)
 
 class LAIDataset:
     
@@ -385,7 +390,14 @@ class LAIDataset:
             if outdir is not None:
                 if verbose:
                     print("Writing simulation output to: ",outdir)
-                write_output(outdir,simulated_samples)
+                if return_out: write_output(outdir, simulated_samples)
+                else:
+                    snps=np.empty((len(simulated_samples)*2,self.num_snps),dtype=np.uint8)
+                    anc=np.empty((len(simulated_samples)*2,self.num_snps),dtype=np.uint8)
+                    for i,p in enumerate(simulated_samples):
+                        snps[2*i],snps[2*i+1]=p.maternal["snps"],p.paternal["snps"]
+                        anc[2*i],anc[2*i+1]=p.maternal["anc"],p.paternal["anc"]
+                    write_output_arrays(outdir,snps,anc)
         
             # return the samples
             if return_out:
@@ -403,6 +415,16 @@ class LAIDataset:
         # run simulation
         if verbose:
             print("Generating {} admixed samples".format(num_samples))
+        if not return_out:
+            snps=np.empty((num_samples*2,self.num_snps),dtype=np.uint8) if outdir is not None else None
+            anc=np.empty((num_samples*2,self.num_snps),dtype=np.uint8) if outdir is not None else None
+            for i in range(num_samples):
+                m=admix(founders,founders_weight,gens[i],self.breakpoint_prob,self.num_snps,self.morgans)
+                p=admix(founders,founders_weight,gens[i],self.breakpoint_prob,self.num_snps,self.morgans)
+                if outdir is not None:
+                    snps[2*i],snps[2*i+1]=m["snps"],p["snps"]; anc[2*i],anc[2*i+1]=m["anc"],p["anc"]
+            if outdir is not None: write_output_arrays(outdir,snps,anc)
+            return
         simulated_samples = []
         for i in range(num_samples):
             
