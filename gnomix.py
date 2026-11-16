@@ -6,7 +6,7 @@ import pickle
 import sys
 import yaml
 
-from src.utils import run_shell_cmd, join_paths, read_vcf, vcf_to_npy, npy_to_vcf, update_vcf 
+from src.utils import run_shell_cmd, join_paths, read_vcf, vcf_to_npy, npy_to_vcf, update_vcf
 from src.utils import read_genetic_map, save_dict, load_dict, read_headers
 from src.preprocess import WindowedNpyData, load_np_data, data_process
 from src.postprocess import get_meta_data, write_msp, write_fb, msp_to_lai, msp_to_bed
@@ -242,10 +242,10 @@ def train_model(config, data_path, verbose):
         for split in splits_to_rem: # train1, train2, val (if val is there)
             chm_path = join_paths(data_path, split, verb=False)
             remove_data_cmd = "rm -r " + chm_path
-            run_shell_cmd(remove_data_cmd, verbose=False)
+            run_shell_cmd(remove_data_cmd, verb=False)
 
     return model
-    
+
 def simulate_splits(base_args,config,data_path):
 
     # build LAIDataset object
@@ -261,7 +261,7 @@ def simulate_splits(base_args,config,data_path):
     # create output directories
     if not os.path.exists(outdir):
         os.makedirs(outdir)
-    
+
     if not os.path.exists(data_path):
         os.makedirs(data_path)
 
@@ -311,7 +311,7 @@ def simulate_splits(base_args,config,data_path):
 
 
 if __name__ == "__main__":
-    
+
     print("...")
 
     # Citation
@@ -322,7 +322,7 @@ if __name__ == "__main__":
     # Infer mode from number of arguments
     mode = None
     if len(sys.argv) == 6:
-        mode = "pre-trained" 
+        mode = "pre-trained"
     if len(sys.argv) == 8 or len(sys.argv) == 9:
         mode = "train"
 
@@ -369,7 +369,7 @@ if __name__ == "__main__":
         model.n_cores = config["model"].get("n_cores", None)
         model.calibrate = config["model"].get("calibrate")
         model.smooth.calibrate = config["model"].get("calibrate")
-        
+
         # TEMPORARY FOR BACKWARDS COMPATIBILITY FOR MODELS TRAINED BEFORE 10/2021
         model.base.vectorize = True
 
@@ -400,17 +400,17 @@ if __name__ == "__main__":
         else:
             data_path = os.path.join(base_args["output_basename"],"generated_data")
             simulate_splits(base_args, config, data_path) # will create the simulation_output folder
-        
+
         # train the model
         if verbose:
             print("Training...")
         model = train_model(config, data_path, verbose=verbose)
-        
+
     # run inference if applicable.
     if base_args["query_file"]:
 
         print("Launching inference...")
-        run_inference(base_args, model, 
+        run_inference(base_args, model,
                         visualize=config["inference"]["visualize_inference"],
                         snp_level=config["inference"]["snp_level_inference"],
                         bed_file_output=config["inference"]["bed_file_output"],
