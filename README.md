@@ -4,6 +4,8 @@
 
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-brightgreen)
 
+📰 **Featured in The New York Times!** Read about how Gnomix helped uncover ancient coyote ancestry in Chihuahuas: [Tiny Chihuahuas Hold a Big Surprise: A Sliver of Coyote DNA](https://www.nytimes.com/2026/11/05/science/chihuahuas-coyote-dna.html).
+
 <br>
 
 
